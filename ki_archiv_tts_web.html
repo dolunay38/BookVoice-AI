@@ -3,471 +3,608 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BookVoice-AI — TTS Studio</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<title>BookVoice-AI</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --green:#00ff41;--green-dim:#00aa2b;--green-dark:#003010;
-  --green-glow:rgba(0,255,65,0.15);--bg:#050f05;--bg2:#0a1a0a;--bg3:#0d200d;
-  --border:rgba(0,255,65,0.2);--border-bright:rgba(0,255,65,0.5);
-  --text:#c8ffd4;--text-dim:#5a8a5a;
-  --mono:'Share Tech Mono',monospace;--sans:'Rajdhani',sans-serif;
+  --bg:#0f0f0f;
+  --surface:#161616;
+  --surface2:#1c1c1c;
+  --border:#242424;
+  --border2:#2a2a2a;
+  --text:#e8e8e8;
+  --text2:#888;
+  --text3:#555;
+  --green:#22c55e;
+  --green-dim:rgba(34,197,94,0.12);
+  --green-glow:rgba(34,197,94,0.25);
+  --amber:#f59e0b;
+  --red:#ef4444;
+  --blue:#3b82f6;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Inter',sans-serif;
+  --radius:8px;
+  --radius-lg:12px;
 }
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
-#matrix-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.07;pointer-events:none}
-.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
-header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;background:rgba(5,15,5,0.9);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100}
-.logo{display:flex;align-items:center;gap:12px}
-.logo-icon{width:36px;height:36px;border:1px solid var(--green);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 12px var(--green-glow);animation:pulse 3s ease-in-out infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 8px var(--green-glow)}50%{box-shadow:0 0 20px rgba(0,255,65,0.3)}}
-.logo-text{font-family:var(--mono);font-size:14px;color:var(--green);letter-spacing:.1em}
-.logo-sub{font-size:10px;color:var(--text-dim);letter-spacing:.2em;text-transform:uppercase}
-.header-stats{display:flex;gap:24px;font-family:var(--mono);font-size:11px;color:var(--text-dim)}
-.stat{display:flex;flex-direction:column;align-items:flex-end}
-.stat-val{color:var(--green);font-size:13px}
-main{flex:1;padding:2rem;max-width:1200px;margin:0 auto;width:100%}
-.section-title{font-family:var(--mono);font-size:11px;color:var(--text-dim);letter-spacing:.3em;text-transform:uppercase;border-left:2px solid var(--green);padding-left:10px;margin-bottom:1.5rem}
-.lang-tabs{display:flex;gap:2px;margin-bottom:2rem;border-bottom:1px solid var(--border)}
-.lang-tab{padding:.6rem 1.5rem;font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--text-dim);background:transparent;border:none;cursor:pointer;transition:all .2s;position:relative;text-transform:uppercase}
-.lang-tab::after{content:'';position:absolute;bottom:-1px;left:0;width:0;height:2px;background:var(--green);transition:width .3s}
-.lang-tab:hover{color:var(--text)}
-.lang-tab.active{color:var(--green)}
-.lang-tab.active::after{width:100%}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:1.5rem;margin-bottom:1.5rem;transition:border-color .3s}
-.card:hover{border-color:var(--border-bright)}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px}
+
+/* ── Layout ── */
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:52px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:.75rem 0;gap:2px;flex-shrink:0;z-index:10}
+.sb-logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#000;font-weight:700;font-size:14px;margin-bottom:.75rem;flex-shrink:0}
+.sb-item{width:38px;height:38px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;transition:all .15s;position:relative}
+.sb-item:hover{background:var(--surface2);color:var(--text2)}
+.sb-item.active{background:var(--green-dim);color:var(--green)}
+.sb-item i{font-size:18px}
+.sb-tooltip{position:absolute;left:48px;background:#1e1e1e;border:1px solid var(--border2);color:var(--text);font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100}
+.sb-item:hover .sb-tooltip{opacity:1}
+.sb-divider{width:24px;height:1px;background:var(--border);margin:.25rem 0}
+.sb-bottom{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:2px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text3)}
+.status-dot.online{background:var(--green);box-shadow:0 0 6px var(--green-glow)}
+.status-dot.offline{background:var(--red)}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:.65rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);flex-shrink:0}
+.page-title{font-size:15px;font-weight:600;color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:.5rem}
+.server-info{font-size:11px;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:5px}
+
+/* ── Content ── */
+.content{flex:1;overflow-y:auto;padding:1.25rem}
+.panel{display:none}
+.panel.active{display:block}
+
+/* ── Two Col ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.card:last-child{margin-bottom:0}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.card-title{font-family:var(--mono);font-size:12px;color:var(--green);letter-spacing:.1em;text-transform:uppercase}
-.upload-zone{border:1px dashed var(--border-bright);border-radius:4px;padding:2rem;text-align:center;cursor:pointer;transition:all .3s;background:rgba(0,255,65,0.02);position:relative;overflow:hidden}
-.upload-zone:hover,.upload-zone.drag{border-color:var(--green);background:var(--green-glow)}
+.card-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+
+/* ── Form Elements ── */
+textarea,input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:.6rem .85rem;outline:none;transition:border-color .15s}
+textarea{resize:vertical;min-height:160px;line-height:1.6}
+textarea:focus,input[type=text]:focus{border-color:var(--green)}
+textarea::placeholder,input::placeholder{color:var(--text3)}
+select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;padding:.5rem .75rem;outline:none;cursor:pointer}
+select:focus{border-color:var(--green)}
+input[type=range]{width:100%;accent-color:var(--green);cursor:pointer}
+
+/* ── Buttons ── */
+.btn{padding:.45rem 1rem;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:5px;font-family:var(--sans)}
+.btn-primary{background:var(--green);color:#000}
+.btn-primary:hover{background:#16a34a}
+.btn-primary:disabled{background:#1a3a1a;color:var(--text3);cursor:not-allowed}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--border);color:var(--text)}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.btn-danger:hover{background:rgba(239,68,68,.1)}
+.btn-sm{padding:.3rem .65rem;font-size:11px}
+.btn-block{width:100%;justify-content:center;padding:.65rem}
+
+/* ── Upload Zone ── */
+.upload-zone{border:1px dashed var(--border2);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--surface2)}
+.upload-zone:hover{border-color:var(--green);background:var(--green-dim)}
 .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.upload-icon{font-size:2rem;margin-bottom:.75rem;display:block}
-.upload-text{font-family:var(--mono);font-size:13px;color:var(--text-dim)}
+.upload-icon{font-size:24px;color:var(--text3);margin-bottom:.5rem}
+.upload-text{font-size:12px;color:var(--text2)}
 .upload-text strong{color:var(--green)}
-.upload-formats{font-size:11px;color:var(--text-dim);margin-top:.5rem;letter-spacing:.05em}
-textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:13px;padding:1rem;resize:vertical;min-height:180px;transition:border-color .3s;outline:none;line-height:1.6}
-textarea:focus{border-color:var(--green-dim)}
-textarea::placeholder{color:var(--text-dim)}
-.voice-row{display:flex;gap:1rem;align-items:center;margin-bottom:1rem}
-.voice-info{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem 1rem;font-family:var(--mono);font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:8px}
-.voice-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.btn{padding:.65rem 1.5rem;border-radius:3px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border:none;transition:all .2s}
-.btn-primary{background:var(--green);color:#000;font-weight:700;box-shadow:0 0 20px rgba(0,255,65,0.3)}
-.btn-primary:hover{background:#00ff80;box-shadow:0 0 30px rgba(0,255,65,0.5)}
-.btn-primary:active{transform:scale(.98)}
-.btn-primary:disabled{background:var(--green-dark);color:var(--text-dim);box-shadow:none;cursor:not-allowed}
-.btn-outline{background:transparent;color:var(--green);border:1px solid var(--border-bright)}
-.btn-outline:hover{background:var(--green-glow)}
-.btn-sm{padding:.4rem .8rem;font-size:11px}
-.btn-test{background:rgba(0,255,65,0.1);color:var(--green);border:1px solid var(--border-bright);width:100%;padding:.7rem;margin-top:.5rem}
-.btn-test:hover{background:rgba(0,255,65,0.2)}
-.slider-wrap{margin-bottom:12px}
-.slider-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:4px}
-.slider-label span:last-child{color:var(--green)}
-input[type=range]{width:100%;accent-color:var(--green)}
-.slider-hint{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text-dim)}
-.progress-wrap{margin-top:1rem}
-.progress-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:.4rem}
-.progress-bar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
-.progress-fill{height:100%;background:var(--green);width:0%;transition:width .5s ease;box-shadow:0 0 8px var(--green)}
-.terminal{background:#000;border:1px solid var(--border);border-radius:4px;padding:1rem;font-family:var(--mono);font-size:12px;height:160px;overflow-y:auto;color:var(--green-dim);line-height:1.8}
-.log-ok{color:var(--green)}.log-warn{color:#ffaa00}.log-err{color:#ff4444}.log-info{color:var(--text-dim)}
-.jobs-grid{display:grid;gap:.75rem}
-.job-row{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.75rem 1rem;display:flex;align-items:center;gap:1rem}
-.job-name{flex:1;font-family:var(--mono);font-size:12px;color:var(--text)}
-.job-chapters{font-family:var(--mono);font-size:11px;color:var(--text-dim)}
-.job-status{padding:.2rem .6rem;border-radius:2px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em}
-.status-running{background:rgba(255,170,0,.15);color:#ffaa00;border:1px solid rgba(255,170,0,.3)}
-.status-done{background:rgba(0,255,65,.1);color:var(--green);border:1px solid rgba(0,255,65,.3)}
-.status-error{background:rgba(255,68,68,.1);color:#ff4444;border:1px solid rgba(255,68,68,.3)}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
-@media(max-width:700px){.two-col{grid-template-columns:1fr}}
-.test-player{width:100%;margin-top:.5rem;display:none;filter:invert(1) hue-rotate(90deg)}
-footer{border-top:1px solid var(--border);padding:.75rem 2rem;font-family:var(--mono);font-size:10px;color:var(--text-dim);display:flex;justify-content:space-between;background:rgba(5,15,5,0.9)}
-.project-badge{background:rgba(0,255,65,0.1);border:1px solid var(--border-bright);border-radius:3px;padding:.2rem .6rem;font-family:var(--mono);font-size:10px;color:var(--green)}
+.upload-formats{font-size:10px;color:var(--text3);margin-top:.25rem}
+
+/* ── Slider Row ── */
+.slider-row{margin-bottom:.85rem}
+.slider-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:.35rem}
+.slider-label span:last-child{color:var(--green);font-family:var(--mono)}
+.slider-hint{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:.2rem}
+
+/* ── Presets ── */
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.85rem}
+.preset-btn{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.4rem .5rem;font-size:11px;color:var(--text2);cursor:pointer;text-align:left;transition:all .15s;font-family:var(--sans)}
+.preset-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.preset-desc{font-size:10px;color:var(--text3);margin-bottom:.85rem;padding:.4rem .6rem;background:var(--surface2);border-radius:var(--radius);border-left:2px solid var(--green)}
+
+/* ── Voice Cards ── */
+.voice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.65rem}
+.voice-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem;cursor:pointer;transition:all .15s}
+.voice-card:hover{border-color:var(--border2)}
+.voice-card.active{border-color:var(--green);background:var(--green-dim)}
+.vc-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-bottom:.5rem}
+.vc-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.vc-meta{font-size:10px;color:var(--text3)}
+.vc-actions{display:flex;gap:.3rem;margin-top:.5rem}
+.vc-add{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;color:var(--text3);min-height:100px}
+.vc-add:hover{color:var(--green)}
+
+/* ── File Cards ── */
+.file-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;transition:border-color .15s}
+.file-card:hover{border-color:var(--border2)}
+.file-icon{font-size:20px;flex-shrink:0}
+.file-name{flex:1;font-size:12px;color:var(--text);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-size{font-size:11px;color:var(--text3);white-space:nowrap}
+
+/* ── Progress ── */
+.progress-wrap{margin-top:.75rem}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:.35rem;font-family:var(--mono)}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .4s ease}
+
+/* ── Log ── */
+.log-box{background:#0a0a0a;border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;height:150px;overflow-y:auto;font-family:var(--mono);font-size:11px;line-height:1.7}
+.log-ok{color:var(--green)}
+.log-err{color:var(--red)}
+.log-warn{color:var(--amber)}
+.log-info{color:var(--text3)}
+
+/* ── Badge ── */
+.badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+.badge-green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.badge-amber{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.badge-blue{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+
+/* ── Audio Player ── */
+audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:none}
+
+/* ── Char count ── */
+.char-count{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+/* ── Action Banner ── */
+.action-banner{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem}
+.action-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;display:flex;align-items:flex-start;gap:.75rem;cursor:pointer;transition:border-color .15s}
+.action-card:hover{border-color:var(--border2)}
+.action-icon{width:36px;height:36px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.action-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.action-sub{font-size:11px;color:var(--text3);line-height:1.4}
+
+/* ── Dashboard Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem}
+.stat-value{font-size:22px;font-weight:600;color:var(--text);font-family:var(--mono);margin-bottom:2px}
+.stat-label{font-size:11px;color:var(--text3)}
 </style>
 </head>
 <body>
-<canvas id="matrix-bg"></canvas>
 <div class="app">
-<header>
-  <div class="logo">
-    <div class="logo-icon">🔊</div>
-    <div>
-      <div class="logo-text">BookVoice-AI</div>
-      <div class="logo-sub">TTS Studio · Aksoy-Net</div>
+
+<!-- ── Sidebar ── -->
+<div class="sidebar">
+  <div class="sb-logo">B</div>
+
+  <div class="sb-item active" onclick="showPanel('dashboard')" id="nav-dashboard">
+    <i class="ti ti-home"></i>
+    <div class="sb-tooltip">Dashboard</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('studio')" id="nav-studio">
+    <i class="ti ti-microphone"></i>
+    <div class="sb-tooltip">Studio</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('voices')" id="nav-voices">
+    <i class="ti ti-player-play"></i>
+    <div class="sb-tooltip">Stimmen</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('musik')" id="nav-musik">
+    <i class="ti ti-music"></i>
+    <div class="sb-tooltip">Musik</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('files')" id="nav-files">
+    <i class="ti ti-folder"></i>
+    <div class="sb-tooltip">Dateien</div>
+  </div>
+
+  <div class="sb-divider"></div>
+
+  <div class="sb-item" onclick="showPanel('settings')" id="nav-settings">
+    <i class="ti ti-settings"></i>
+    <div class="sb-tooltip">Einstellungen</div>
+  </div>
+
+  <div class="sb-bottom">
+    <div class="sb-item" id="server-status-btn" title="Server Status">
+      <div class="status-dot" id="status-dot"></div>
     </div>
   </div>
-  <div class="header-stats">
-    <div class="stat"><span class="stat-val" id="hdr-project">—</span><span>Projekt</span></div>
-    <div class="stat"><span class="stat-val" id="hdr-jobs">0</span><span>Jobs</span></div>
-    <div class="stat"><span class="stat-val" id="hdr-files">0</span><span>Dateien</span></div>
-    <div class="stat"><span class="stat-val" id="hdr-status" style="color:#ff4444">OFFLINE</span><span>Server</span></div>
-  </div>
-</header>
+</div>
 
-<main>
-  <!-- Projekt-Name oben -->
-  <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.5rem">
-    <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);letter-spacing:.2em">PROJEKT:</div>
-    <input type="text" id="project-name" placeholder="mein_hoerbuch_001" value=""
-      style="flex:1;background:var(--bg2);border:1px solid var(--border-bright);border-radius:4px;
-             color:var(--green);font-family:var(--mono);font-size:13px;padding:.5rem 1rem;outline:none"
-      oninput="updateProject()">
-    <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">Jeder User gibt einen eigenen Projektnamen ein</div>
-  </div>
-
-  <!-- Lang tabs -->
-  <div class="lang-tabs">
-    <button class="lang-tab active" onclick="setLang('tr',this)">🇹🇷 Türkisch</button>
-    <button class="lang-tab" onclick="setLang('de',this)">🇩🇪 Deutsch</button>
-    <button class="lang-tab" onclick="setLang('en',this)">🇬🇧 Englisch</button>
-  </div>
-
-  <div class="two-col">
-    <!-- LEFT -->
-    <div>
-      <p class="section-title">// Text-Eingabe</p>
-
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Datei hochladen</span>
-          <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)" id="file-label">kein File</span>
-        </div>
-        <div class="upload-zone" id="drop-zone">
-          <input type="file" accept=".txt,.pdf,.epub,.mobi,.azw3" id="file-input" onchange="handleFile(this)">
-          <span class="upload-icon">📄</span>
-          <div class="upload-text">Drag & Drop oder <strong>klicken</strong></div>
-          <div class="upload-formats">TXT · PDF · EPUB · MOBI · max. 50 MB</div>
-        </div>
+<!-- ── Main ── -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">Dashboard</div>
+    <div class="topbar-right">
+      <div class="server-info">
+        <span id="server-status-text">Verbinde…</span>
       </div>
-
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Text direkt eingeben</span>
-          <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)" id="char-count">0 Zeichen</span>
-        </div>
-        <textarea id="text-input" placeholder="Text hier eingeben oder Datei hochladen..." oninput="updateCharCount()"></textarea>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><span class="card-title">Referenzstimme</span></div>
-        <div class="voice-row">
-          <div class="voice-info">
-            <span class="voice-dot"></span>
-            <span id="voice-name">stimme.wav — geladen</span>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="document.getElementById('voice-upload').click()">⬆ Upload</button>
-          <input type="file" id="voice-upload" accept=".wav,.mp3,.mp4,.m4a,.ogg,.flac" style="display:none" onchange="uploadVoice(this)">
-        </div>
-        <div id="voice-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:.5rem"></div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:.5rem">
-          Aktiv: <span id="lang-display" style="color:var(--green)">Türkisch (tr)</span> ·
-          Stimme: <span id="active-voice" style="color:var(--green)">stimme.wav</span>
-        </div>
-      </div>
-
-      <!-- Projekt + Format -->
-      <div class="card">
-        <div class="card-header"><span class="card-title">Ausgabe</span></div>
-        <select id="output-format" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;
-               color:var(--green);font-family:var(--mono);font-size:12px;padding:.6rem .8rem;outline:none;cursor:pointer">
-          <option value="mp3">MP3 — Standard (WhatsApp, Handy)</option>
-          <option value="m4b">M4B — Hörbuch (iPhone, Kapitel-Navigation)</option>
-          <option value="wav">WAV — Verlustfrei (Nachbearbeitung)</option>
-        </select>
-      </div>
-
-      <!-- Stimme Einstellungen -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Stimme Einstellungen</span>
-          <button class="btn btn-outline btn-sm" onclick="resetVoiceSettings()">Reset</button>
-        </div>
-
-        <!-- Presets -->
-        <div style="margin-bottom:1rem">
-          <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:6px;letter-spacing:.1em">STIL-PRESET</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <button class="btn btn-outline btn-sm" onclick="applyPreset('sufi')" style="text-align:left">🕌 Sufi / Spirituell</button>
-            <button class="btn btn-outline btn-sm" onclick="applyPreset('roman')" style="text-align:left">📖 Roman / Erzählung</button>
-            <button class="btn btn-outline btn-sm" onclick="applyPreset('sachtext')" style="text-align:left">📰 Sachtext / Neutral</button>
-            <button class="btn btn-outline btn-sm" onclick="applyPreset('dramatisch')" style="text-align:left">🎭 Dramatisch</button>
-            <button class="btn btn-outline btn-sm" onclick="applyPreset('schnell')" style="text-align:left">⚡ Schnell</button>
-            <button class="btn btn-outline btn-sm" onclick="applyPreset('kind')" style="text-align:left">👶 Kinder / Klar</button>
-          </div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:6px" id="preset-desc">Preset auswählen oder manuell einstellen</div>
-        </div>
-
-        <div class="slider-wrap">
-          <div class="slider-label"><span>🌡️ Wärme</span><span id="temp-val">0.50</span></div>
-          <input type="range" id="temperature" min="0.1" max="1.0" step="0.05" value="0.5"
-            oninput="document.getElementById('temp-val').textContent=parseFloat(this.value).toFixed(2)">
-          <div class="slider-hint"><span>Stabil</span><span>Emotionaler</span></div>
-        </div>
-
-        <div class="slider-wrap">
-          <div class="slider-label"><span>🎵 Natürlichkeit</span><span id="rep-val">5.0</span></div>
-          <input type="range" id="rep-penalty" min="2" max="15" step="0.5" value="5"
-            oninput="document.getElementById('rep-val').textContent=parseFloat(this.value).toFixed(1)">
-          <div class="slider-hint"><span>Natürlicher</span><span>Strukturierter</span></div>
-        </div>
-
-        <div class="slider-wrap">
-          <div class="slider-label"><span>🎨 Kreativität</span><span id="topk-val">30</span></div>
-          <input type="range" id="top-k" min="10" max="100" step="5" value="30"
-            oninput="document.getElementById('topk-val').textContent=this.value">
-          <div class="slider-hint"><span>Weicher</span><span>Variabler</span></div>
-        </div>
-
-        <div class="slider-wrap">
-          <div class="slider-label"><span>⚡ Geschwindigkeit</span><span id="speed-val">1.0x</span></div>
-          <input type="range" id="speed" min="0.5" max="2.0" step="0.05" value="1.0"
-            oninput="document.getElementById('speed-val').textContent=parseFloat(this.value).toFixed(2)+'x'">
-          <div class="slider-hint"><span>0.5x Langsam</span><span>2.0x Schnell</span></div>
-        </div>
-
-        <!-- Test-Audio Button -->
-        <button class="btn btn-test" id="test-btn" onclick="testVoice()">
-          🎙️ TEST-AUDIO GENERIEREN
-        </button>
-        <audio id="test-player" class="test-player" controls></audio>
-      </div>
-
-      <!-- Hintergrundmusik -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">🎵 Hintergrundmusik</span>
-          <button class="btn btn-outline btn-sm" onclick="document.getElementById('musik-upload').click()">⬆ Upload</button>
-          <input type="file" id="musik-upload" accept=".mp3,.wav,.m4a,.ogg" style="display:none" onchange="uploadMusik(this)">
-        </div>
-
-        <select id="musik-select" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;
-               color:var(--green);font-family:var(--mono);font-size:12px;padding:.6rem .8rem;outline:none;cursor:pointer;margin-bottom:.75rem">
-          <option value="">— Keine Musik —</option>
-        </select>
-
-        <div class="slider-wrap">
-          <div class="slider-label"><span>🔊 Musik-Lautstärke</span><span id="musik-vol-val">15%</span></div>
-          <input type="range" id="musik-volume" min="0" max="50" step="1" value="15"
-            oninput="document.getElementById('musik-vol-val').textContent=this.value+'%'">
-          <div class="slider-hint"><span>Leise</span><span>Laut</span></div>
-        </div>
-
-        <button class="btn btn-outline btn-sm" style="width:100%;margin-top:.5rem" id="mix-btn" onclick="mixMusik()">
-          🎼 MIT MUSIK MISCHEN
-        </button>
-        <div id="mix-status" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-top:.5rem;text-align:center"></div>
-      </div>
-
-      <button class="btn btn-primary" style="width:100%;padding:1rem;font-size:14px" id="gen-btn" onclick="generateTTS()">
-        ▶ HÖRBUCH GENERIEREN
+      <button class="btn btn-primary btn-sm" onclick="showPanel('studio')">
+        <i class="ti ti-plus"></i> Neues Hörbuch
       </button>
     </div>
+  </div>
 
-    <!-- RIGHT -->
-    <div>
-      <p class="section-title">// Status & Ausgabe</p>
+  <div class="content">
 
-      <div class="card" id="progress-card" style="display:none">
-        <div class="card-header">
-          <span class="card-title">Generierung läuft</span>
-          <span class="job-status status-running" id="progress-status">RUNNING</span>
+    <!-- ══ Dashboard ══ -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-files">—</div>
+          <div class="stat-label">Fertige Dateien</div>
         </div>
-        <div class="progress-wrap">
-          <div class="progress-label">
-            <span id="progress-text">Kapitel 0 / 0</span>
-            <span id="progress-pct">0%</span>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-voices">—</div>
+          <div class="stat-label">Stimmen</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-musik">—</div>
+          <div class="stat-label">Musik-Tracks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-device">—</div>
+          <div class="stat-label">Device</div>
+        </div>
+      </div>
+
+      <div class="action-banner">
+        <div class="action-card" onclick="showPanel('studio')">
+          <div class="action-icon" style="background:rgba(34,197,94,.1)">🎙️</div>
+          <div>
+            <div class="action-title">Hörbuch erstellen</div>
+            <div class="action-sub">Text, EPUB, PDF oder Foto hochladen und in Audio umwandeln</div>
           </div>
-          <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        </div>
+        <div class="action-card" onclick="showPanel('files')">
+          <div class="action-icon" style="background:rgba(59,130,246,.1)">📂</div>
+          <div>
+            <div class="action-title">Dateien verwalten</div>
+            <div class="action-sub">Fertige Hörbücher herunterladen, anhören oder löschen</div>
+          </div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-header">
           <span class="card-title">System Log</span>
-          <button class="btn btn-outline btn-sm" onclick="clearLog()">CLR</button>
+          <button class="btn btn-secondary btn-sm" onclick="clearLog()">Leeren</button>
         </div>
-        <div class="terminal" id="terminal">
-          <div class="log-info">[SYSTEM] BookVoice-AI Studio bereit</div>
-          <div class="log-info">[SYSTEM] XTTS-v2 Modell geladen</div>
+        <div class="log-box" id="log-box">
+          <div class="log-info">[SYSTEM] BookVoice-AI gestartet</div>
         </div>
       </div>
+    </div>
 
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Fertige Dateien</span>
-          <button class="btn btn-outline btn-sm" onclick="loadFiles()">↻</button>
-        </div>
-        <div class="jobs-grid" id="files-list">
-          <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);text-align:center;padding:1rem">
-            Projekt-Namen eingeben um Dateien zu sehen
+    <!-- ══ Studio ══ -->
+    <div class="panel" id="panel-studio">
+      <div class="two-col">
+
+        <!-- LEFT -->
+        <div>
+          <!-- Projekt -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Projekt</span>
+              <span class="char-count" id="char-count">0 Zeichen</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;margin-bottom:.75rem">
+              <input type="text" id="project-name" placeholder="projekt-name" value="hoerbuch">
+              <select id="output-format" style="width:auto">
+                <option value="mp3">MP3</option>
+                <option value="m4b">M4B</option>
+                <option value="wav">WAV</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+              <select id="tts-lang" style="flex:1">
+                <option value="tr">🇹🇷 Türkisch</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="en">🇬🇧 Englisch</option>
+                <option value="ar">🇸🇦 Arabisch</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Text -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Text eingeben</span>
+            </div>
+            <textarea id="test-text" placeholder="Text hier eingeben oder Datei hochladen..." oninput="updateCharCount()"></textarea>
+          </div>
+
+          <!-- Upload -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Datei hochladen</span></div>
+            <div class="upload-zone" id="drop-zone">
+              <input type="file" accept=".txt,.pdf,.epub,.mobi,.jpg,.jpeg,.png" onchange="handleFileUpload(this)">
+              <div class="upload-icon"><i class="ti ti-upload"></i></div>
+              <div class="upload-text">Drag & Drop oder <strong>klicken</strong></div>
+              <div class="upload-formats">TXT · PDF · EPUB · MOBI · Foto (JPG/PNG)</div>
+            </div>
+          </div>
+
+          <!-- Aktive Stimme -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Aktive Stimme</span>
+              <button class="btn btn-secondary btn-sm" onclick="showPanel('voices')">Wechseln</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div class="vc-avatar" id="active-avatar" style="background:rgba(34,197,94,.15);color:var(--green);width:36px;height:36px;font-size:12px;font-weight:600;border-radius:50%;display:flex;align-items:center;justify-content:center">SM</div>
+              <div>
+                <div style="font-size:12px;font-weight:500;color:var(--text)" id="active-voice-name">stimme.wav</div>
+                <div style="font-size:11px;color:var(--text3)" id="active-voice-meta">TR · XTTS-v2</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Aktive Jobs</span>
-          <button class="btn btn-outline btn-sm" onclick="loadJobs()">↻</button>
-        </div>
-        <div class="jobs-grid" id="jobs-list">
-          <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);text-align:center;padding:1rem">
-            Keine aktiven Jobs
+        <!-- RIGHT -->
+        <div>
+          <!-- Einstellungen -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Stimme Einstellungen</span>
+              <button class="btn btn-secondary btn-sm" onclick="resetSettings()">Reset</button>
+            </div>
+
+            <div class="preset-grid">
+              <button class="preset-btn" onclick="applyPreset('sufi')">🕌 Sufi</button>
+              <button class="preset-btn" onclick="applyPreset('roman')">📖 Roman</button>
+              <button class="preset-btn" onclick="applyPreset('sachtext')">📰 Sachtext</button>
+              <button class="preset-btn" onclick="applyPreset('dramatisch')">🎭 Dramatisch</button>
+              <button class="preset-btn" onclick="applyPreset('schnell')">⚡ Schnell</button>
+              <button class="preset-btn" onclick="applyPreset('kind')">👶 Kinder</button>
+            </div>
+            <div class="preset-desc" id="preset-desc">Preset auswählen oder manuell einstellen</div>
+
+            <div class="slider-row">
+              <div class="slider-label"><span>🌡️ Wärme</span><span id="temp-val">0.50</span></div>
+              <input type="range" id="temperature" min="0.1" max="1.0" step="0.05" value="0.5" oninput="document.getElementById('temp-val').textContent=parseFloat(this.value).toFixed(2)">
+              <div class="slider-hint"><span>Stabil</span><span>Emotional</span></div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>🎵 Natürlichkeit</span><span id="rep-val">5.0</span></div>
+              <input type="range" id="rep-penalty" min="2" max="15" step="0.5" value="5" oninput="document.getElementById('rep-val').textContent=parseFloat(this.value).toFixed(1)">
+              <div class="slider-hint"><span>Natürlich</span><span>Strukturiert</span></div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>🎨 Kreativität</span><span id="topk-val">30</span></div>
+              <input type="range" id="top-k" min="10" max="100" step="5" value="30" oninput="document.getElementById('topk-val').textContent=this.value">
+              <div class="slider-hint"><span>Weich</span><span>Variabel</span></div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>⚡ Geschwindigkeit</span><span id="speed-val">1.00x</span></div>
+              <input type="range" id="speed" min="0.5" max="2.0" step="0.05" value="1.0" oninput="document.getElementById('speed-val').textContent=parseFloat(this.value).toFixed(2)+'x'">
+              <div class="slider-hint"><span>0.5x</span><span>2.0x</span></div>
+            </div>
+          </div>
+
+          <!-- Test + Generate -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Ausgabe</span></div>
+            <button class="btn btn-secondary btn-block" id="test-btn" onclick="generatePreview()" style="margin-bottom:.5rem">
+              <i class="ti ti-player-play"></i> Test-Audio generieren
+            </button>
+            <audio id="preview-player" controls></audio>
+
+            <div class="progress-wrap" id="progress-wrap" style="display:none">
+              <div class="progress-label">
+                <span id="progress-text">Kapitel 0 / 0</span>
+                <span id="batch-pct">0%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" id="batch-bar" style="width:0%"></div></div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="gen-btn" onclick="startSynthesis()" style="margin-top:.75rem">
+              <i class="ti ti-wand"></i> HÖRBUCH GENERIEREN
+            </button>
+          </div>
+
+          <!-- Log -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Log</span>
+              <button class="btn btn-secondary btn-sm" onclick="clearLog()">Leeren</button>
+            </div>
+            <div class="log-box" id="studio-log"></div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</main>
 
-<footer>
-  <div style="display:flex;align-items:center;gap:6px">
-    <div style="width:6px;height:6px;border-radius:50%;background:var(--green)"></div>
-    <span>API: <span id="footer-server">/api</span></span>
-  </div>
-  <span>BookVoice-AI v1.0 · Aksoy-Net · 2026</span>
-</footer>
-</div>
+    <!-- ══ Stimmen ══ -->
+    <div class="panel" id="panel-voices">
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Stimm-Bibliothek</span>
+              <span class="char-count" id="voice-count">0 Stimmen</span>
+            </div>
+            <div class="voice-grid" id="voice-grid"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Stimme hochladen</span></div>
+            <div class="upload-zone">
+              <input type="file" accept=".wav,.mp3,.mp4,.m4a,.ogg" onchange="handleVoiceUpload(this)">
+              <div class="upload-icon"><i class="ti ti-microphone"></i></div>
+              <div class="upload-text">Stimme hochladen</div>
+              <div class="upload-formats">WAV · MP3 · MP4 · M4A · 20–60 Sek empfohlen</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Tipps für gute Stimmen</span></div>
+            <div style="font-size:11px;color:var(--text3);line-height:1.8">
+              ✅ 30–60 Sekunden Aufnahme<br>
+              ✅ Stilles Zimmer, kein Hintergrundrauschen<br>
+              ✅ Gleichmäßig und deutlich sprechen<br>
+              ✅ In der Zielsprache aufnehmen<br>
+              ✅ WAV Format bevorzugen
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Musik ══ -->
+    <div class="panel" id="panel-musik">
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Musik-Bibliothek</span></div>
+            <div id="musik-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Musik hochgeladen</div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Musik hochladen</span></div>
+            <div class="upload-zone">
+              <input type="file" accept=".mp3,.wav,.m4a,.ogg" onchange="handleMusikUpload(this)">
+              <div class="upload-icon"><i class="ti ti-music"></i></div>
+              <div class="upload-text">Musik hochladen</div>
+              <div class="upload-formats">MP3 · WAV · M4A · OGG</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Mit Hörbuch mischen</span></div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Hintergrundmusik</div>
+              <select id="musik-select"><option value="">— Keine Musik —</option></select>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>🔊 Musik-Lautstärke</span><span id="musik-vol-val">15%</span></div>
+              <input type="range" id="musik-volume" min="0" max="50" step="1" value="15" oninput="document.getElementById('musik-vol-val').textContent=this.value+'%'">
+              <div class="slider-hint"><span>Leise</span><span>Laut</span></div>
+            </div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projekt</div>
+              <input type="text" id="mix-project" placeholder="hoerbuch" value="hoerbuch">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="mixMusikWithAudio()">
+              <i class="ti ti-music"></i> Mit Musik mischen
+            </button>
+            <div id="mix-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:.5rem"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Dateien ══ -->
+    <div class="panel" id="panel-files">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Fertige Hörbücher</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadFilesFromServer()">
+            <i class="ti ti-refresh"></i> Aktualisieren
+          </button>
+        </div>
+        <div id="file-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Dateien</div></div>
+      </div>
+    </div>
+
+    <!-- ══ Einstellungen ══ -->
+    <div class="panel" id="panel-settings">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Server</span></div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem">API URL</div>
+        <input type="text" id="api-url" value="/api" style="margin-bottom:.75rem">
+        <button class="btn btn-primary btn-sm" onclick="checkApi()">Verbindung testen</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Info</span></div>
+        <div style="font-size:12px;color:var(--text3);line-height:2">
+          <div>Version: <span style="color:var(--text)">BookVoice-AI v1.0</span></div>
+          <div>Model: <span style="color:var(--text)">XTTS-v2</span></div>
+          <div>GitHub: <a href="https://github.com/dolunay38/BookVoice-AI" style="color:var(--green)">dolunay38/BookVoice-AI</a></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- content -->
+</div><!-- main -->
+</div><!-- app -->
 
 <script>
+// ── Config ──────────────────────────────────────
 const TTS_URL = '/api';
-const LANG_NAMES = {tr:'Türkisch (tr)', de:'Deutsch (de)', en:'Englisch (en)'};
-const TEST_SENTENCES = {
-  tr: 'Merhaba, bu bir ses testi cümlesidir. Sistem düzgün çalışıyor.',
-  de: 'Hallo, dies ist ein Sprachtest. Das System funktioniert einwandfrei.',
-  en: 'Hello, this is a voice test. The system is working correctly.'
-};
-
-let currentLang = 'tr';
-let currentSpeakerWav = '/app/tts_models/stimme.wav';
-let currentProject = '';
 let activeJobId = null;
 let pollInterval = null;
+let selectedVoiceId = null;
+let voices = [];
 
-// Matrix Rain
-(function(){
-  const c = document.getElementById('matrix-bg');
-  const ctx = c.getContext('2d');
-  const resize = () => { c.width = innerWidth; c.height = innerHeight; };
-  resize(); window.addEventListener('resize', resize);
-  const chars = 'アイウエオカキ01アイウ'.split('');
-  const cols = Math.floor(innerWidth / 16);
-  const drops = Array(cols).fill(1);
-  setInterval(() => {
-    ctx.fillStyle = 'rgba(0,0,0,0.05)';
-    ctx.fillRect(0, 0, c.width, c.height);
-    ctx.fillStyle = '#00ff41';
-    ctx.font = '14px monospace';
-    drops.forEach((y, i) => {
-      ctx.fillText(chars[Math.floor(Math.random()*chars.length)], i*16, y*16);
-      if (y*16 > c.height && Math.random() > 0.975) drops[i] = 0;
-      drops[i]++;
-    });
-  }, 50);
-})();
+const PRESETS = {
+  sufi:      {temp:0.65, rep:4.0, topk:25, speed:0.85, desc:'🕌 Ruhig, melodisch — für Sufi & religiöse Texte'},
+  roman:     {temp:0.60, rep:5.0, topk:30, speed:1.00, desc:'📖 Natürlich, ausdrucksstark — für Romane'},
+  sachtext:  {temp:0.35, rep:8.0, topk:40, speed:1.10, desc:'📰 Klar, neutral — für Sachtexte'},
+  dramatisch:{temp:0.80, rep:3.0, topk:20, speed:0.90, desc:'🎭 Emotional — für dramatische Szenen'},
+  schnell:   {temp:0.30, rep:9.0, topk:45, speed:1.40, desc:'⚡ Schnell & stabil — für lange Texte'},
+  kind:      {temp:0.40, rep:7.0, topk:35, speed:0.95, desc:'👶 Klar & langsam — für Kinder'}
+};
 
-function updateProject() {
-  currentProject = document.getElementById('project-name').value.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-  document.getElementById('hdr-project').textContent = currentProject || '—';
-  if (currentProject) loadFiles();
+const PREVIEW_TEXTS = {
+  tr:'Merhaba, bu bir ses önizlemesidir. Sistem çalışıyor.',
+  de:'Hallo, dies ist eine Sprachvorschau. Das System funktioniert.',
+  en:'Hello, this is a voice preview. The system is working.'
+};
+
+// ── Navigation ───────────────────────────────────
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item[id^=nav]').forEach(i => i.classList.remove('active'));
+  const panel = document.getElementById('panel-'+name);
+  const nav = document.getElementById('nav-'+name);
+  if(panel) panel.classList.add('active');
+  if(nav) nav.classList.add('active');
+  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',files:'Dateien',settings:'Einstellungen'};
+  document.getElementById('page-title').textContent = titles[name] || name;
+  if(name==='files') loadFilesFromServer();
+  if(name==='voices') loadVoicesFromServer();
+  if(name==='musik'){ loadMusikFromServer(); loadMusikList(); }
 }
 
-function setLang(lang, el) {
-  currentLang = lang;
-  document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('lang-display').textContent = LANG_NAMES[lang];
-  log(`[LANG] ${LANG_NAMES[lang]}`, 'info');
-}
-
-function updateCharCount() {
-  const n = document.getElementById('text-input').value.length;
+// ── Char Count ──────────────────────────────────
+function updateCharCount(){
+  const n = document.getElementById('test-text').value.length;
   document.getElementById('char-count').textContent = `${n.toLocaleString()} Zeichen`;
 }
 
-function handleFile(input) {
+// ── File Upload ─────────────────────────────────
+function handleFileUpload(input){
   const file = input.files[0];
-  if (!file) return;
-  document.getElementById('file-label').textContent = file.name;
-  log(`[UPLOAD] ${file.name}`, 'ok');
+  if(!file) return;
+  addLog(`📄 Datei geladen: ${file.name}`);
   const reader = new FileReader();
   reader.onload = e => {
-    document.getElementById('text-input').value = e.target.result;
+    document.getElementById('test-text').value = e.target.result;
     updateCharCount();
-    log(`[UPLOAD] ${e.target.result.length.toLocaleString()} Zeichen`, 'ok');
+    addLog(`✔ ${e.target.result.length.toLocaleString()} Zeichen extrahiert`, 'ok');
   };
   reader.readAsText(file);
 }
 
+// Drag & Drop
 const dz = document.getElementById('drop-zone');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-dz.addEventListener('drop', e => {
-  e.preventDefault(); dz.classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (file) { document.getElementById('file-input').files = e.dataTransfer.files; handleFile(document.getElementById('file-input')); }
-});
-
-function getVoiceParams() {
-  return {
-    temperature: parseFloat(document.getElementById('temperature').value),
-    repetition_penalty: parseFloat(document.getElementById('rep-penalty').value),
-    top_k: parseInt(document.getElementById('top-k').value),
-    speed: parseFloat(document.getElementById('speed').value)
-  };
+if(dz){
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor='var(--green)'; });
+  dz.addEventListener('dragleave', () => { dz.style.borderColor=''; });
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.style.borderColor='';
+    const file = e.dataTransfer.files[0];
+    if(file){ const inp = dz.querySelector('input'); inp.files = e.dataTransfer.files; handleFileUpload(inp); }
+  });
 }
 
-// Test-Audio
-async function testVoice() {
-  const btn = document.getElementById('test-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Generiere Test...';
-  const params = getVoiceParams();
-  const testText = TEST_SENTENCES[currentLang];
-  log(`[TEST] Generiere Test-Audio... (Speed: ${params.speed}x)`, 'info');
-  try {
-    const resp = await fetch(`${TTS_URL}/tts/generate`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        text: testText,
-        language: currentLang,
-        speaker_wav: currentSpeakerWav,
-        filename: `_test_${Date.now()}.wav`,
-        ...params
-      })
-    });
-    const data = await resp.json();
-    if (data.status === 'ok') {
-      const player = document.getElementById('test-player');
-      player.src = `${TTS_URL}/tts/download/${data.datei}`;
-      player.style.display = 'block';
-      player.play();
-      log(`[TEST] ✅ Test fertig — ${data.groesse_kb} KB`, 'ok');
-    } else {
-      log(`[TEST] Fehler: ${data.detail}`, 'err');
-    }
-  } catch(e) {
-    log(`[TEST] Fehler: ${e.message}`, 'err');
-  }
-  btn.disabled = false;
-  btn.textContent = '🎙️ TEST-AUDIO GENERIEREN';
-}
-
-const PRESETS = {
-  sufi:      { temp:0.65, rep:4.0, topk:25, speed:0.85, desc:'🕌 Ruhig, melodisch, spirituell — ideal für Sufi & religiöse Texte' },
-  roman:     { temp:0.60, rep:5.0, topk:30, speed:1.00, desc:'📖 Natürlich, ausdrucksstark — für Romane & Erzählungen' },
-  sachtext:  { temp:0.35, rep:8.0, topk:40, speed:1.10, desc:'📰 Klar, neutral, gleichmäßig — für Sachtexte & Nachrichten' },
-  dramatisch:{ temp:0.80, rep:3.0, topk:20, speed:0.90, desc:'🎭 Emotional, variabel — für dramatische Szenen & Poesie' },
-  schnell:   { temp:0.30, rep:9.0, topk:45, speed:1.40, desc:'⚡ Schnell & stabil — für lange Texte ohne viel Betonung' },
-  kind:      { temp:0.40, rep:7.0, topk:35, speed:0.95, desc:'👶 Klar, langsam, deutlich — für Kinderbücher & Lernmaterial' }
-};
-
-function applyPreset(name) {
+// ── Presets ─────────────────────────────────────
+function applyPreset(name){
   const p = PRESETS[name];
-  if (!p) return;
+  if(!p) return;
   document.getElementById('temperature').value = p.temp;
   document.getElementById('temp-val').textContent = p.temp.toFixed(2);
   document.getElementById('rep-penalty').value = p.rep;
@@ -475,315 +612,362 @@ function applyPreset(name) {
   document.getElementById('top-k').value = p.topk;
   document.getElementById('topk-val').textContent = p.topk;
   document.getElementById('speed').value = p.speed;
-  document.getElementById('speed-val').textContent = p.speed.toFixed(2) + 'x';
+  document.getElementById('speed-val').textContent = p.speed.toFixed(2)+'x';
   document.getElementById('preset-desc').textContent = p.desc;
-  log(`[PRESET] ${p.desc}`, 'ok');
+  addLog(`[PRESET] ${p.desc}`, 'ok');
 }
 
-async function uploadMusik(input) {
-  const file = input.files[0];
-  if (!file) return;
-  log(`[MUSIK] Lade hoch: ${file.name}...`, 'info');
-  const formData = new FormData();
-  formData.append('file', file);
-  try {
-    const resp = await fetch(`${TTS_URL}/tts/upload-musik`, {method:'POST', body:formData});
-    const data = await resp.json();
-    if (data.status === 'ok') {
-      log(`[MUSIK] ✅ ${file.name} hochgeladen!`, 'ok');
-      loadMusik();
-    }
-  } catch(e) { log(`[FEHLER] ${e.message}`, 'err'); }
+function resetSettings(){
+  document.getElementById('temperature').value = 0.5; document.getElementById('temp-val').textContent = '0.50';
+  document.getElementById('rep-penalty').value = 5; document.getElementById('rep-val').textContent = '5.0';
+  document.getElementById('top-k').value = 30; document.getElementById('topk-val').textContent = '30';
+  document.getElementById('speed').value = 1.0; document.getElementById('speed-val').textContent = '1.00x';
+  document.getElementById('preset-desc').textContent = 'Preset auswählen oder manuell einstellen';
 }
 
-async function loadMusik() {
-  try {
-    const resp = await fetch(`${TTS_URL}/tts/musik`);
-    const data = await resp.json();
-    const sel = document.getElementById('musik-select');
-    sel.innerHTML = '<option value="">— Keine Musik —</option>';
-    data.musik.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m.name;
-      opt.textContent = `🎵 ${m.name} (${m.groesse_mb}MB)`;
-      sel.appendChild(opt);
-    });
-  } catch(e) {}
+// ── Voice Path ──────────────────────────────────
+function getVoicePath(){
+  const v = voices.find(x => x.id === selectedVoiceId);
+  return v && v.path ? v.path : '/app/tts_models/stimme.wav';
 }
 
-async function mixMusik() {
-  const musikFile = document.getElementById('musik-select').value;
-  if (!musikFile) { log('[MUSIK] Keine Musik ausgewählt!', 'warn'); return; }
-
-  const files = document.querySelectorAll('#files-list .job-name');
-  if (!files.length) { log('[MUSIK] Erst Hörbuch generieren!', 'warn'); return; }
-
-  // Letzte generierte Datei nehmen
-  const lastFile = files[files.length-1].textContent.replace('🔊 ', '').trim();
-  const volume = parseFloat(document.getElementById('musik-volume').value) / 100;
-
-  const btn = document.getElementById('mix-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Mische...';
-  document.getElementById('mix-status').textContent = `Mische ${lastFile} mit ${musikFile}...`;
-
-  try {
-    const resp = await fetch(`${TTS_URL}/tts/mix-musik`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        audio_file: lastFile,
-        musik_file: musikFile,
-        musik_volume: volume,
-        output_name: `${currentProject || 'hoerbuch'}_mit_musik.mp3`
-      })
-    });
-    const data = await resp.json();
-    if (data.status === 'ok') {
-      log(`[MUSIK] ✅ Mix fertig: ${data.datei} (${data.groesse_mb}MB)`, 'ok');
-      document.getElementById('mix-status').textContent = `✅ Fertig: ${data.datei}`;
-      loadFiles();
-    } else {
-      log(`[FEHLER] ${data.detail}`, 'err');
-    }
-  } catch(e) { log(`[FEHLER] ${e.message}`, 'err'); }
-
-  btn.disabled = false;
-  btn.textContent = '🎼 MIT MUSIK MISCHEN';
-}
-
-function resetVoiceSettings() {
-  document.getElementById('temperature').value = 0.5;
-  document.getElementById('temp-val').textContent = '0.50';
-  document.getElementById('rep-penalty').value = 5;
-  document.getElementById('rep-val').textContent = '5.0';
-  document.getElementById('top-k').value = 30;
-  document.getElementById('topk-val').textContent = '30';
-  document.getElementById('speed').value = 1.0;
-  document.getElementById('speed-val').textContent = '1.0x';
-  log('[RESET] Einstellungen zurückgesetzt', 'info');
-}
-
-function splitChapters(text, maxLen) {
+// ── Text Split ──────────────────────────────────
+function splitChapters(text, maxLen){
   const chapters = [];
   const paragraphs = text.split(/\n{2,}/);
   let current = '';
-  for (const p of paragraphs) {
-    if (current.length + p.length > maxLen && current.length > 0) {
-      chapters.push(current.trim());
-      current = p;
-    } else {
-      current += (current ? '\n\n' : '') + p;
-    }
+  for(const p of paragraphs){
+    if(current.length + p.length > maxLen && current.length > 0){ chapters.push(current.trim()); current = p; }
+    else{ current += (current ? '\n\n' : '') + p; }
   }
-  if (current.trim()) chapters.push(current.trim());
+  if(current.trim()) chapters.push(current.trim());
   return chapters.filter(c => c.length > 10);
 }
 
-async function generateTTS() {
-  if (!currentProject) {
-    log('[FEHLER] Bitte Projekt-Namen eingeben!', 'err');
-    document.getElementById('project-name').focus();
-    return;
-  }
-  const text = document.getElementById('text-input').value.trim();
-  if (!text) { log('[FEHLER] Kein Text eingegeben!', 'err'); return; }
-
-  const outputFormat = document.getElementById('output-format').value;
-  const params = getVoiceParams();
-  const btn = document.getElementById('gen-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ GENERIERT...';
-
+// ── Synthese ────────────────────────────────────
+async function startSynthesis(){
+  const text = document.getElementById('test-text').value.trim();
+  if(!text){ addLog('Kein Text eingegeben!','err'); return; }
+  const projectName = document.getElementById('project-name').value || 'hoerbuch';
+  const outputFormat = document.getElementById('output-format').value || 'mp3';
+  const lang = document.getElementById('tts-lang').value || 'tr';
+  const temperature = parseFloat(document.getElementById('temperature').value);
+  const repPenalty = parseFloat(document.getElementById('rep-penalty').value);
+  const topK = parseInt(document.getElementById('top-k').value);
+  const speed = parseFloat(document.getElementById('speed').value);
   const chapters = splitChapters(text, 2000);
-  log(`[TTS] Projekt: ${currentProject} · ${chapters.length} Kapitel · ${currentLang.toUpperCase()} · ${outputFormat.toUpperCase()}`, 'info');
-  log(`[TTS] Wärme:${params.temperature} · Speed:${params.speed}x · Rep:${params.repetition_penalty}`, 'info');
-
+  addLog(`▶ Starte: ${chapters.length} Kapitel · ${lang.toUpperCase()} · ${outputFormat.toUpperCase()}`, 'ok');
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Generiert…';
+  document.getElementById('progress-wrap').style.display = 'block';
   try {
     const resp = await fetch(`${TTS_URL}/tts/book`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        chapters,
-        language: currentLang,
-        speaker_wav: currentSpeakerWav,
-        book_name: currentProject,
-        output_format: outputFormat,
-        ...params
-      })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({chapters, language:lang, speaker_wav:getVoicePath(), book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed})
     });
     const data = await resp.json();
     activeJobId = data.job_id;
-    log(`[JOB] Gestartet: ${data.job_id}`, 'ok');
-    showProgress(0, chapters.length);
-    startPolling(data.job_id, chapters.length);
+    addLog(`Job: ${data.job_id}`, 'ok');
+    if(pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+      try {
+        const sr = await fetch(`${TTS_URL}/tts/book/status/${data.job_id}`);
+        const sd = await sr.json();
+        const progress = sd.total > 0 ? Math.round((sd.done/sd.total)*100) : 0;
+        document.getElementById('batch-bar').style.width = progress+'%';
+        document.getElementById('batch-pct').textContent = progress+'%';
+        document.getElementById('progress-text').textContent = `Kapitel ${sd.done} / ${sd.total}`;
+        if(sd.status==='fertig'||sd.status==='fertig_mit_fehlern'){
+          clearInterval(pollInterval);
+          btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+          addLog(`✔ Fertig! ${sd.done}/${sd.total} Kapitel · ${sd.output||''}`, 'ok');
+          if(sd.errors&&sd.errors.length) sd.errors.forEach(e=>addLog(`⚠ ${e}`,'warn'));
+          loadFilesFromServer(); loadDashboardStats();
+        }
+      } catch(e) {}
+    }, 3000);
   } catch(e) {
-    log(`[FEHLER] ${e.message}`, 'err');
-    btn.disabled = false;
-    btn.textContent = '▶ HÖRBUCH GENERIEREN';
+    addLog(`Fehler: ${e.message}`,'err');
+    btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
   }
 }
 
-function startPolling(jobId, total) {
-  if (pollInterval) clearInterval(pollInterval);
-  pollInterval = setInterval(async () => {
-    try {
-      const resp = await fetch(`${TTS_URL}/tts/book/status/${jobId}`);
-      const data = await resp.json();
-      showProgress(data.done, total);
-      if (data.status === 'fertig' || data.status === 'fertig_mit_fehlern') {
-        clearInterval(pollInterval);
-        document.getElementById('gen-btn').disabled = false;
-        document.getElementById('gen-btn').textContent = '▶ HÖRBUCH GENERIEREN';
-        log(`[FERTIG] ${data.done}/${total} Kapitel · Output: ${data.output || '—'}`, 'ok');
-        if (data.errors && data.errors.length) data.errors.forEach(e => log(`[WARN] ${e}`, 'warn'));
-        loadFiles();
-        document.getElementById('progress-status').textContent = 'FERTIG';
-        document.getElementById('progress-status').className = 'job-status status-done';
-      }
-    } catch(e) {}
-  }, 3000);
+// ── Preview ─────────────────────────────────────
+async function generatePreview(){
+  const lang = document.getElementById('tts-lang').value || 'tr';
+  const temperature = parseFloat(document.getElementById('temperature').value);
+  const speed = parseFloat(document.getElementById('speed').value);
+  const btn = document.getElementById('test-btn');
+  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader"></i> Generiert…';
+  addLog('👂 Test-Audio wird generiert…');
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/generate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text:PREVIEW_TEXTS[lang]||PREVIEW_TEXTS.tr, language:lang, speaker_wav:getVoicePath(), filename:`_preview_${Date.now()}.wav`, temperature, speed})
+    });
+    const data = await resp.json();
+    if(data.status==='ok'){
+      const player = document.getElementById('preview-player');
+      player.src = `${TTS_URL}/tts/download/${data.datei}`;
+      player.style.display='block'; player.play();
+      addLog(`✔ Test bereit — ${data.groesse_kb} KB`,'ok');
+    }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-player-play"></i> Test-Audio generieren';
 }
 
-function showProgress(done, total) {
-  const card = document.getElementById('progress-card');
-  card.style.display = 'block';
-  const pct = total > 0 ? Math.round((done/total)*100) : 0;
-  document.getElementById('progress-fill').style.width = `${pct}%`;
-  document.getElementById('progress-text').textContent = `Kapitel ${done} / ${total}`;
-  document.getElementById('progress-pct').textContent = `${pct}%`;
-}
-
-async function loadFiles() {
+// ── Files ────────────────────────────────────────
+async function loadFilesFromServer(){
   try {
     const resp = await fetch(`${TTS_URL}/tts/files`);
     const data = await resp.json();
-    const project = currentProject;
-    const filtered = project
-      ? data.dateien.filter(f => f.name.includes(project) || f.name.startsWith('kapitel_'))
-      : data.dateien;
-    document.getElementById('hdr-files').textContent = filtered.length;
-    const list = document.getElementById('files-list');
-    if (!filtered.length) {
-      list.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);text-align:center;padding:1rem">Noch keine Dateien</div>';
-      return;
-    }
-    list.innerHTML = filtered.map(f => `
-      <div class="job-row">
-        <span class="job-name">🔊 ${f.name}</span>
-        <span class="job-chapters">${f.groesse_mb}MB</span>
-        <a href="${TTS_URL}/tts/download/${f.name}" class="btn btn-outline btn-sm" download>⬇</a>
-        <button class="btn btn-sm" style="border:1px solid rgba(255,68,68,.4);color:#ff4444;background:transparent" onclick="deleteFile('${f.name}')">🗑️</button>
+    const list = document.getElementById('file-list');
+    document.getElementById('stat-files').textContent = data.anzahl;
+    if(!data.dateien.length){ list.innerHTML='<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Dateien</div>'; return; }
+    list.innerHTML = data.dateien.map(f=>`
+      <div class="file-card">
+        <span class="file-icon">${f.name.endsWith('.mp3')?'🎵':f.name.endsWith('.m4b')?'📱':'🔊'}</span>
+        <span class="file-name">${f.name}</span>
+        <span class="file-size">${f.groesse_mb} MB</span>
+        <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i> DL</a>
+        <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
       </div>`).join('');
-  } catch(e) { log(`[FEHLER] Server nicht erreichbar`, 'err'); }
+  } catch(e) { addLog('Dateien konnten nicht geladen werden','err'); }
 }
 
-async function loadJobs() {
-  if (!activeJobId) return;
+async function deleteAudioFile(filename){
+  if(!confirm(`"${filename}" wirklich löschen?`)) return;
   try {
-    const resp = await fetch(`${TTS_URL}/tts/book/status/${activeJobId}`);
-    const data = await resp.json();
-    const list = document.getElementById('jobs-list');
-    const cls = data.status === 'fertig' ? 'status-done' : data.status === 'running' ? 'status-running' : 'status-error';
-    list.innerHTML = `<div class="job-row">
-      <span class="job-name">📖 ${activeJobId.slice(0,8)}</span>
-      <span class="job-chapters">${data.done}/${data.total}</span>
-      <span class="job-status ${cls}">${data.status.toUpperCase()}</span>
-    </div>`;
-    document.getElementById('hdr-jobs').textContent = 1;
-  } catch(e) {}
+    await fetch(`${TTS_URL}/tts/files/${filename}`, {method:'DELETE'});
+    addLog(`Gelöscht: ${filename}`,'ok');
+    loadFilesFromServer();
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
 }
 
-async function uploadVoice(input) {
+// ── Voices ──────────────────────────────────────
+async function loadVoicesFromServer(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/voices`);
+    const data = await resp.json();
+    document.getElementById('stat-voices').textContent = data.stimmen.length;
+    const colors = [
+      {bg:'rgba(34,197,94,.15)',fg:'var(--green)'},
+      {bg:'rgba(59,130,246,.15)',fg:'var(--blue)'},
+      {bg:'rgba(245,158,11,.15)',fg:'var(--amber)'},
+      {bg:'rgba(168,85,247,.15)',fg:'#a855f7'},
+    ];
+    voices = data.stimmen.map((v,i) => ({
+      id: i+1, name:v.name, path:`/app/tts_models/${v.name}`,
+      init:v.name.slice(0,2).toUpperCase(), type:'custom',
+      groesse_kb:v.groesse_kb, ...colors[i%colors.length]
+    }));
+    if(voices.length && !selectedVoiceId){ selectedVoiceId=voices[0].id; updateActiveVoiceDisplay(); }
+    renderVoiceGrid();
+    document.getElementById('voice-count').textContent = `${voices.length} Stimmen`;
+  } catch(e) { addLog('Stimmen konnten nicht geladen werden','err'); }
+}
+
+function renderVoiceGrid(){
+  const grid = document.getElementById('voice-grid');
+  if(!grid) return;
+  grid.innerHTML = voices.map(v=>`
+    <div class="voice-card${v.id===selectedVoiceId?' active':''}" onclick="selectVoice(${v.id})">
+      <div class="vc-avatar" style="background:${v.bg};color:${v.fg}">${v.init}</div>
+      <div class="vc-name">${v.name}</div>
+      <div class="vc-meta">${v.groesse_kb} KB · XTTS-v2</div>
+      <div class="vc-actions">
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();previewVoice(${v.id})"><i class="ti ti-player-play"></i></button>
+        ${v.name!=='stimme.wav'?`<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteVoiceFromServer('${v.name}')"><i class="ti ti-trash"></i></button>`:''}
+      </div>
+    </div>`).join('') + `
+    <div class="voice-card vc-add" onclick="document.querySelector('#panel-voices .upload-zone input').click()">
+      <div style="font-size:24px">+</div>
+      <div style="font-size:11px">Stimme hochladen</div>
+    </div>`;
+}
+
+function selectVoice(id){
+  selectedVoiceId = id;
+  updateActiveVoiceDisplay();
+  renderVoiceGrid();
+}
+
+function updateActiveVoiceDisplay(){
+  const v = voices.find(x=>x.id===selectedVoiceId);
+  if(!v) return;
+  document.getElementById('active-avatar').textContent = v.init;
+  document.getElementById('active-avatar').style.background = v.bg;
+  document.getElementById('active-avatar').style.color = v.fg;
+  document.getElementById('active-voice-name').textContent = v.name;
+  document.getElementById('active-voice-meta').textContent = 'TR/DE/EN · XTTS-v2';
+}
+
+async function previewVoice(id){
+  const v = voices.find(x=>x.id===id);
+  if(!v) return;
+  const lang = document.getElementById('tts-lang').value||'tr';
+  addLog(`🎙️ Stimme testen: ${v.name}`);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/generate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text:PREVIEW_TEXTS[lang]||PREVIEW_TEXTS.tr, language:lang, speaker_wav:v.path, filename:`_vpreview_${Date.now()}.wav`})
+    });
+    const data = await resp.json();
+    if(data.status==='ok'){ new Audio(`${TTS_URL}/tts/download/${data.datei}`).play(); addLog(`✔ Vorschau: ${v.name}`,'ok'); }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+async function handleVoiceUpload(input){
   const file = input.files[0];
-  if (!file) return;
-  log(`[STIMME] Lade hoch: ${file.name}...`, 'info');
+  if(!file) return;
+  addLog(`⬆ Lade Stimme hoch: ${file.name}…`);
   const formData = new FormData();
   formData.append('file', file);
   try {
     const resp = await fetch(`${TTS_URL}/tts/upload-voice`, {method:'POST', body:formData});
     const data = await resp.json();
-    if (data.status === 'ok') {
-      log(`[STIMME] ✅ ${data.datei} hochgeladen!`, 'ok');
-      setActiveVoice(data.datei);
-      loadVoices();
-    } else {
-      log(`[FEHLER] ${data.detail}`, 'err');
-    }
-  } catch(e) {
-    log(`[FEHLER] ${e.message}`, 'err');
-  }
+    if(data.status==='ok'){ addLog(`✔ Stimme hochgeladen: ${data.datei}`,'ok'); loadVoicesFromServer(); }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
 }
 
-function setActiveVoice(name) {
-  currentSpeakerWav = `/app/tts_models/${name}`;
-  document.getElementById('voice-name').textContent = `${name} — aktiv`;
-  document.getElementById('active-voice').textContent = name;
-  log(`[STIMME] Aktiv: ${name}`, 'ok');
-}
-
-async function loadVoices() {
-  try {
-    const resp = await fetch(`${TTS_URL}/tts/voices`);
-    const data = await resp.json();
-    const list = document.getElementById('voice-list');
-    list.innerHTML = data.stimmen.map(v => `
-      <button class="btn btn-outline btn-sm" onclick="setActiveVoice('${v.name}')" style="font-size:10px;padding:.3rem .6rem">
-        🎙️ ${v.name} (${v.groesse_kb}KB)
-      </button>
-      ${v.name !== 'stimme.wav' ? `<button class="btn btn-sm" style="border:1px solid rgba(255,68,68,.4);color:#ff4444;background:transparent;font-size:10px;padding:.3rem .4rem" onclick="deleteVoice('${v.name}')">🗑️</button>` : ''}`).join(' ');
-  } catch(e) {}
-}
-
-async function deleteFile(filename) {
-  if (!confirm(`"${filename}" wirklich löschen?`)) return;
-  try {
-    await fetch(`${TTS_URL}/tts/files/${filename}`, {method:'DELETE'});
-    log(`[GELÖSCHT] ${filename}`, 'warn');
-    loadFiles();
-  } catch(e) {}
-}
-
-async function deleteVoice(filename) {
-  if (!confirm(`Stimme "${filename}" löschen?`)) return;
+async function deleteVoiceFromServer(filename){
+  if(!confirm(`Stimme "${filename}" löschen?`)) return;
   try {
     await fetch(`${TTS_URL}/tts/voices/${filename}`, {method:'DELETE'});
-    log(`[GELÖSCHT] ${filename}`, 'warn');
-    loadVoices();
+    addLog(`Stimme gelöscht: ${filename}`,'ok');
+    loadVoicesFromServer();
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+// ── Musik ────────────────────────────────────────
+async function loadMusikFromServer(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/musik`);
+    const data = await resp.json();
+    document.getElementById('stat-musik').textContent = data.anzahl;
+    const sel = document.getElementById('musik-select');
+    sel.innerHTML = '<option value="">— Keine Musik —</option>';
+    data.musik.forEach(m => { const o=document.createElement('option'); o.value=m.name; o.textContent=`🎵 ${m.name} (${m.groesse_mb}MB)`; sel.appendChild(o); });
   } catch(e) {}
 }
 
-function log(msg, type='info') {
-  const t = document.getElementById('terminal');
-  const cls = type === 'ok' ? 'log-ok' : type === 'err' ? 'log-err' : type === 'warn' ? 'log-warn' : 'log-info';
-  const ts = new Date().toLocaleTimeString('de-DE');
-  const div = document.createElement('div');
-  div.className = cls;
-  div.textContent = `[${ts}] ${msg}`;
-  t.appendChild(div);
-  t.scrollTop = t.scrollHeight;
-}
-
-function clearLog() { document.getElementById('terminal').innerHTML = ''; }
-
-async function checkHealth() {
+async function loadMusikList(){
   try {
-    const resp = await fetch(`${TTS_URL}/health`);
+    const resp = await fetch(`${TTS_URL}/tts/musik`);
     const data = await resp.json();
-    const el = document.getElementById('hdr-status');
-    el.textContent = data.status === 'ok' ? `ONLINE (${data.device.toUpperCase()})` : 'FEHLER';
-    el.style.color = data.status === 'ok' ? 'var(--green)' : '#ff4444';
-    if (data.status === 'ok') log('[OK] Server verbunden · Device: ' + data.device.toUpperCase(), 'ok');
-  } catch(e) {
-    document.getElementById('hdr-status').textContent = 'OFFLINE';
-    document.getElementById('hdr-status').style.color = '#ff4444';
-  }
+    const list = document.getElementById('musik-list');
+    if(!data.musik.length){ list.innerHTML='<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Musik</div>'; return; }
+    list.innerHTML = data.musik.map(m=>`
+      <div class="file-card">
+        <span class="file-icon">🎵</span>
+        <span class="file-name">${m.name}</span>
+        <span class="file-size">${m.groesse_mb} MB</span>
+        <button onclick="deleteMusik('${m.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+      </div>`).join('');
+  } catch(e) {}
 }
 
-checkHealth();
-loadVoices();
-loadMusik();
-setInterval(checkHealth, 30000);
+async function handleMusikUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  addLog(`⬆ Musik hochladen: ${file.name}…`);
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/upload-musik`, {method:'POST', body:formData});
+    const data = await resp.json();
+    if(data.status==='ok'){ addLog(`✔ Musik hochgeladen: ${data.datei}`,'ok'); loadMusikFromServer(); loadMusikList(); }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+async function deleteMusik(filename){
+  if(!confirm(`"${filename}" löschen?`)) return;
+  try {
+    await fetch(`${TTS_URL}/tts/musik/${filename}`, {method:'DELETE'});
+    addLog(`Gelöscht: ${filename}`,'ok');
+    loadMusikList(); loadMusikFromServer();
+  } catch(e) {}
+}
+
+async function mixMusikWithAudio(){
+  const musikFile = document.getElementById('musik-select').value;
+  if(!musikFile){ addLog('Keine Musik ausgewählt!','err'); return; }
+  const volume = parseFloat(document.getElementById('musik-volume').value)/100;
+  const projectName = document.getElementById('mix-project').value||'hoerbuch';
+  addLog(`🎼 Mische mit ${musikFile}…`);
+  document.getElementById('mix-status').textContent = 'Mische…';
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/mix-musik`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({audio_file:`${projectName}_komplett.mp3`, musik_file:musikFile, musik_volume:volume, output_name:`${projectName}_mit_musik.mp3`})
+    });
+    const data = await resp.json();
+    if(data.status==='ok'){
+      addLog(`✔ Mix fertig: ${data.datei}`,'ok');
+      document.getElementById('mix-status').textContent = `✔ ${data.datei}`;
+      loadFilesFromServer();
+    }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+// ── Dashboard Stats ──────────────────────────────
+async function loadDashboardStats(){
+  try {
+    const [files, voices, musik] = await Promise.all([
+      fetch(`${TTS_URL}/tts/files`).then(r=>r.json()),
+      fetch(`${TTS_URL}/tts/voices`).then(r=>r.json()),
+      fetch(`${TTS_URL}/tts/musik`).then(r=>r.json())
+    ]);
+    document.getElementById('stat-files').textContent = files.anzahl||0;
+    document.getElementById('stat-voices').textContent = voices.stimmen?.length||0;
+    document.getElementById('stat-musik').textContent = musik.anzahl||0;
+  } catch(e) {}
+}
+
+// ── Log ──────────────────────────────────────────
+function addLog(msg, type='info'){
+  ['log-box','studio-log'].forEach(id=>{
+    const box = document.getElementById(id);
+    if(!box) return;
+    const ts = new Date().toLocaleTimeString('de-DE');
+    const cls = type==='ok'?'log-ok':type==='err'?'log-err':type==='warn'?'log-warn':'log-info';
+    const div = document.createElement('div');
+    div.className = cls;
+    div.textContent = `[${ts}] ${msg}`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  });
+}
+
+function clearLog(){
+  ['log-box','studio-log'].forEach(id=>{ const b=document.getElementById(id); if(b) b.innerHTML=''; });
+}
+
+// ── Health Check ─────────────────────────────────
+async function checkApi(){
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('server-status-text');
+  try {
+    const r = await fetch(`${TTS_URL}/health`, {signal:AbortSignal.timeout(3000)});
+    if(r.ok){
+      const d = await r.json();
+      dot.className='status-dot online';
+      txt.textContent = `Online · ${(d.device||'cpu').toUpperCase()}`;
+      document.getElementById('stat-device').textContent = (d.device||'cpu').toUpperCase();
+      addLog(`✔ Server verbunden · ${(d.device||'cpu').toUpperCase()}`,'ok');
+    } else { dot.className='status-dot offline'; txt.textContent='Fehler'; }
+  } catch(e) { dot.className='status-dot offline'; txt.textContent='Offline'; }
+}
+
+// ── Init ─────────────────────────────────────────
+(function init(){
+  checkApi();
+  loadVoicesFromServer();
+  loadFilesFromServer();
+  loadMusikFromServer();
+  loadDashboardStats();
+  setInterval(checkApi, 30000);
+})();
 </script>
 </body>
 </html>
