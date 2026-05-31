@@ -28,6 +28,47 @@ jobs_lock = threading.Lock()
 tts_engine = None
 _cached_latents = {}
 
+# ── Modell beim Start prüfen und herunterladen ─────────────────
+def ensure_model():
+    """Stellt sicher dass XTTS-v2 Modell vorhanden ist"""
+    if not MODEL_DIR.exists() or not (MODEL_DIR / "config.json").exists():
+        print("🔄 XTTS-v2 Modell wird heruntergeladen (~1.8 GB)...")
+        print("   Bitte warten — dies dauert beim ersten Start einige Minuten!")
+        try:
+            from TTS.api import TTS as TTSDownloader
+            TTSDownloader("tts_models/multilingual/multi-dataset/xtts_v2")
+            print("✅ Modell erfolgreich heruntergeladen!")
+        except Exception as e:
+            print(f"❌ Modell-Download fehlgeschlagen: {e}")
+    else:
+        print("✅ XTTS-v2 Modell bereits vorhanden!")
+
+# ── Standard-Stimme erstellen falls keine vorhanden ───────────
+def ensure_default_voice():
+    """Erstellt eine Standard-Stimme falls keine vorhanden"""
+    voice_path = Path(DEFAULT_SPEAKER_WAV)
+    if not voice_path.exists():
+        print("🎙️ Erstelle Standard-Stimme...")
+        try:
+            import numpy as np
+            sample_rate = 22050
+            duration = 3
+            t = np.linspace(0, duration, int(sample_rate * duration))
+            # Einfacher Sinuston als Platzhalter
+            audio = np.sin(2 * np.pi * 200 * t) * 0.3
+            audio_tensor = torch.tensor(audio, dtype=torch.float32).unsqueeze(0)
+            torchaudio.save(str(voice_path), audio_tensor, sample_rate)
+            print("✅ Standard-Stimme erstellt!")
+            print("⚠️  Bitte eigene Stimme hochladen für beste Qualität!")
+        except Exception as e:
+            print(f"⚠️  Standard-Stimme konnte nicht erstellt werden: {e}")
+    else:
+        print("✅ Stimme vorhanden!")
+
+# Beim Start ausführen
+ensure_model()
+ensure_default_voice()
+
 def load_model():
     global tts_engine
     if tts_engine is not None:
