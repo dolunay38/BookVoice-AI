@@ -16,7 +16,7 @@ services:
       - TTS_OUTPUT=/app/HOERBUCH
       - TTS_LANG=tr
       - COQUI_TOS_AGREED=1
-    restart: unless-stopped
+    restart: always
 
   bookvoice-proxy:
     image: nginx:alpine
@@ -28,7 +28,7 @@ services:
       - ./ki_archiv_tts_web.html:/usr/share/nginx/html/index.html:ro
     depends_on:
       - bookvoice-tts
-    restart: unless-stopped
+    restart: always
 
 volumes:
   bookvoice-tts-models:

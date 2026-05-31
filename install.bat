@@ -55,15 +55,34 @@ if %errorlevel% neq 0 (
 )
 echo OK: Docker laeuft!
 
-REM Ordner erstellen
+REM Nginx Config erstellen
 echo.
-echo [4/6] Erstelle Ordner...
+echo [4/6] Erstelle Konfiguration...
 set INSTALL_DIR=%USERPROFILE%\BookVoice-AI
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 if not exist "%INSTALL_DIR%\HOERBUCH" mkdir "%INSTALL_DIR%\HOERBUCH"
 if not exist "%INSTALL_DIR%\tts_models" mkdir "%INSTALL_DIR%\tts_models"
 if not exist "%INSTALL_DIR%\musik" mkdir "%INSTALL_DIR%\musik"
-echo OK: Ordner erstellt in %INSTALL_DIR%
+
+REM Nginx Config schreiben
+(
+echo server {
+echo     listen 80;
+echo     server_name _;
+echo     location / {
+echo         root /usr/share/nginx/html;
+echo         index index.html;
+echo     }
+echo     location /api/ {
+echo         rewrite ^/api/^(.*^) /$1 break;
+echo         proxy_pass http://bookvoice-tts:7500;
+echo         proxy_read_timeout 300s;
+echo         client_max_body_size 100M;
+echo     }
+echo }
+) > "%INSTALL_DIR%\nginx-bookvoice.conf"
+
+echo OK: Konfiguration erstellt!
 
 REM Dateien kopieren
 echo.
