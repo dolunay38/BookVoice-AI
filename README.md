@@ -45,6 +45,27 @@ chmod +x install.sh && ./install.sh
 
 ---
 
+## 🖥️ Server Deployment (Proxmox / Ubuntu / VPS)
+
+Für 24/7 Betrieb mit mehreren Usern über Cloudflare:
+
+```bash
+git clone https://github.com/dolunay38/BookVoice-AI.git
+cd BookVoice-AI
+docker compose -f compose.server.yaml up -d
+```
+
+📖 **Vollständige Server-Anleitung:** [SERVER_DEPLOYMENT.md](SERVER_DEPLOYMENT.md)
+
+Enthält:
+- Proxmox VM Setup & Ballooning
+- Cloudflare Tunnel Konfiguration
+- E-Mail Zugangs-Policy
+- GPU Support (NVIDIA)
+- Container Verwaltung
+
+---
+
 ## 🚀 Verwendung
 
 1. Installation starten → Browser öffnet automatisch
