@@ -1,0 +1,75 @@
+services:
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - /mnt/data/docker-data/ki-archiv/models/ollama_storage:/root/.ollama
+    restart: unless-stopped
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    volumes:
+      - /mnt/data/docker-data/ki-archiv/webui_storage:/app/backend/data
+      - /mnt/data/docker-data/ki-archiv/ERGEBNISSE:/app/backend/data/docs/ERGEBNISSE
+      - /mnt/data/docker-data/ki-archiv/ARCHIV:/app/backend/data/docs/ARCHIV
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_AUTH=false
+      - DOCS_DIR=/app/backend/data/docs
+      - DOCS_SCAN_INTERVAL=30
+      - DOCS_RECURSIVE=true
+    restart: always
+
+  nllb-translator:
+    container_name: nllb-translator
+    build:
+      context: ./nllb-services
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - /mnt/data/docker-data/ki-archiv/nllb_models/nllb-200-distilled-600M:/models/nllb-200-distilled-600M:ro
+    environment:
+      - MODEL_PATH=/models/nllb-200-distilled-600M
+    restart: unless-stopped
+
+  ki-archiv-ingest:
+    build: .
+    container_name: ki-archiv-ingest
+    tty: true
+    stdin_open: true
+    command: sh -c "python3 ingest_winmaster.py || tail -f /dev/null"
+    volumes:
+      - .:/app
+      - /mnt/data/docker-data/ki-archiv/EINGABE:/app/EINGABE
+      - /mnt/data/docker-data/ki-archiv/ARCHIV:/app/ARCHIV
+      - /mnt/data/docker-data/ki-archiv/ERGEBNISSE:/app/ERGEBNISSE
+    depends_on:
+      - nllb-translator
+      - ollama
+    restart: always
+
+  # ============================================================
+  # TTS - Hörbuch Modul (Coqui XTTS-v2)
+  # ============================================================
+  ki-archiv-tts:
+    build:
+      context: .
+      dockerfile: Dockerfile.tts
+    container_name: ki-archiv-tts
+    ports:
+      - "7500:7500"
+    volumes:
+      - /mnt/data/docker-data/ki-archiv/tts_models:/root/.local/share/tts
+      - /mnt/data/docker-data/ki-archiv/ERGEBNISSE:/app/ERGEBNISSE
+      - /mnt/data/docker-data/ki-archiv/HOERBUCH:/app/HOERBUCH
+    environment:
+      - TTS_OUTPUT=/app/HOERBUCH
+      - TTS_LANG=tr
+    restart: unless-stopped

@@ -1,0 +1,45 @@
+FROM python:3.11-slim
+WORKDIR /app
+
+# System-Tools
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libsndfile1 \
+    calibre \
+    tesseract-ocr \
+    tesseract-ocr-tur \
+    tesseract-ocr-deu \
+    tesseract-ocr-eng \
+    tesseract-ocr-ara \
+    poppler-utils \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# PyTorch CPU (GPU auto-detect zur Laufzeit)
+RUN pip install --no-cache-dir \
+    torch==2.1.0+cpu \
+    torchaudio==2.1.0+cpu \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# TTS + API + OCR + eBook
+RUN pip install --no-cache-dir \
+    transformers==4.40.0 \
+    TTS \
+    fastapi \
+    uvicorn \
+    pydantic \
+    python-multipart \
+    pytesseract \
+    pdf2image \
+    PyPDF2 \
+    pillow \
+    ebooklib
+
+COPY tts_server.py /app/tts_server.py
+
+EXPOSE 7500
+ENV COQUI_TOS_AGREED=1
+ENV DEVICE=auto
+
+CMD ["uvicorn", "tts_server:app", "--host", "0.0.0.0", "--port", "7500"]

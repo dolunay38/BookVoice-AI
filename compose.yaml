@@ -1,0 +1,38 @@
+services:
+
+  bookvoice-tts:
+    build:
+      context: .
+      dockerfile: Dockerfile.tts
+    container_name: bookvoice-tts
+    ports:
+      - "7500:7500"
+    volumes:
+      - ${HOME}/BookVoice-AI/tts_models:/root/.local/share/tts
+      - ${HOME}/BookVoice-AI/tts_models:/app/tts_models
+      - ${HOME}/BookVoice-AI/HOERBUCH:/app/HOERBUCH
+      - ${HOME}/BookVoice-AI/musik:/app/musik
+      - ./tts_server.py:/app/tts_server.py
+    environment:
+      - TTS_OUTPUT=/app/HOERBUCH
+      - TTS_LANG=tr
+      - COQUI_TOS_AGREED=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  bookvoice-proxy:
+    image: nginx:alpine
+    container_name: bookvoice-proxy
+    ports:
+      - "7502:80"
+    volumes:
+      - ./nginx-bookvoice.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - bookvoice-tts
+    restart: unless-stopped
