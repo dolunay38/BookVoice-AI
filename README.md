@@ -2,7 +2,7 @@
 
 **Open-Source KI Hörbuch-Studio** — Texte, eBooks und Fotos in hochwertige Hörbücher verwandeln.
 
-![BookVoice-AI](https://img.shields.io/badge/Version-1.0-green) ![Docker](https://img.shields.io/badge/Docker-Required-blue) ![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Version](https://img.shields.io/badge/Version-1.2-green) ![Docker](https://img.shields.io/badge/Docker-Required-blue) ![GPU](https://img.shields.io/badge/GPU-Colab%20T4-orange)
 
 ---
 
@@ -12,42 +12,77 @@
 ```cmd
 install.bat
 ```
-Doppelklick auf `install.bat` — fertig!
+Doppelklick — fertig!
 
 ### Linux / Mac
 ```bash
 chmod +x install.sh && ./install.sh
 ```
 
-**Voraussetzung:** [Docker Desktop](https://www.docker.com/products/docker-desktop) installiert
+**Voraussetzung:** [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ---
 
-## ✨ Features
+## 🚀 Update
+```cmd
+update.bat
+```
+Lädt automatisch die neueste Version von GitHub!
+
+---
+
+## ✨ Features v1.2
 
 | Feature | Beschreibung |
 |---|---|
-| 🎙️ Voice Cloning | Eigene Stimme hochladen → KI spricht damit |
-| 📚 eBook Support | EPUB, MOBI, PDF, AZW3 direkt hochladen |
-| 📸 OCR | Foto von Buchseite → automatisch Text erkennen |
-| 🎵 Hintergrundmusik | Musik mit Hörbuch mischen |
+| 🧠 XTTS-v2 | Voice Cloning — eigene Stimme hochladen |
+| ⚡ Edge TTS | 400+ Stimmen · Online · Sehr schnell |
+| ☁️ GPU Colab | Google T4 GPU kostenlos · 10x schneller |
+| 📚 eBook Support | EPUB, MOBI, PDF, AZW3 |
+| 📸 OCR | Foto von Buchseite → automatisch Text |
+| 🖼️ Cover-Bibliothek | Buchcover verwalten & in MP3/M4B einbetten |
+| 🎵 Hintergrundmusik | Musik hochladen und mischen |
+| ▶️ Audio-Player | Direkt im Browser abspielen |
 | 🌍 Multi-Sprache | Türkisch, Deutsch, Englisch, Arabisch |
 | 🎛️ Stil-Presets | Sufi, Roman, Sachtext, Dramatisch... |
 | 📱 M4B Format | iPhone Hörbuch-Format mit Kapitel-Navigation |
-| 🖥️ Web-GUI | Modernes Browser-Interface |
-| 🐳 Docker | Ein Befehl — läuft überall |
+| 🐳 Docker | One-Click Install · CPU & GPU Auto-Detection |
 
 ---
 
-## 🖼️ Screenshots
+## 🎙️ 3 Engines zur Auswahl
 
-*Web-GUI im Matrix-Style*
+### 🧠 XTTS-v2 (Lokal/Offline)
+- Eigene Stimme klonen
+- Läuft komplett lokal
+- Kein Internet nötig
+- 11 Standard-Stimmen inklusive
+
+### ⚡ Edge TTS (Online)
+- 400+ Microsoft Neural Stimmen
+- Sehr schnell (~2-3 Sek/Kapitel)
+- Internet erforderlich
+- Kostenlos
+
+### ☁️ GPU Colab (Google T4)
+- NVIDIA T4 GPU kostenlos
+- 10x schneller als CPU
+- Google Account benötigt
+- ~3-4 Stunden pro Session
 
 ---
 
-## 🖥️ Server Deployment (Proxmox / Ubuntu / VPS)
+## 📓 GPU Colab Schnellstart
 
-Für 24/7 Betrieb mit mehreren Usern über Cloudflare:
+1. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dolunay38/BookVoice-AI/blob/main/BookVoice_AI_Colab.ipynb)
+2. Runtime → T4 GPU aktivieren
+3. Strg+F9 → Alle ausführen
+4. Link in BookVoice-AI GUI eingeben
+5. ☁️ GPU Colab → Verbinden
+
+---
+
+## 🖥️ Server Deployment
 
 ```bash
 git clone https://github.com/dolunay38/BookVoice-AI.git
@@ -55,34 +90,19 @@ cd BookVoice-AI
 docker compose -f compose.server.yaml up -d
 ```
 
-📖 **Vollständige Server-Anleitung:** [SERVER_DEPLOYMENT.md](SERVER_DEPLOYMENT.md)
-
-Enthält:
-- Proxmox VM Setup & Ballooning
-- Cloudflare Tunnel Konfiguration
-- E-Mail Zugangs-Policy
-- GPU Support (NVIDIA)
-- Container Verwaltung
+📖 [Server Anleitung](SERVER_DEPLOYMENT.md)
 
 ---
 
 ## 🚀 Verwendung
 
-1. Installation starten → Browser öffnet automatisch
-2. **Projekt-Namen** eingeben
-3. **Text** eingeben oder Datei hochladen
-4. **Stimme** auswählen oder eigene hochladen
-5. **Stil-Preset** wählen (z.B. Sufi für religiöse Texte)
-6. **Test-Audio** generieren und anhören
-7. **HÖRBUCH GENERIEREN** klicken
-8. Fertige MP3/M4B herunterladen
-
-### SML Tags für natürlicheres Vorlesen
-
-```
-Bismillah. [pause:2] Bu kitabın birinci bölümü...
-[break] Ve böylece devam etti.
-```
+1. **Engine** wählen (XTTS-v2 / Edge TTS / GPU Colab)
+2. **Text** eingeben oder EPUB/PDF hochladen
+3. **Stimme** auswählen (11 Standard + eigene)
+4. **Preset** wählen (Sufi, Roman, Sachtext...)
+5. **Test-Audio** anhören
+6. **HÖRBUCH GENERIEREN**
+7. **Bibliothek** → direkt abspielen oder herunterladen
 
 ---
 
@@ -90,13 +110,18 @@ Bismillah. [pause:2] Bu kitabın birinci bölümü...
 
 ```
 BookVoice-AI/
-├── install.bat          # Windows Installer
-├── install.sh           # Linux/Mac Installer
-├── compose.yaml         # Docker Compose
-├── Dockerfile.tts       # TTS Container
-├── tts_server.py        # FastAPI Backend
-├── ki_archiv_tts_web.html  # Web-GUI
-└── nginx-bookvoice.conf # Reverse Proxy
+├── install.bat              # Windows One-Click
+├── install.sh               # Linux/Mac
+├── update.bat               # Auto-Update
+├── uninstall.bat            # Deinstallation
+├── debug.bat                # Diagnose
+├── BookVoice_AI_Colab.ipynb # Google Colab GPU
+├── compose.yaml             # Lokal Docker
+├── compose.server.yaml      # Server Docker
+├── Dockerfile.tts           # Container Build
+├── tts_server.py            # FastAPI Backend
+├── ki_archiv_tts_web.html   # Web-GUI
+└── nginx-bookvoice.conf     # Reverse Proxy
 ```
 
 ---
@@ -106,43 +131,15 @@ BookVoice-AI/
 | | Minimum | Empfohlen |
 |---|---|---|
 | RAM | 8 GB | 16 GB |
-| Speicher | 10 GB frei | 50 GB |
+| Speicher | 10 GB | 50 GB |
 | CPU | 4 Kerne | 8+ Kerne |
 | GPU | Nicht nötig | NVIDIA (10x schneller) |
 
 ---
 
-## 🌐 Server-Deployment
+## 🤝 Verwandte Projekte
 
-Für Server-Deployment (Proxmox, Ubuntu VM):
-
-```bash
-git clone https://github.com/IsmailAksoy/BookVoice-AI.git
-cd BookVoice-AI
-docker compose -f compose.server.yaml up -d
-```
-
----
-
-## 📖 Für welche Texte geeignet?
-
-- Sufi & islamische Literatur (Türkisch)
-- Romane & Erzählungen
-- Sachtexte & Nachrichten
-- Kinderbücher
-- Lernmaterialien
-- Religiöse Texte (Arabisch)
-
----
-
-## 🤝 Mitmachen
-
-Pull Requests willkommen! Geplante Features:
-
-- [ ] Mehrere Stimmen pro Buch (Dialoge)
-- [ ] Automatische Kapitel-Erkennung
-- [ ] Mobile App
-- [ ] Mehr Sprachen
+- [KI-ARCHIV-PRO](https://github.com/dolunay38/KI-ARCHIV-PRO) — KI Transkription & Archiv Studio
 
 ---
 
@@ -150,8 +147,8 @@ Pull Requests willkommen! Geplante Features:
 
 MIT License — kostenlos für private und kommerzielle Nutzung.
 
-**Powered by:** XTTS-v2 · FastAPI · Docker · Nginx · Cloudflare
+**Powered by:** XTTS-v2 · Edge TTS · FastAPI · Docker · Cloudflare · Google Colab
 
 ---
 
-*BookVoice-AI — Entwickelt von Ismail Aksoy · Aksoy-Net Homelab · 2026*
+*BookVoice-AI v1.2 — Entwickelt von Ismail Aksoy · Aksoy-Net Homelab · 2026*
