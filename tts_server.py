@@ -106,7 +106,8 @@ class ChapterRequest(BaseModel):
     temperature: float = 0.5
     repetition_penalty: float = 5.0
     top_k: int = 30
-    speed: float = 1.0  # mp3, wav, m4b
+    speed: float = 1.0
+    cover_path: str = ""  # Optionales Cover-Bild  # mp3, wav, m4b
 
 class EbookRequest(BaseModel):
     language: str = DEFAULT_LANG
@@ -184,38 +185,73 @@ def merge_wav_files(input_files: list[Path], output_file: Path):
     ], capture_output=True)
     list_file.unlink(missing_ok=True)
 
-def merge_to_mp3(input_files: list[Path], output_file: Path):
+def merge_to_mp3(input_files: list[Path], output_file: Path, cover_path: Path = None):
     if not input_files:
         return
     list_file = output_file.parent / f"_list_{uuid.uuid4().hex[:6]}.txt"
     with open(list_file, "w") as f:
         for wav in input_files:
             f.write(f"file '{wav.resolve()}'\n")
-    subprocess.run([
-        "ffmpeg", "-f", "concat", "-safe", "0",
-        "-i", str(list_file),
-        "-af", "dynaudnorm=f=150:g=15",
-        "-codec:a", "libmp3lame", "-qscale:a", "2",
-        str(output_file), "-y"
-    ], capture_output=True)
+
+    if cover_path and cover_path.exists():
+        subprocess.run([
+            "ffmpeg", "-f", "concat", "-safe", "0",
+            "-i", str(list_file),
+            "-i", str(cover_path),
+            "-map", "0:a", "-map", "1:v",
+            "-af", "dynaudnorm=f=150:g=15",
+            "-codec:a", "libmp3lame", "-qscale:a", "2",
+            "-codec:v", "copy",
+            "-id3v2_version", "3",
+            "-metadata:s:v", "title=Album cover",
+            "-metadata:s:v", "comment=Cover (front)",
+            str(output_file), "-y"
+        ], capture_output=True)
+    else:
+        subprocess.run([
+            "ffmpeg", "-f", "concat", "-safe", "0",
+            "-i", str(list_file),
+            "-af", "dynaudnorm=f=150:g=15",
+            "-codec:a", "libmp3lame", "-qscale:a", "2",
+            str(output_file), "-y"
+        ], capture_output=True)
     list_file.unlink(missing_ok=True)
 
-def merge_to_m4b(input_files: list[Path], output_file: Path, title: str = "Hörbuch"):
+def merge_to_m4b(input_files: list[Path], output_file: Path, title: str = "Hörbuch", cover_path: Path = None):
     if not input_files:
         return
     list_file = output_file.parent / f"_list_{uuid.uuid4().hex[:6]}.txt"
     with open(list_file, "w") as f:
         for wav in input_files:
             f.write(f"file '{wav.resolve()}'\n")
-    subprocess.run([
-        "ffmpeg", "-f", "concat", "-safe", "0",
-        "-i", str(list_file),
-        "-af", "dynaudnorm=f=150:g=15",
-        "-c:a", "aac", "-b:a", "64k",
-        "-metadata", f"title={title}",
-        "-metadata", "genre=Audiobook",
-        str(output_file), "-y"
-    ], capture_output=True)
+
+    if cover_path and cover_path.exists():
+        # M4B mit Cover einbetten
+        subprocess.run([
+            "ffmpeg", "-f", "concat", "-safe", "0",
+            "-i", str(list_file),
+            "-i", str(cover_path),
+            "-map", "0:a",
+            "-map", "1:v",
+            "-af", "dynaudnorm=f=150:g=15",
+            "-c:a", "aac", "-b:a", "64k",
+            "-c:v", "copy",
+            "-disposition:v", "attached_pic",
+            "-metadata", f"title={title}",
+            "-metadata", "genre=Audiobook",
+            str(output_file), "-y"
+        ], capture_output=True)
+    else:
+        # M4B ohne Cover
+        subprocess.run([
+            "ffmpeg", "-f", "concat", "-safe", "0",
+            "-i", str(list_file),
+            "-af", "dynaudnorm=f=150:g=15",
+            "-c:a", "aac", "-b:a", "64k",
+            "-metadata", f"title={title}",
+            "-metadata", "genre=Audiobook",
+            str(output_file), "-y"
+        ], capture_output=True)
     list_file.unlink(missing_ok=True)
 
 # ── Konvertierung ──────────────────────────────────────────────
@@ -460,7 +496,20 @@ def delete_file(filename: str):
         return {"status": "ok", "geloescht": filename}
     raise HTTPException(status_code=404, detail="Datei nicht gefunden")
 
-@app.post("/tts/upload-voice")
+@app.post("/tts/upload-cover")
+async def upload_cover(file: UploadFile = File(...), book_name: str = "hoerbuch"):
+    """Buchcover hochladen"""
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
+        raise HTTPException(status_code=400, detail="Nur JPG/PNG/WEBP erlaubt")
+    cover_dir = OUTPUT_DIR / book_name
+    cover_dir.mkdir(parents=True, exist_ok=True)
+    cover_path = cover_dir / f"cover{suffix}"
+    with open(cover_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    return {"status": "ok", "cover_path": str(cover_path), "datei": f"cover{suffix}"}
+
+
 async def upload_voice(file: UploadFile = File(...)):
     suffix = Path(file.filename).suffix.lower()
     if suffix not in (AUDIO_FORMATS | VIDEO_FORMATS):
@@ -500,6 +549,94 @@ def delete_voice(filename: str):
 
 MUSIK_DIR = Path("/app/musik")
 MUSIK_DIR.mkdir(parents=True, exist_ok=True)
+
+COVER_DIR = Path("/app/covers")
+COVER_DIR.mkdir(parents=True, exist_ok=True)
+
+@app.get("/tts/covers")
+def list_covers():
+    """Cover-Bibliothek auflisten"""
+    files = []
+    for ext in ["*.jpg", "*.jpeg", "*.png", "*.webp"]:
+        for f in sorted(COVER_DIR.glob(ext)):
+            files.append({"name": f.name, "groesse_kb": round(f.stat().st_size/1024, 1)})
+    return {"covers": files, "anzahl": len(files)}
+
+@app.post("/tts/upload-cover-library")
+async def upload_cover_library(file: UploadFile = File(...)):
+    """Cover in Bibliothek hochladen"""
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
+        raise HTTPException(status_code=400, detail="Nur JPG/PNG/WEBP erlaubt")
+    save_path = COVER_DIR / file.filename
+    with open(save_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    return {"status": "ok", "datei": file.filename}
+
+@app.get("/tts/covers/{filename}")
+def get_cover(filename: str):
+    """Cover-Bild anzeigen"""
+    path = COVER_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Cover nicht gefunden")
+    return FileResponse(str(path))
+
+
+    path = COVER_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Cover nicht gefunden")
+    path.unlink()
+    return {"status": "ok", "geloescht": filename}
+
+@app.post("/tts/add-cover-to-file")
+async def add_cover_to_file(audio_file: str, cover_file: str):
+    """Cover nachträglich zu einer Audio-Datei hinzufügen"""
+    # Audio suchen
+    audio_path = None
+    for f in OUTPUT_DIR.rglob(audio_file):
+        audio_path = f
+        break
+    if not audio_path:
+        raise HTTPException(status_code=404, detail=f"Audio nicht gefunden: {audio_file}")
+
+    # Cover suchen (erst in Bibliothek, dann in Buch-Ordner)
+    cover_path = COVER_DIR / cover_file
+    if not cover_path.exists():
+        raise HTTPException(status_code=404, detail=f"Cover nicht gefunden: {cover_file}")
+
+    suffix = audio_path.suffix.lower()
+    out_path = audio_path.parent / f"{audio_path.stem}_cover{suffix}"
+
+    if suffix == ".mp3":
+        result = subprocess.run([
+            "ffmpeg", "-i", str(audio_path), "-i", str(cover_path),
+            "-map", "0:a", "-map", "1:v",
+            "-codec:a", "copy", "-codec:v", "copy",
+            "-id3v2_version", "3",
+            "-metadata:s:v", "title=Album cover",
+            "-metadata:s:v", "comment=Cover (front)",
+            str(out_path), "-y"
+        ], capture_output=True)
+    elif suffix == ".m4b":
+        result = subprocess.run([
+            "ffmpeg", "-i", str(audio_path), "-i", str(cover_path),
+            "-map", "0:a", "-map", "1:v",
+            "-codec:a", "copy", "-codec:v", "copy",
+            "-disposition:v", "attached_pic",
+            str(out_path), "-y"
+        ], capture_output=True)
+    else:
+        raise HTTPException(status_code=400, detail="Nur MP3 und M4B unterstützt")
+
+    if result.returncode != 0:
+        raise HTTPException(status_code=500, detail=f"Fehler: {result.stderr.decode()}")
+
+    return {
+        "status": "ok",
+        "datei": out_path.name,
+        "groesse_mb": round(out_path.stat().st_size/1024/1024, 2)
+    }
+
 
 class MixRequest(BaseModel):
     audio_file: str
@@ -574,6 +711,146 @@ def delete_musik(filename: str):
     path.unlink()
     return {"status": "ok", "geloescht": filename}
 
+# ── Edge TTS ──────────────────────────────────────────────────
+class EdgeTTSRequest(BaseModel):
+    text: str
+    voice: str = "tr-TR-EmelNeural"
+    filename: str = ""
+    rate: str = "+0%"
+    pitch: str = "+0Hz"
+    output_format: str = "mp3"
+
+class EdgeTTSBookRequest(BaseModel):
+    chapters: list[str]
+    voice: str = "tr-TR-EmelNeural"
+    book_name: str = "hoerbuch"
+    output_format: str = "mp3"
+    rate: str = "+0%"
+    pitch: str = "+0Hz"
+    cover_path: str = ""
+
+@app.get("/edge/voices")
+async def edge_voices():
+    """Alle verfügbaren Edge TTS Stimmen auflisten"""
+    try:
+        import edge_tts
+        voices = await edge_tts.list_voices()
+        result = []
+        for v in voices:
+            result.append({
+                "name": v["ShortName"],
+                "display": v.get("FriendlyName", v["ShortName"]),
+                "lang": v["Locale"],
+                "gender": v["Gender"]
+            })
+        return {"voices": result, "anzahl": len(result)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/edge/generate")
+async def edge_generate(req: EdgeTTSRequest):
+    """Einzelnen Text mit Edge TTS generieren"""
+    try:
+        import edge_tts
+        filename = req.filename or f"edge_{uuid.uuid4().hex[:8]}.mp3"
+        out_path = OUTPUT_DIR / filename
+        communicate = edge_tts.Communicate(req.text, req.voice, rate=req.rate, pitch=req.pitch)
+        await communicate.save(str(out_path))
+        return {
+            "status": "ok",
+            "datei": filename,
+            "groesse_kb": round(out_path.stat().st_size/1024, 1)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/edge/book")
+async def edge_book(req: EdgeTTSBookRequest, background_tasks: BackgroundTasks):
+    """Hörbuch mit Edge TTS generieren"""
+    job_id = uuid.uuid4().hex[:12]
+    with jobs_lock:
+        jobs[job_id] = {"status": "running", "done": 0, "total": len(req.chapters), "files": [], "errors": [], "output": ""}
+    background_tasks.add_task(_process_edge_book, job_id, req)
+    return {"job_id": job_id, "status": "gestartet", "kapitel_anzahl": len(req.chapters)}
+
+async def _process_edge_book_async(job_id: str, req: EdgeTTSBookRequest):
+    """Edge TTS Buch-Generierung (async)"""
+    import edge_tts
+    book_dir = OUTPUT_DIR / req.book_name
+    book_dir.mkdir(parents=True, exist_ok=True)
+    kapitel_files = []
+
+    for i, chapter_text in enumerate(req.chapters):
+        if not chapter_text.strip():
+            continue
+        kapitel_num = f"{i+1:03d}"
+        filename = f"kapitel_{kapitel_num}.mp3"
+        out_path = book_dir / filename
+        try:
+            communicate = edge_tts.Communicate(chapter_text, req.voice, rate=req.rate, pitch=req.pitch)
+            await communicate.save(str(out_path))
+            kapitel_files.append(out_path)
+            with jobs_lock:
+                jobs[job_id]["done"] += 1
+                jobs[job_id]["files"].append(filename)
+        except Exception as e:
+            with jobs_lock:
+                jobs[job_id]["errors"].append(f"Kapitel {kapitel_num}: {str(e)}")
+
+    # Zusammenfügen
+    if kapitel_files:
+        cover = Path(req.cover_path) if req.cover_path else None
+        fmt = req.output_format.lower()
+        if fmt == "m4b":
+            out = book_dir / f"{req.book_name}.m4b"
+            # MP3 zu WAV konvertieren für merge
+            wav_files = []
+            for mp3 in kapitel_files:
+                wav = mp3.with_suffix('.wav')
+                subprocess.run(["ffmpeg", "-i", str(mp3), str(wav), "-y"], capture_output=True)
+                wav_files.append(wav)
+            merge_to_m4b(wav_files, out, title=req.book_name, cover_path=cover)
+        else:
+            out = book_dir / f"{req.book_name}_komplett.mp3"
+            # Alle MP3s zusammenfügen
+            list_file = book_dir / "_list.txt"
+            with open(list_file, "w") as f:
+                for mp3 in kapitel_files:
+                    f.write(f"file '{mp3.resolve()}'\n")
+            subprocess.run([
+                "ffmpeg", "-f", "concat", "-safe", "0",
+                "-i", str(list_file),
+                "-codec:a", "copy",
+                str(out), "-y"
+            ], capture_output=True)
+            list_file.unlink(missing_ok=True)
+            if cover and cover.exists():
+                out_cover = book_dir / f"{req.book_name}_mit_cover.mp3"
+                subprocess.run([
+                    "ffmpeg", "-i", str(out), "-i", str(cover),
+                    "-map", "0:a", "-map", "1:v",
+                    "-codec:a", "copy", "-codec:v", "copy",
+                    "-id3v2_version", "3",
+                    str(out_cover), "-y"
+                ], capture_output=True)
+                out = out_cover
+
+        with jobs_lock:
+            jobs[job_id]["status"] = "fertig"
+            jobs[job_id]["output"] = out.name
+    else:
+        with jobs_lock:
+            jobs[job_id]["status"] = "fertig_mit_fehlern"
+
+def _process_edge_book(job_id: str, req: EdgeTTSBookRequest):
+    import asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_process_edge_book_async(job_id, req))
+    finally:
+        loop.close()
+
 
 def system_info():
     return {
@@ -609,15 +886,16 @@ def _process_book(job_id: str, req: ChapterRequest):
     if kapitel_files:
         try:
             fmt = req.output_format.lower()
+            cover = Path(req.cover_path) if req.cover_path else None
             if fmt == "m4b":
                 out = book_dir / f"{req.book_name}.m4b"
-                merge_to_m4b(kapitel_files, out, title=req.book_name)
+                merge_to_m4b(kapitel_files, out, title=req.book_name, cover_path=cover)
             elif fmt == "wav":
                 out = book_dir / f"{req.book_name}_komplett.wav"
                 merge_wav_files(kapitel_files, out)
             else:
                 out = book_dir / f"{req.book_name}_komplett.mp3"
-                merge_to_mp3(kapitel_files, out)
+                merge_to_mp3(kapitel_files, out, cover_path=cover)
             with jobs_lock:
                 jobs[job_id]["output"] = out.name
         except Exception as e:

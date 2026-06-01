@@ -194,6 +194,10 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
     <i class="ti ti-music"></i>
     <div class="sb-tooltip">Musik</div>
   </div>
+  <div class="sb-item" onclick="showPanel('covers')" id="nav-covers">
+    <i class="ti ti-photo"></i>
+    <div class="sb-tooltip">Cover</div>
+  </div>
   <div class="sb-item" onclick="showPanel('files')" id="nav-files">
     <i class="ti ti-folder"></i>
     <div class="sb-tooltip">Dateien</div>
@@ -231,6 +235,30 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
     <!-- ══ Dashboard ══ -->
     <div class="panel active" id="panel-dashboard">
+
+      <!-- Hero Banner -->
+      <div style="background:linear-gradient(135deg,rgba(34,197,94,.08) 0%,rgba(59,130,246,.06) 100%);border:1px solid rgba(34,197,94,.15);border-radius:var(--radius-lg);padding:1.5rem 2rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+            <div style="width:40px;height:40px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#000;font-weight:700">B</div>
+            <div>
+              <div style="font-size:20px;font-weight:600;color:var(--text)">BookVoice-AI</div>
+              <div style="font-size:11px;color:var(--text3)">v1.1 · Aksoy-Net · XTTS-v2</div>
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--text2);max-width:500px;line-height:1.6">
+            Dein selbst-gehostetes KI-Hörbuch-Studio. Wandle Texte, eBooks und Fotos in hochwertige Hörbücher um — mit eigener Stimme, in Türkisch, Deutsch und Englisch.
+          </div>
+          <div style="display:flex;gap:.5rem;margin-top:1rem">
+            <button class="btn btn-primary" onclick="showPanel('studio')"><i class="ti ti-wand"></i> Neues Hörbuch</button>
+            <button class="btn btn-secondary" onclick="showPanel('voices')"><i class="ti ti-microphone"></i> Stimmen</button>
+            <button class="btn btn-secondary" onclick="showPanel('files')"><i class="ti ti-folder"></i> Bibliothek</button>
+          </div>
+        </div>
+        <div style="font-size:64px;opacity:.15">🎙️</div>
+      </div>
+
+      <!-- Stats -->
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-value" id="stat-files">—</div>
@@ -250,6 +278,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         </div>
       </div>
 
+      <!-- Quick Actions -->
       <div class="action-banner">
         <div class="action-card" onclick="showPanel('studio')">
           <div class="action-icon" style="background:rgba(34,197,94,.1)">🎙️</div>
@@ -258,15 +287,46 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             <div class="action-sub">Text, EPUB, PDF oder Foto hochladen und in Audio umwandeln</div>
           </div>
         </div>
+        <div class="action-card" onclick="showPanel('voices')">
+          <div class="action-icon" style="background:rgba(168,85,247,.1)">🎵</div>
+          <div>
+            <div class="action-title">Stimmen verwalten</div>
+            <div class="action-sub">11 Standard-Stimmen · Eigene Stimme hochladen · Vorschau anhören</div>
+          </div>
+        </div>
+        <div class="action-card" onclick="showPanel('musik')">
+          <div class="action-icon" style="background:rgba(245,158,11,.1)">🎼</div>
+          <div>
+            <div class="action-title">Hintergrundmusik</div>
+            <div class="action-sub">Musik hochladen und mit Hörbuch mischen</div>
+          </div>
+        </div>
         <div class="action-card" onclick="showPanel('files')">
           <div class="action-icon" style="background:rgba(59,130,246,.1)">📂</div>
           <div>
-            <div class="action-title">Dateien verwalten</div>
+            <div class="action-title">Bibliothek</div>
             <div class="action-sub">Fertige Hörbücher herunterladen, anhören oder löschen</div>
           </div>
         </div>
       </div>
 
+      <!-- Features -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Features</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;font-size:12px">
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> XTTS-v2 Voice Cloning</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> EPUB / PDF / MOBI</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> OCR Foto-Upload</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> MP3 / M4B / WAV Export</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Hintergrundmusik</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Buchcover in M4B</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> TR / DE / EN / AR</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Stil-Presets</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> CPU / GPU Auto</div>
+        </div>
+      </div>
+
+      <!-- Log -->
       <div class="card">
         <div class="card-header">
           <span class="card-title">System Log</span>
@@ -284,6 +344,69 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
         <!-- LEFT -->
         <div>
+          <!-- Engine Auswahl -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Engine</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+              <button class="btn btn-primary" id="engine-xtts" onclick="setEngine('xtts')" style="justify-content:center">
+                🧠 XTTS-v2
+              </button>
+              <button class="btn btn-secondary" id="engine-edge" onclick="setEngine('edge')" style="justify-content:center">
+                ⚡ Edge TTS 🌐
+              </button>
+            </div>
+            <div id="engine-hint" style="font-size:10px;color:var(--text3);padding:.4rem .6rem;background:var(--surface2);border-radius:var(--radius)">
+              🧠 XTTS-v2: Lokal · Voice Cloning · Eigene Stimme
+            </div>
+          </div>
+
+          <!-- Edge TTS Stimmen (nur wenn Edge aktiv) -->
+          <div class="card" id="edge-voices-card" style="display:none">
+            <div class="card-header">
+              <span class="card-title">Edge TTS Stimme</span>
+              <span class="char-count" id="edge-voice-count">Lädt...</span>
+            </div>
+            <div style="display:flex;gap:.5rem;margin-bottom:.5rem">
+              <select id="edge-lang-filter" style="flex:none;width:auto" onchange="filterEdgeVoices()">
+                <option value="">Alle</option>
+                <option value="tr" selected>🇹🇷 TR</option>
+                <option value="de">🇩🇪 DE</option>
+                <option value="en">🇬🇧 EN</option>
+                <option value="ar">🇸🇦 AR</option>
+              </select>
+              <select id="edge-gender-filter" style="flex:none;width:auto" onchange="filterEdgeVoices()">
+                <option value="">Alle</option>
+                <option value="Female">♀ Weiblich</option>
+                <option value="Male">♂ Männlich</option>
+              </select>
+            </div>
+            <select id="edge-voice-select" style="width:100%;margin-bottom:.5rem">
+              <option value="">Lädt Stimmen...</option>
+            </select>
+            <div style="display:flex;gap:.5rem">
+              <div style="flex:1">
+                <div style="font-size:10px;color:var(--text2);margin-bottom:.25rem">Tempo</div>
+                <select id="edge-rate" style="width:100%;font-size:11px">
+                  <option value="-20%">-20% Langsam</option>
+                  <option value="-10%">-10%</option>
+                  <option value="+0%" selected>Normal</option>
+                  <option value="+10%">+10%</option>
+                  <option value="+20%">+20% Schnell</option>
+                </select>
+              </div>
+              <div style="flex:1">
+                <div style="font-size:10px;color:var(--text2);margin-bottom:.25rem">Tonhöhe</div>
+                <select id="edge-pitch" style="width:100%;font-size:11px">
+                  <option value="-20Hz">-20Hz Tiefer</option>
+                  <option value="-10Hz">-10Hz</option>
+                  <option value="+0Hz" selected>Normal</option>
+                  <option value="+10Hz">+10Hz</option>
+                  <option value="+20Hz">+20Hz Höher</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <!-- Projekt -->
           <div class="card">
             <div class="card-header">
@@ -305,6 +428,21 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
                 <option value="en">🇬🇧 Englisch</option>
                 <option value="ar">🇸🇦 Arabisch</option>
               </select>
+            </div>
+
+            <!-- Cover Upload -->
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div id="cover-preview" style="width:60px;height:60px;background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;cursor:pointer;overflow:hidden" onclick="document.getElementById('cover-input').click()">
+                📖
+              </div>
+              <div style="flex:1">
+                <div style="font-size:11px;color:var(--text2);margin-bottom:.25rem">Buchcover (optional)</div>
+                <div style="font-size:10px;color:var(--text3)">JPG/PNG · Wird in M4B eingebettet</div>
+                <input type="file" id="cover-input" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="handleCoverUpload(this)">
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cover-input').click()">
+                <i class="ti ti-upload"></i>
+              </button>
             </div>
           </div>
 
@@ -496,6 +634,49 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Cover ══ -->
+    <div class="panel" id="panel-covers">
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Cover-Bibliothek</span>
+              <span class="char-count" id="cover-count">0 Cover</span>
+            </div>
+            <div id="cover-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.75rem">
+              <div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px;grid-column:1/-1">Noch keine Cover hochgeladen</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Cover hochladen</span></div>
+            <div class="upload-zone">
+              <input type="file" accept=".jpg,.jpeg,.png,.webp" onchange="handleCoverLibraryUpload(this)">
+              <div class="upload-icon"><i class="ti ti-photo"></i></div>
+              <div class="upload-text">Cover hochladen</div>
+              <div class="upload-formats">JPG · PNG · WEBP · Empfohlen: 500×500px</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Cover zu Hörbuch hinzufügen</span></div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Hörbuch-Datei</div>
+              <select id="cover-audio-select" style="width:100%"><option value="">— Datei auswählen —</option></select>
+            </div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Cover</div>
+              <select id="cover-select" style="width:100%"><option value="">— Cover auswählen —</option></select>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="addCoverToFile()">
+              <i class="ti ti-photo"></i> Cover hinzufügen
+            </button>
+            <div id="cover-add-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:.5rem"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ Dateien ══ -->
     <div class="panel" id="panel-files">
       <div class="card">
@@ -537,7 +718,20 @@ const TTS_URL = '/api';
 let activeJobId = null;
 let pollInterval = null;
 let selectedVoiceId = null;
-let voices = [];
+// Standard-Stimmen Bibliothek
+let voices = [
+  {id:1,  name:'suf1.mp3',                path:'/app/tts_models/suf1.mp3',                init:'S1', lang:'TR', gender:'M', style:'Sufi',    bg:'rgba(139,92,246,.15)', fg:'#a855f7', type:'builtin'},
+  {id:2,  name:'rom1.mp3',                path:'/app/tts_models/rom1.mp3',                init:'R1', lang:'TR', gender:'M', style:'Roman',   bg:'rgba(34,197,94,.15)',  fg:'#22c55e', type:'builtin'},
+  {id:3,  name:'tr_erkek_ahmet.mp3',      path:'/app/tts_models/tr_erkek_ahmet.mp3',      init:'TA', lang:'TR', gender:'M', style:'Neutral', bg:'rgba(59,130,246,.15)', fg:'#3b82f6', type:'builtin'},
+  {id:4,  name:'tr_kadin_emel.mp3',       path:'/app/tts_models/tr_kadin_emel.mp3',       init:'TE', lang:'TR', gender:'F', style:'Warm',    bg:'rgba(236,72,153,.15)', fg:'#ec4899', type:'builtin'},
+  {id:5,  name:'tr_erkek_sufi.mp3',       path:'/app/tts_models/tr_erkek_sufi.mp3',       init:'TS', lang:'TR', gender:'M', style:'Sufi',    bg:'rgba(245,158,11,.15)', fg:'#f59e0b', type:'builtin'},
+  {id:6,  name:'tr_erkek_sufi_divan.mp3', path:'/app/tts_models/tr_erkek_sufi_divan.mp3', init:'TD', lang:'TR', gender:'M', style:'Divan',   bg:'rgba(168,85,247,.15)', fg:'#a855f7', type:'builtin'},
+  {id:7,  name:'tr_sufi_emotion.mp3',     path:'/app/tts_models/tr_sufi_emotion.mp3',     init:'TM', lang:'TR', gender:'M', style:'Emotion', bg:'rgba(239,68,68,.15)',  fg:'#ef4444', type:'builtin'},
+  {id:8,  name:'de_maennlich_florian.mp3',path:'/app/tts_models/de_maennlich_florian.mp3',init:'DF', lang:'DE', gender:'M', style:'Klar',    bg:'rgba(59,130,246,.15)', fg:'#3b82f6', type:'builtin'},
+  {id:9,  name:'de_weiblich_seraphina.mp3',path:'/app/tts_models/de_weiblich_seraphina.mp3',init:'DS',lang:'DE',gender:'F',style:'Warm',   bg:'rgba(236,72,153,.15)', fg:'#ec4899', type:'builtin'},
+  {id:10, name:'en_maennlich_andrew.mp3', path:'/app/tts_models/en_maennlich_andrew.mp3', init:'EA', lang:'EN', gender:'M', style:'Deep',    bg:'rgba(34,197,94,.15)',  fg:'#22c55e', type:'builtin'},
+  {id:11, name:'en_weiblich_ava.mp3',     path:'/app/tts_models/en_weiblich_ava.mp3',     init:'EV', lang:'EN', gender:'F', style:'Clear',   bg:'rgba(245,158,11,.15)', fg:'#f59e0b', type:'builtin'},
+];
 
 const PRESETS = {
   sufi:      {temp:0.65, rep:4.0, topk:25, speed:0.85, desc:'🕌 Ruhig, melodisch — für Sufi & religiöse Texte'},
@@ -562,11 +756,12 @@ function showPanel(name){
   const nav = document.getElementById('nav-'+name);
   if(panel) panel.classList.add('active');
   if(nav) nav.classList.add('active');
-  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',files:'Dateien',settings:'Einstellungen'};
+  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',settings:'Einstellungen'};
   document.getElementById('page-title').textContent = titles[name] || name;
   if(name==='files') loadFilesFromServer();
   if(name==='voices') loadVoicesFromServer();
   if(name==='musik'){ loadMusikFromServer(); loadMusikList(); }
+  if(name==='covers'){ loadCoversFromServer(); loadCoverAudioSelect(); }
 }
 
 // ── Char Count ──────────────────────────────────
@@ -645,51 +840,167 @@ function splitChapters(text, maxLen){
 }
 
 // ── Synthese ────────────────────────────────────
+let currentCoverPath = '';
+
+async function handleCoverUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  const projectName = document.getElementById('project-name').value || 'hoerbuch';
+  addLog(`🖼️ Lade Cover hoch: ${file.name}…`);
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/upload-cover?book_name=${projectName}`, {method:'POST', body:formData});
+    const data = await resp.json();
+    if(data.status === 'ok'){
+      currentCoverPath = data.cover_path;
+      // Cover Vorschau anzeigen
+      const preview = document.getElementById('cover-preview');
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+      };
+      reader.readAsDataURL(file);
+      addLog(`✔ Cover hochgeladen!`, 'ok');
+    }
+  } catch(e) { addLog(`Fehler: ${e.message}`, 'err'); }
+}
+
+// ── Engine ───────────────────────────────────────────
+let currentEngine = 'xtts';
+let allEdgeVoices = [];
+
+function setEngine(engine){
+  currentEngine = engine;
+  const xttsBtn = document.getElementById('engine-xtts');
+  const edgeBtn = document.getElementById('engine-edge');
+  const hint = document.getElementById('engine-hint');
+  const edgeCard = document.getElementById('edge-voices-card');
+  const voiceCard = document.querySelector('#panel-studio .card:has(#active-avatar)');
+
+  if(engine === 'xtts'){
+    xttsBtn.className = 'btn btn-primary';
+    edgeBtn.className = 'btn btn-secondary';
+    hint.textContent = '🧠 XTTS-v2: Lokal · Voice Cloning · Eigene Stimme';
+    hint.style.color = 'var(--text3)';
+    edgeCard.style.display = 'none';
+    if(voiceCard) voiceCard.style.display = 'block';
+  } else {
+    xttsBtn.className = 'btn btn-secondary';
+    edgeBtn.className = 'btn btn-primary';
+    hint.innerHTML = '⚡ Edge TTS: <span style="color:var(--amber)">⚠️ Online-Dienst · Internet erforderlich</span> · 400+ Stimmen · Sehr schnell';
+    edgeCard.style.display = 'block';
+    if(voiceCard) voiceCard.style.display = 'none';
+    if(allEdgeVoices.length === 0) loadEdgeVoices();
+  }
+  addLog(`[ENGINE] ${engine === 'xtts' ? 'XTTS-v2 (Lokal)' : 'Edge TTS (Online)'}`, 'info');
+}
+
+async function loadEdgeVoices(){
+  try {
+    document.getElementById('edge-voice-count').textContent = 'Lädt...';
+    const resp = await fetch(`${TTS_URL}/edge/voices`);
+    const data = await resp.json();
+    allEdgeVoices = data.voices;
+    document.getElementById('edge-voice-count').textContent = `${data.anzahl} Stimmen`;
+    filterEdgeVoices();
+    addLog(`[EDGE] ${data.anzahl} Stimmen geladen`, 'ok');
+  } catch(e) {
+    addLog('[EDGE] Stimmen konnten nicht geladen werden — Internet verfügbar?', 'err');
+  }
+}
+
+function filterEdgeVoices(){
+  const lang = document.getElementById('edge-lang-filter').value.toLowerCase();
+  const gender = document.getElementById('edge-gender-filter').value;
+  const sel = document.getElementById('edge-voice-select');
+  const filtered = allEdgeVoices.filter(v => {
+    const matchLang = !lang || v.lang.toLowerCase().startsWith(lang);
+    const matchGender = !gender || v.gender === gender;
+    return matchLang && matchGender;
+  });
+  sel.innerHTML = filtered.map(v =>
+    `<option value="${v.name}">${v.display} (${v.lang})</option>`
+  ).join('');
+  document.getElementById('edge-voice-count').textContent = `${filtered.length} Stimmen`;
+}
+
 async function startSynthesis(){
   const text = document.getElementById('test-text').value.trim();
   if(!text){ addLog('Kein Text eingegeben!','err'); return; }
   const projectName = document.getElementById('project-name').value || 'hoerbuch';
   const outputFormat = document.getElementById('output-format').value || 'mp3';
   const lang = document.getElementById('tts-lang').value || 'tr';
+  const chapters = splitChapters(text, 2000);
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Generiert…';
+  document.getElementById('progress-wrap').style.display = 'block';
+
+  // Edge TTS
+  if(currentEngine === 'edge'){
+    const voice = document.getElementById('edge-voice-select').value;
+    const rate = document.getElementById('edge-rate').value;
+    const pitch = document.getElementById('edge-pitch').value;
+    if(!voice){ addLog('Bitte Edge TTS Stimme auswählen!','err'); btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN'; return; }
+    addLog(`⚡ Edge TTS: ${chapters.length} Kapitel · ${voice}`, 'ok');
+    try {
+      const resp = await fetch(`${TTS_URL}/edge/book`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({chapters, voice, book_name:projectName, output_format:outputFormat, rate, pitch, cover_path:currentCoverPath})
+      });
+      const data = await resp.json();
+      activeJobId = data.job_id;
+      addLog(`Job: ${data.job_id}`, 'ok');
+      startJobPolling(data.job_id, chapters.length);
+    } catch(e) {
+      addLog(`Fehler: ${e.message}`,'err');
+      btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+    }
+    return;
+  }
+
+  // XTTS-v2
   const temperature = parseFloat(document.getElementById('temperature').value);
   const repPenalty = parseFloat(document.getElementById('rep-penalty').value);
   const topK = parseInt(document.getElementById('top-k').value);
   const speed = parseFloat(document.getElementById('speed').value);
-  const chapters = splitChapters(text, 2000);
-  addLog(`▶ Starte: ${chapters.length} Kapitel · ${lang.toUpperCase()} · ${outputFormat.toUpperCase()}`, 'ok');
-  const btn = document.getElementById('gen-btn');
-  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Generiert…';
-  document.getElementById('progress-wrap').style.display = 'block';
+  addLog(`🧠 XTTS-v2: ${chapters.length} Kapitel · ${lang.toUpperCase()} · ${outputFormat.toUpperCase()}`, 'ok');
   try {
     const resp = await fetch(`${TTS_URL}/tts/book`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({chapters, language:lang, speaker_wav:getVoicePath(), book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed})
+      body: JSON.stringify({chapters, language:lang, speaker_wav:getVoicePath(), book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed, cover_path:currentCoverPath})
     });
     const data = await resp.json();
     activeJobId = data.job_id;
     addLog(`Job: ${data.job_id}`, 'ok');
-    if(pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(async () => {
-      try {
-        const sr = await fetch(`${TTS_URL}/tts/book/status/${data.job_id}`);
-        const sd = await sr.json();
-        const progress = sd.total > 0 ? Math.round((sd.done/sd.total)*100) : 0;
-        document.getElementById('batch-bar').style.width = progress+'%';
-        document.getElementById('batch-pct').textContent = progress+'%';
-        document.getElementById('progress-text').textContent = `Kapitel ${sd.done} / ${sd.total}`;
-        if(sd.status==='fertig'||sd.status==='fertig_mit_fehlern'){
-          clearInterval(pollInterval);
-          btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
-          addLog(`✔ Fertig! ${sd.done}/${sd.total} Kapitel · ${sd.output||''}`, 'ok');
-          if(sd.errors&&sd.errors.length) sd.errors.forEach(e=>addLog(`⚠ ${e}`,'warn'));
-          loadFilesFromServer(); loadDashboardStats();
-        }
-      } catch(e) {}
-    }, 3000);
+    startJobPolling(data.job_id, chapters.length);
   } catch(e) {
     addLog(`Fehler: ${e.message}`,'err');
     btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
   }
+}
+
+function startJobPolling(jobId, total){
+  const btn = document.getElementById('gen-btn');
+  if(pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    try {
+      const endpoint = currentEngine === 'edge' ? `/tts/book/status/${jobId}` : `/tts/book/status/${jobId}`;
+      const sr = await fetch(`${TTS_URL}${endpoint}`);
+      const sd = await sr.json();
+      const progress = sd.total > 0 ? Math.round((sd.done/sd.total)*100) : 0;
+      document.getElementById('batch-bar').style.width = progress+'%';
+      document.getElementById('batch-pct').textContent = progress+'%';
+      document.getElementById('progress-text').textContent = `Kapitel ${sd.done} / ${sd.total}`;
+      if(sd.status==='fertig'||sd.status==='fertig_mit_fehlern'){
+        clearInterval(pollInterval);
+        btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+        addLog(`✔ Fertig! ${sd.done}/${sd.total} Kapitel · ${sd.output||''}`, 'ok');
+        if(sd.errors&&sd.errors.length) sd.errors.forEach(e=>addLog(`⚠ ${e}`,'warn'));
+        loadFilesFromServer(); loadDashboardStats();
+      }
+    } catch(e) {}
+  }, 3000);
 }
 
 // ── Preview ─────────────────────────────────────
@@ -750,17 +1061,20 @@ async function loadVoicesFromServer(){
     const resp = await fetch(`${TTS_URL}/tts/voices`);
     const data = await resp.json();
     document.getElementById('stat-voices').textContent = data.stimmen.length;
-    const colors = [
-      {bg:'rgba(34,197,94,.15)',fg:'var(--green)'},
-      {bg:'rgba(59,130,246,.15)',fg:'var(--blue)'},
-      {bg:'rgba(245,158,11,.15)',fg:'var(--amber)'},
-      {bg:'rgba(168,85,247,.15)',fg:'#a855f7'},
-    ];
-    voices = data.stimmen.map((v,i) => ({
-      id: i+1, name:v.name, path:`/app/tts_models/${v.name}`,
-      init:v.name.slice(0,2).toUpperCase(), type:'custom',
-      groesse_kb:v.groesse_kb, ...colors[i%colors.length]
-    }));
+    const builtinNames = voices.filter(v=>v.type==='builtin').map(v=>v.name);
+    const serverVoices = data.stimmen
+      .filter(v => !builtinNames.includes(v.name))
+      .map((v, i) => ({
+        id: 100 + i,
+        name: v.name,
+        path: `/app/tts_models/${v.name}`,
+        init: v.name.slice(0,2).toUpperCase(),
+        lang: 'TR', gender: 'M', style: 'Custom',
+        bg: 'rgba(34,197,94,.15)', fg: '#22c55e',
+        type: 'custom',
+        groesse_kb: v.groesse_kb
+      }));
+    voices = [...voices.filter(v=>v.type==='builtin'), ...serverVoices];
     if(voices.length && !selectedVoiceId){ selectedVoiceId=voices[0].id; updateActiveVoiceDisplay(); }
     renderVoiceGrid();
     document.getElementById('voice-count').textContent = `${voices.length} Stimmen`;
@@ -773,11 +1087,14 @@ function renderVoiceGrid(){
   grid.innerHTML = voices.map(v=>`
     <div class="voice-card${v.id===selectedVoiceId?' active':''}" onclick="selectVoice(${v.id})">
       <div class="vc-avatar" style="background:${v.bg};color:${v.fg}">${v.init}</div>
-      <div class="vc-name">${v.name}</div>
-      <div class="vc-meta">${v.groesse_kb} KB · XTTS-v2</div>
+      <div class="vc-name">${v.name.replace('.mp3','').replace(/_/g,' ')}</div>
+      <div class="vc-meta" style="display:flex;gap:4px;margin-top:2px">
+        <span style="background:${v.bg};color:${v.fg};padding:1px 6px;border-radius:4px;font-size:9px">${v.lang}</span>
+        <span style="background:var(--border);color:var(--text2);padding:1px 6px;border-radius:4px;font-size:9px">${v.gender==='M'?'♂':'♀'} ${v.style}</span>
+      </div>
       <div class="vc-actions">
-        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();previewVoice(${v.id})"><i class="ti ti-player-play"></i></button>
-        ${v.name!=='stimme.wav'?`<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteVoiceFromServer('${v.name}')"><i class="ti ti-trash"></i></button>`:''}
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();previewVoice(${v.id})" title="Vorschau">▶</button>
+        ${v.type!=='builtin'?`<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteVoiceFromServer('${v.name}')" title="Löschen">🗑</button>`:''}
       </div>
     </div>`).join('') + `
     <div class="voice-card vc-add" onclick="document.querySelector('#panel-voices .upload-zone input').click()">
@@ -911,6 +1228,96 @@ async function mixMusikWithAudio(){
 }
 
 // ── Dashboard Stats ──────────────────────────────
+async function loadCoversFromServer(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/covers`);
+    const data = await resp.json();
+    document.getElementById('cover-count').textContent = `${data.anzahl} Cover`;
+    const grid = document.getElementById('cover-grid');
+    const sel = document.getElementById('cover-select');
+    if(sel){ sel.innerHTML = '<option value="">— Cover auswählen —</option>'; }
+    if(!data.covers.length){
+      grid.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px;grid-column:1/-1">Noch keine Cover</div>';
+      return;
+    }
+    grid.innerHTML = data.covers.map(c=>`
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer" onclick="selectCover('${c.name}')">
+        <img src="${TTS_URL}/tts/covers/${c.name}" style="width:100%;aspect-ratio:1;object-fit:cover" onerror="this.style.display='none'">
+        <div style="padding:.4rem;font-size:9px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+        <div style="padding:0 .4rem .4rem;display:flex;gap:.25rem">
+          <button class="btn btn-danger btn-sm" style="flex:1;font-size:9px" onclick="event.stopPropagation();deleteCover('${c.name}')">🗑</button>
+        </div>
+      </div>`).join('');
+    if(sel){
+      data.covers.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name; opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) { addLog('Cover konnten nicht geladen werden','err'); }
+}
+
+function selectCover(name){
+  const sel = document.getElementById('cover-select');
+  if(sel) sel.value = name;
+  addLog(`Cover ausgewählt: ${name}`, 'ok');
+}
+
+async function handleCoverLibraryUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  addLog(`🖼️ Cover hochladen: ${file.name}…`);
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/upload-cover-library`, {method:'POST', body:formData});
+    const data = await resp.json();
+    if(data.status==='ok'){ addLog(`✔ Cover hochgeladen: ${data.datei}`,'ok'); loadCoversFromServer(); }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+async function deleteCover(filename){
+  if(!confirm(`Cover "${filename}" löschen?`)) return;
+  try {
+    await fetch(`${TTS_URL}/tts/covers/${filename}`, {method:'DELETE'});
+    addLog(`Cover gelöscht: ${filename}`,'ok');
+    loadCoversFromServer();
+  } catch(e) {}
+}
+
+async function addCoverToFile(){
+  const audioFile = document.getElementById('cover-audio-select').value;
+  const coverFile = document.getElementById('cover-select').value;
+  if(!audioFile || !coverFile){ addLog('Bitte Datei und Cover auswählen!','err'); return; }
+  document.getElementById('cover-add-status').textContent = 'Füge Cover hinzu…';
+  addLog(`🖼️ Cover "${coverFile}" → "${audioFile}"…`);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/add-cover-to-file?audio_file=${encodeURIComponent(audioFile)}&cover_file=${encodeURIComponent(coverFile)}`, {method:'POST'});
+    const data = await resp.json();
+    if(data.status==='ok'){
+      addLog(`✔ Fertig: ${data.datei} (${data.groesse_mb}MB)`,'ok');
+      document.getElementById('cover-add-status').textContent = `✔ ${data.datei}`;
+      loadFilesFromServer();
+    }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+async function loadCoverAudioSelect(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/files`);
+    const data = await resp.json();
+    const sel = document.getElementById('cover-audio-select');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">— Datei auswählen —</option>';
+    data.dateien.filter(f => f.name.endsWith('.mp3') || f.name.endsWith('.m4b')).forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.name; opt.textContent = `${f.name} (${f.groesse_mb}MB)`;
+      sel.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
 async function loadDashboardStats(){
   try {
     const [files, voices, musik] = await Promise.all([
@@ -961,10 +1368,14 @@ async function checkApi(){
 
 // ── Init ─────────────────────────────────────────
 (function init(){
+  selectedVoiceId = voices[0].id;
+  updateActiveVoiceDisplay();
+  renderVoiceGrid();
   checkApi();
   loadVoicesFromServer();
   loadFilesFromServer();
   loadMusikFromServer();
+  loadCoversFromServer();
   loadDashboardStats();
   setInterval(checkApi, 30000);
 })();
