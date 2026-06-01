@@ -347,17 +347,44 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <!-- Engine Auswahl -->
           <div class="card">
             <div class="card-header"><span class="card-title">Engine</span></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
-              <button class="btn btn-primary" id="engine-xtts" onclick="setEngine('xtts')" style="justify-content:center">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+              <button class="btn btn-primary" id="engine-xtts" onclick="setEngine('xtts')" style="justify-content:center;font-size:11px">
                 🧠 XTTS-v2
               </button>
-              <button class="btn btn-secondary" id="engine-edge" onclick="setEngine('edge')" style="justify-content:center">
+              <button class="btn btn-secondary" id="engine-edge" onclick="setEngine('edge')" style="justify-content:center;font-size:11px">
                 ⚡ Edge TTS 🌐
+              </button>
+              <button class="btn btn-secondary" id="engine-gpu" onclick="setEngine('gpu')" style="justify-content:center;font-size:11px">
+                ☁️ GPU Colab
               </button>
             </div>
             <div id="engine-hint" style="font-size:10px;color:var(--text3);padding:.4rem .6rem;background:var(--surface2);border-radius:var(--radius)">
               🧠 XTTS-v2: Lokal · Voice Cloning · Eigene Stimme
             </div>
+          </div>
+
+          <!-- GPU Colab Panel -->
+          <div class="card" id="gpu-card" style="display:none">
+            <div class="card-header">
+              <span class="card-title">☁️ GPU Colab</span>
+              <span class="badge badge-amber">Beta</span>
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;line-height:1.6">
+              Nutze Google Colab T4 GPU kostenlos für schnelle Hörbuch-Generierung.
+              <br>~10x schneller als CPU!
+            </div>
+            <div style="margin-bottom:.5rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Colab API URL</div>
+              <div style="display:flex;gap:.5rem">
+                <input type="text" id="gpu-url" placeholder="https://xxxx.ngrok.io" style="flex:1">
+                <button class="btn btn-secondary btn-sm" onclick="connectGPU()">Verbinden</button>
+              </div>
+            </div>
+            <div id="gpu-status" style="font-size:11px;color:var(--text3);margin-bottom:.75rem"></div>
+            <a href="https://colab.research.google.com/github/dolunay38/BookVoice-AI/blob/main/BookVoice_AI_Colab.ipynb" 
+               target="_blank" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;text-decoration:none">
+              📓 Google Colab öffnen
+            </a>
           </div>
 
           <!-- Edge TTS Stimmen (nur wenn Edge aktiv) -->
@@ -866,34 +893,68 @@ async function handleCoverUpload(input){
   } catch(e) { addLog(`Fehler: ${e.message}`, 'err'); }
 }
 
-// ── Engine ───────────────────────────────────────────
-let currentEngine = 'xtts';
-let allEdgeVoices = [];
+// ── GPU Colab ────────────────────────────────────────
+let gpuUrl = '';
+
+async function connectGPU(){
+  const url = document.getElementById('gpu-url').value.trim().replace(/\/$/, '');
+  if(!url){ addLog('Bitte Colab URL eingeben!','err'); return; }
+  const status = document.getElementById('gpu-status');
+  status.textContent = '⏳ Verbinde...';
+  status.style.color = 'var(--amber)';
+  try {
+    const resp = await fetch(`${url}/health`, {signal: AbortSignal.timeout(10000)});
+    const data = await resp.json();
+    if(data.status === 'ok'){
+      gpuUrl = url;
+      status.textContent = `✅ Verbunden! GPU: ${(data.device||'gpu').toUpperCase()}`;
+      status.style.color = 'var(--green)';
+      addLog(`[GPU] Verbunden mit Colab: ${url}`, 'ok');
+      addLog(`[GPU] Device: ${(data.device||'gpu').toUpperCase()}`, 'ok');
+    }
+  } catch(e) {
+    status.textContent = '❌ Verbindung fehlgeschlagen — URL prüfen!';
+    status.style.color = 'var(--red)';
+    addLog('[GPU] Verbindung fehlgeschlagen!', 'err');
+  }
+}
+
+function getActiveUrl(){
+  if(currentEngine === 'gpu' && gpuUrl) return gpuUrl;
+  return TTS_URL;
+}
 
 function setEngine(engine){
   currentEngine = engine;
   const xttsBtn = document.getElementById('engine-xtts');
   const edgeBtn = document.getElementById('engine-edge');
+  const gpuBtn = document.getElementById('engine-gpu');
   const hint = document.getElementById('engine-hint');
   const edgeCard = document.getElementById('edge-voices-card');
-  const voiceCard = document.querySelector('#panel-studio .card:has(#active-avatar)');
+  const gpuCard = document.getElementById('gpu-card');
+
+  xttsBtn.className = 'btn btn-secondary';
+  edgeBtn.className = 'btn btn-secondary';
+  gpuBtn.className = 'btn btn-secondary';
+
+  edgeCard.style.display = 'none';
+  gpuCard.style.display = 'none';
 
   if(engine === 'xtts'){
     xttsBtn.className = 'btn btn-primary';
-    edgeBtn.className = 'btn btn-secondary';
     hint.textContent = '🧠 XTTS-v2: Lokal · Voice Cloning · Eigene Stimme';
     hint.style.color = 'var(--text3)';
-    edgeCard.style.display = 'none';
-    if(voiceCard) voiceCard.style.display = 'block';
-  } else {
-    xttsBtn.className = 'btn btn-secondary';
+  } else if(engine === 'edge'){
     edgeBtn.className = 'btn btn-primary';
-    hint.innerHTML = '⚡ Edge TTS: <span style="color:var(--amber)">⚠️ Online-Dienst · Internet erforderlich</span> · 400+ Stimmen · Sehr schnell';
+    hint.innerHTML = '⚡ Edge TTS: <span style="color:var(--amber)">⚠️ Online · Internet erforderlich</span> · 400+ Stimmen · Sehr schnell';
     edgeCard.style.display = 'block';
-    if(voiceCard) voiceCard.style.display = 'none';
     if(allEdgeVoices.length === 0) loadEdgeVoices();
+  } else if(engine === 'gpu'){
+    gpuBtn.className = 'btn btn-primary';
+    hint.innerHTML = '☁️ GPU Colab: <span style="color:var(--green)">T4 GPU kostenlos</span> · 10x schneller · Voice Cloning';
+    gpuCard.style.display = 'block';
   }
-  addLog(`[ENGINE] ${engine === 'xtts' ? 'XTTS-v2 (Lokal)' : 'Edge TTS (Online)'}`, 'info');
+  addLog(`[ENGINE] ${engine === 'xtts' ? 'XTTS-v2 (Lokal)' : engine === 'edge' ? 'Edge TTS (Online)' : 'GPU Colab'}`, 'info');
 }
 
 async function loadEdgeVoices(){
@@ -936,7 +997,30 @@ async function startSynthesis(){
   btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Generiert…';
   document.getElementById('progress-wrap').style.display = 'block';
 
-  // Edge TTS
+  // GPU Colab — nutzt XTTS-v2 auf Colab
+  if(currentEngine === 'gpu'){
+    if(!gpuUrl){ addLog('Bitte zuerst mit Colab verbinden!','err'); btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN'; return; }
+    const lang = document.getElementById('tts-lang').value || 'tr';
+    const temperature = parseFloat(document.getElementById('temperature').value);
+    const repPenalty = parseFloat(document.getElementById('rep-penalty').value);
+    const topK = parseInt(document.getElementById('top-k').value);
+    const speed = parseFloat(document.getElementById('speed').value);
+    addLog(`☁️ GPU Colab: ${chapters.length} Kapitel · ${lang.toUpperCase()}`, 'ok');
+    try {
+      const resp = await fetch(`${gpuUrl}/tts/book`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({chapters, language:lang, speaker_wav:'/content/tts_models/stimme.wav', book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed, cover_path:currentCoverPath})
+      });
+      const data = await resp.json();
+      activeJobId = data.job_id;
+      addLog(`Job: ${data.job_id}`, 'ok');
+      startJobPolling(data.job_id, chapters.length, gpuUrl);
+    } catch(e) {
+      addLog(`Fehler: ${e.message}`,'err');
+      btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+    }
+    return;
+  }
   if(currentEngine === 'edge'){
     const voice = document.getElementById('edge-voice-select').value;
     const rate = document.getElementById('edge-rate').value;
@@ -980,13 +1064,13 @@ async function startSynthesis(){
   }
 }
 
-function startJobPolling(jobId, total){
+function startJobPolling(jobId, total, baseUrl){
+  const url = baseUrl || TTS_URL;
   const btn = document.getElementById('gen-btn');
   if(pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(async () => {
     try {
-      const endpoint = currentEngine === 'edge' ? `/tts/book/status/${jobId}` : `/tts/book/status/${jobId}`;
-      const sr = await fetch(`${TTS_URL}${endpoint}`);
+      const sr = await fetch(`${url}/tts/book/status/${jobId}`);
       const sd = await sr.json();
       const progress = sd.total > 0 ? Math.round((sd.done/sd.total)*100) : 0;
       document.getElementById('batch-bar').style.width = progress+'%';
