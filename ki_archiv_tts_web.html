@@ -366,21 +366,46 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <!-- GPU Colab Panel -->
           <div class="card" id="gpu-card" style="display:none">
             <div class="card-header">
-              <span class="card-title">☁️ GPU Colab</span>
+              <div style="display:flex;align-items:center;gap:.5rem">
+                <span class="card-title">☁️ GPU Colab</span>
+                <div id="gpu-live-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3)"></div>
+              </div>
               <span class="badge badge-amber">Beta</span>
             </div>
             <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;line-height:1.6">
               Nutze Google Colab T4 GPU kostenlos für schnelle Hörbuch-Generierung.
               <br>~10x schneller als CPU!
             </div>
+
+            <!-- URL + Verbinden -->
             <div style="margin-bottom:.5rem">
               <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Colab API URL</div>
               <div style="display:flex;gap:.5rem">
-                <input type="text" id="gpu-url" placeholder="https://xxxx.ngrok.io" style="flex:1">
-                <button class="btn btn-secondary btn-sm" onclick="connectGPU()">Verbinden</button>
+                <input type="text" id="gpu-url" placeholder="https://xxxx.trycloudflare.com" style="flex:1">
+                <button class="btn btn-secondary btn-sm" id="gpu-connect-btn" onclick="connectGPU()">Verbinden</button>
+                <button class="btn btn-danger btn-sm" id="gpu-disconnect-btn" onclick="disconnectGPU()" style="display:none">Trennen</button>
               </div>
             </div>
-            <div id="gpu-status" style="font-size:11px;color:var(--text3);margin-bottom:.75rem"></div>
+
+            <!-- Status -->
+            <div id="gpu-status" style="font-size:11px;color:var(--text3);margin-bottom:.5rem"></div>
+
+            <!-- GPU Stats Grid -->
+            <div id="gpu-stats" style="display:none;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.75rem">
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem;text-align:center">
+                <div style="font-size:16px;font-weight:600;color:var(--green)" id="gpu-util">—</div>
+                <div style="font-size:9px;color:var(--text3)">GPU %</div>
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem;text-align:center">
+                <div style="font-size:16px;font-weight:600;color:var(--blue)" id="gpu-mem">—</div>
+                <div style="font-size:9px;color:var(--text3)">VRAM</div>
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem;text-align:center">
+                <div style="font-size:16px;font-weight:600;color:var(--amber)" id="gpu-timer">—</div>
+                <div style="font-size:9px;color:var(--text3)">Session</div>
+              </div>
+            </div>
+
             <a href="https://colab.research.google.com/github/dolunay38/BookVoice-AI/blob/main/BookVoice_AI_Colab.ipynb" 
                target="_blank" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;text-decoration:none">
               📓 Google Colab öffnen
@@ -894,7 +919,32 @@ async function handleCoverUpload(input){
 }
 
 // ── GPU Colab ────────────────────────────────────────
-let gpuUrl = '';
+let gpuUrl = localStorage.getItem('bookvoice_gpu_url') || '';
+let currentEngine = 'xtts';
+let allEdgeVoices = [];
+let gpuConnected = false;
+let gpuSessionStart = null;
+let gpuStatsInterval = null;
+let gpuReconnectInterval = null;
+
+function disconnectGPU(){
+  gpuUrl = '';
+  gpuConnected = false;
+  localStorage.removeItem('bookvoice_gpu_url');
+  if(gpuStatsInterval) clearInterval(gpuStatsInterval);
+  if(gpuReconnectInterval) clearInterval(gpuReconnectInterval);
+
+  // UI zurücksetzen
+  document.getElementById('gpu-url').value = '';
+  document.getElementById('gpu-status').textContent = '🔌 Verbindung getrennt';
+  document.getElementById('gpu-status').style.color = 'var(--text3)';
+  document.getElementById('gpu-live-dot').style.background = 'var(--text3)';
+  document.getElementById('gpu-live-dot').style.boxShadow = 'none';
+  document.getElementById('gpu-stats').style.display = 'none';
+  document.getElementById('gpu-connect-btn').style.display = 'block';
+  document.getElementById('gpu-disconnect-btn').style.display = 'none';
+  addLog('[GPU] Verbindung getrennt', 'warn');
+}
 
 async function connectGPU(){
   const url = document.getElementById('gpu-url').value.trim().replace(/\/$/, '');
@@ -907,15 +957,96 @@ async function connectGPU(){
     const data = await resp.json();
     if(data.status === 'ok'){
       gpuUrl = url;
+      gpuConnected = true;
+      gpuSessionStart = Date.now();
+      // URL speichern
+      localStorage.setItem('bookvoice_gpu_url', url);
       status.textContent = `✅ Verbunden! GPU: ${(data.device||'gpu').toUpperCase()}`;
       status.style.color = 'var(--green)';
-      addLog(`[GPU] Verbunden mit Colab: ${url}`, 'ok');
-      addLog(`[GPU] Device: ${(data.device||'gpu').toUpperCase()}`, 'ok');
+
+      // Live Dot grün
+      const dot = document.getElementById('gpu-live-dot');
+      dot.style.background = 'var(--green)';
+      dot.style.boxShadow = '0 0 6px var(--green)';
+      dot.style.animation = 'blink 2s infinite';
+
+      // Buttons umschalten
+      document.getElementById('gpu-connect-btn').style.display = 'none';
+      document.getElementById('gpu-disconnect-btn').style.display = 'block';
+
+      // Stats anzeigen
+      document.getElementById('gpu-stats').style.display = 'grid';
+
+      // Stats Interval starten
+      if(gpuStatsInterval) clearInterval(gpuStatsInterval);
+      gpuStatsInterval = setInterval(updateGpuStats, 5000);
+      updateGpuStats();
+
+      // Auto-Reconnect starten
+      if(gpuReconnectInterval) clearInterval(gpuReconnectInterval);
+      gpuReconnectInterval = setInterval(autoReconnect, 30000);
+
+      addLog(`[GPU] Verbunden · ${(data.device||'cuda').toUpperCase()}`, 'ok');
     }
   } catch(e) {
-    status.textContent = '❌ Verbindung fehlgeschlagen — URL prüfen!';
+    status.textContent = '❌ Verbindung fehlgeschlagen!';
     status.style.color = 'var(--red)';
+    gpuConnected = false;
+    document.getElementById('gpu-live-dot').style.background = 'var(--red)';
     addLog('[GPU] Verbindung fehlgeschlagen!', 'err');
+  }
+}
+
+async function updateGpuStats(){
+  if(!gpuUrl || !gpuConnected) return;
+  try {
+    const resp = await fetch(`${gpuUrl}/health`, {signal: AbortSignal.timeout(5000)});
+    const data = await resp.json();
+
+    // Timer
+    if(gpuSessionStart){
+      const elapsed = Math.floor((Date.now() - gpuSessionStart) / 1000);
+      const remaining = Math.max(0, 3*60*60 - elapsed);
+      const h = Math.floor(remaining / 3600);
+      const m = Math.floor((remaining % 3600) / 60);
+      document.getElementById('gpu-timer').textContent = `${h}h${m}m`;
+      if(remaining < 30*60){
+        document.getElementById('gpu-timer').style.color = 'var(--red)';
+      }
+    }
+
+    // GPU Auslastung
+    if(data.gpu_util !== undefined){
+      document.getElementById('gpu-util').textContent = `${data.gpu_util}%`;
+    }
+    if(data.gpu_mem !== undefined){
+      document.getElementById('gpu-mem').textContent = data.gpu_mem;
+    }
+
+  } catch(e) {
+    // Verbindung verloren
+    gpuConnected = false;
+    document.getElementById('gpu-live-dot').style.background = 'var(--amber)';
+    document.getElementById('gpu-status').textContent = '⚠️ Verbindung unterbrochen — reconnecte...';
+    document.getElementById('gpu-status').style.color = 'var(--amber)';
+  }
+}
+
+async function autoReconnect(){
+  if(!gpuUrl) return;
+  if(!gpuConnected){
+    addLog('[GPU] Auto-Reconnect...', 'info');
+    try {
+      const resp = await fetch(`${gpuUrl}/health`, {signal: AbortSignal.timeout(5000)});
+      const data = await resp.json();
+      if(data.status === 'ok'){
+        gpuConnected = true;
+        document.getElementById('gpu-live-dot').style.background = 'var(--green)';
+        document.getElementById('gpu-status').textContent = '✅ Wieder verbunden!';
+        document.getElementById('gpu-status').style.color = 'var(--green)';
+        addLog('[GPU] Wieder verbunden!', 'ok');
+      }
+    } catch(e) {}
   }
 }
 
@@ -1120,14 +1251,36 @@ async function loadFilesFromServer(){
     document.getElementById('stat-files').textContent = data.anzahl;
     if(!data.dateien.length){ list.innerHTML='<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Dateien</div>'; return; }
     list.innerHTML = data.dateien.map(f=>`
-      <div class="file-card">
-        <span class="file-icon">${f.name.endsWith('.mp3')?'🎵':f.name.endsWith('.m4b')?'📱':'🔊'}</span>
-        <span class="file-name">${f.name}</span>
-        <span class="file-size">${f.groesse_mb} MB</span>
-        <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i> DL</a>
-        <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+      <div class="file-card" style="flex-direction:column;align-items:stretch">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <span class="file-icon">${f.name.endsWith('.mp3')?'🎵':f.name.endsWith('.m4b')?'📱':'🔊'}</span>
+          <span class="file-name">${f.name}</span>
+          <span class="file-size">${f.groesse_mb} MB</span>
+          <button onclick="togglePlayer('player_${f.name.replace(/\./g,'_')}')" class="btn btn-secondary btn-sm" title="Abspielen">▶</button>
+          <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+          <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+        </div>
+        <audio id="player_${f.name.replace(/\./g,'_')}" controls style="display:none;width:100%;margin-top:.5rem;height:32px">
+          <source src="${TTS_URL}/tts/download/${f.name}">
+        </audio>
       </div>`).join('');
   } catch(e) { addLog('Dateien konnten nicht geladen werden','err'); }
+}
+
+function togglePlayer(id){
+  const player = document.getElementById(id);
+  if(!player) return;
+  if(player.style.display === 'none'){
+    // Alle anderen stoppen
+    document.querySelectorAll('audio').forEach(a => {
+      if(a.id !== id){ a.pause(); a.style.display = 'none'; }
+    });
+    player.style.display = 'block';
+    player.play();
+  } else {
+    player.pause();
+    player.style.display = 'none';
+  }
 }
 
 async function deleteAudioFile(filename){
@@ -1462,6 +1615,14 @@ async function checkApi(){
   loadCoversFromServer();
   loadDashboardStats();
   setInterval(checkApi, 30000);
+
+  // GPU URL aus localStorage laden
+  const savedUrl = localStorage.getItem('bookvoice_gpu_url');
+  if(savedUrl){
+    const input = document.getElementById('gpu-url');
+    if(input) input.value = savedUrl;
+    addLog(`[GPU] Gespeicherte URL geladen`, 'info');
+  }
 })();
 </script>
 </body>

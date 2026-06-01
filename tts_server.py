@@ -382,7 +382,17 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "device": DEVICE}
+    info = {"status": "ok", "device": DEVICE, "model_loaded": tts_engine is not None}
+    if torch.cuda.is_available():
+        try:
+            info["gpu_util"] = torch.cuda.utilization()
+            mem = torch.cuda.mem_get_info()
+            used = (mem[1] - mem[0]) / 1024**3
+            total = mem[1] / 1024**3
+            info["gpu_mem"] = f"{used:.1f}/{total:.0f}GB"
+        except:
+            pass
+    return info
 
 @app.post("/tts/generate")
 def generate(req: TTSRequest):
