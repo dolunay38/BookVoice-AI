@@ -632,19 +632,36 @@ async def convert_to_text(file: UploadFile = File(...)):
                     txt_path.unlink(missing_ok=True)
 
         elif suffix == ".doc":
-            # .doc via antiword oder calibre
+            # .doc via python-docx, antiword oder calibre
             try:
-                result = subprocess.run(["antiword", str(tmp_path)], capture_output=True, text=True)
-                if result.returncode == 0:
-                    text = result.stdout
+                from docx import Document
+                doc = Document(str(tmp_path))
+                text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
             except:
                 pass
+            if not text.strip():
+                try:
+                    result = subprocess.run(["antiword", str(tmp_path)], capture_output=True, text=True)
+                    if result.returncode == 0:
+                        text = result.stdout
+                except:
+                    pass
             if not text.strip():
                 txt_path = tmp_path.with_suffix(".txt")
                 subprocess.run(["ebook-convert", str(tmp_path), str(txt_path)], capture_output=True)
                 if txt_path.exists():
                     text = txt_path.read_text(encoding="utf-8", errors="ignore")
                     txt_path.unlink(missing_ok=True)
+            if not text.strip():
+                # Letzter Versuch: als Binär lesen und Text extrahieren
+                try:
+                    raw = tmp_path.read_bytes()
+                    text = raw.decode("latin-1", errors="ignore")
+                    # Nur druckbare Zeichen behalten
+                    import re
+                    text = " ".join(re.findall(r"[\w\s,.!?;:()\-]{4,}", text))
+                except:
+                    pass
         
         # ── PowerPoint (pptx, ppt) ──
         elif suffix in {".pptx", ".ppt"}:
