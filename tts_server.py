@@ -565,7 +565,6 @@ async def upload_voice(file: UploadFile = File(...)):
         del _cached_latents[str(save_path)]
     return {"status": "ok", "datei": save_path.name}
 
-@app.post("/tts/convert-to-text")
 @app.post("/admin/colab-url")
 async def set_colab_url(url: str):
     """Colab URL vom Notebook empfangen und speichern"""
@@ -584,6 +583,8 @@ def get_colab_url():
         return {"status": "empty", "url": ""}
 
 
+
+@app.post("/tts/convert-to-text")
 async def convert_to_text(file: UploadFile = File(...)):
     """PDF, DOCX, EPUB etc. zu Text konvertieren"""
     suffix = Path(file.filename).suffix.lower()
