@@ -94,11 +94,25 @@ app.add_middleware(
     allow_credentials=False,
 )
 
+from fastapi import Request
+from fastapi.responses import Response
+
 @app.middleware("http")
-async def add_cors_header(request, call_next):
+async def add_cors_header(request: Request, call_next):
+    # Preflight OPTIONS direkt beantworten
+    if request.method == "OPTIONS":
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "86400",
+            }
+        )
     response = await call_next(request)
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
