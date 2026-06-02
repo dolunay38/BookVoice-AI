@@ -586,7 +586,7 @@ def get_colab_url():
 
 @app.post("/tts/convert-to-text")
 async def convert_to_text(file: UploadFile = File(...)):
-    """PDF, DOCX, EPUB etc. zu Text konvertieren"""
+    """Alle Dokument-Formate zu Text konvertieren"""
     suffix = Path(file.filename).suffix.lower()
     tmp_path = Path(tempfile.mktemp(suffix=suffix))
     
@@ -596,25 +596,30 @@ async def convert_to_text(file: UploadFile = File(...)):
         
         text = ""
         
-        if suffix == ".txt":
+        # ── TXT / Markdown / CSV ──
+        if suffix in {".txt", ".md", ".csv", ".rtf"}:
             text = tmp_path.read_text(encoding="utf-8", errors="ignore")
-            
+        
+        # ── PDF ──
         elif suffix == ".pdf":
             try:
                 import PyPDF2
                 with open(tmp_path, "rb") as f:
                     reader = PyPDF2.PdfReader(f)
                     for page in reader.pages:
-                        text += page.extract_text() + "\n"
+                        t = page.extract_text()
+                        if t: text += t + "\n"
             except:
-                # Calibre als Fallback
+                pass
+            if not text.strip():
                 txt_path = tmp_path.with_suffix(".txt")
                 subprocess.run(["ebook-convert", str(tmp_path), str(txt_path)], capture_output=True)
                 if txt_path.exists():
                     text = txt_path.read_text(encoding="utf-8", errors="ignore")
                     txt_path.unlink(missing_ok=True)
-                    
-        elif suffix in {".docx", ".doc"}:
+        
+        # ── WORD (docx, doc, odt) ──
+        elif suffix in {".docx", ".odt"}:
             try:
                 from docx import Document
                 doc = Document(str(tmp_path))
@@ -625,22 +630,103 @@ async def convert_to_text(file: UploadFile = File(...)):
                 if txt_path.exists():
                     text = txt_path.read_text(encoding="utf-8", errors="ignore")
                     txt_path.unlink(missing_ok=True)
-                    
-        elif suffix in {".epub", ".mobi", ".azw3"}:
+
+        elif suffix == ".doc":
+            # .doc via antiword oder calibre
+            try:
+                result = subprocess.run(["antiword", str(tmp_path)], capture_output=True, text=True)
+                if result.returncode == 0:
+                    text = result.stdout
+            except:
+                pass
+            if not text.strip():
+                txt_path = tmp_path.with_suffix(".txt")
+                subprocess.run(["ebook-convert", str(tmp_path), str(txt_path)], capture_output=True)
+                if txt_path.exists():
+                    text = txt_path.read_text(encoding="utf-8", errors="ignore")
+                    txt_path.unlink(missing_ok=True)
+        
+        # ── PowerPoint (pptx, ppt) ──
+        elif suffix in {".pptx", ".ppt"}:
+            try:
+                from pptx import Presentation
+                prs = Presentation(str(tmp_path))
+                for slide in prs.slides:
+                    for shape in slide.shapes:
+                        if hasattr(shape, "text") and shape.text.strip():
+                            text += shape.text + "\n"
+            except:
+                txt_path = tmp_path.with_suffix(".txt")
+                subprocess.run(["ebook-convert", str(tmp_path), str(txt_path)], capture_output=True)
+                if txt_path.exists():
+                    text = txt_path.read_text(encoding="utf-8", errors="ignore")
+                    txt_path.unlink(missing_ok=True)
+        
+        # ── Excel (xlsx, xls) ──
+        elif suffix in {".xlsx", ".xls"}:
+            try:
+                import openpyxl
+                wb = openpyxl.load_workbook(str(tmp_path), read_only=True, data_only=True)
+                for sheet in wb.worksheets:
+                    for row in sheet.iter_rows(values_only=True):
+                        row_text = " | ".join([str(c) for c in row if c is not None])
+                        if row_text.strip():
+                            text += row_text + "\n"
+            except:
+                try:
+                    import xlrd
+                    wb = xlrd.open_workbook(str(tmp_path))
+                    for sheet in wb.sheets():
+                        for row in range(sheet.nrows):
+                            text += " | ".join([str(sheet.cell_value(row, col)) for col in range(sheet.ncols)]) + "\n"
+                except:
+                    pass
+        
+        # ── E-Books (epub, mobi, azw3, fb2) ──
+        elif suffix in {".epub", ".mobi", ".azw3", ".fb2", ".lrf"}:
             txt_path = tmp_path.with_suffix(".txt")
             subprocess.run(["ebook-convert", str(tmp_path), str(txt_path)], capture_output=True)
             if txt_path.exists():
                 text = txt_path.read_text(encoding="utf-8", errors="ignore")
                 txt_path.unlink(missing_ok=True)
-                
-        elif suffix in {".jpg", ".jpeg", ".png"}:
-            import pytesseract
-            from PIL import Image
-            img = Image.open(str(tmp_path))
-            text = pytesseract.image_to_string(img, lang="tur+deu+eng")
+        
+        # ── HTML / XML ──
+        elif suffix in {".html", ".htm", ".xml"}:
+            try:
+                from html.parser import HTMLParser
+                class TextExtractor(HTMLParser):
+                    def __init__(self):
+                        super().__init__()
+                        self.parts = []
+                    def handle_data(self, data):
+                        if data.strip():
+                            self.parts.append(data.strip())
+                parser = TextExtractor()
+                parser.feed(tmp_path.read_text(encoding="utf-8", errors="ignore"))
+                text = "\n".join(parser.parts)
+            except:
+                text = tmp_path.read_text(encoding="utf-8", errors="ignore")
+        
+        # ── Bilder (OCR) ──
+        elif suffix in {".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif", ".bmp"}:
+            try:
+                import pytesseract
+                from PIL import Image
+                img = Image.open(str(tmp_path))
+                text = pytesseract.image_to_string(img, lang="tur+deu+eng")
+            except:
+                raise HTTPException(status_code=400, detail="OCR fehlgeschlagen — Tesseract nicht verfügbar")
+        
+        # ── Unbekanntes Format — Calibre Fallback ──
+        else:
+            txt_path = tmp_path.with_suffix(".txt")
+            subprocess.run(["ebook-convert", str(tmp_path), str(txt_path)], capture_output=True)
+            if txt_path.exists():
+                text = txt_path.read_text(encoding="utf-8", errors="ignore")
+                txt_path.unlink(missing_ok=True)
             
         if not text.strip():
-            raise HTTPException(status_code=400, detail="Text konnte nicht extrahiert werden!")
+            raise HTTPException(status_code=400, detail=f"Text konnte nicht extrahiert werden! Format: {suffix}")
             
         return {
             "status": "ok",
