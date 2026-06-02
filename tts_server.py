@@ -85,7 +85,22 @@ def load_model():
     print(f"✅ XTTS-v2 bereit! [{DEVICE.upper()}]")
 
 app = FastAPI(title="BookVoice-AI Server", version="1.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    allow_credentials=False,
+)
+
+@app.middleware("http")
+async def add_cors_header(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 class TTSRequest(BaseModel):
     text: str
@@ -507,6 +522,122 @@ def delete_file(filename: str):
     raise HTTPException(status_code=404, detail="Datei nicht gefunden")
 
 @app.post("/tts/upload-cover")
+async def upload_cover(file: UploadFile = File(...), book_name: str = "hoerbuch"):
+    """Buchcover hochladen"""
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
+        raise HTTPException(status_code=400, detail="Nur JPG/PNG/WEBP erlaubt")
+    cover_dir = OUTPUT_DIR / book_name
+    cover_dir.mkdir(parents=True, exist_ok=True)
+    cover_path = cover_dir / f"cover{suffix}"
+    with open(cover_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    return {"status": "ok", "cover_path": str(cover_path), "datei": f"cover{suffix}"}
+
+
+async def upload_voice(file: UploadFile = File(...)):
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in (AUDIO_FORMATS | VIDEO_FORMATS):
+        raise HTTPException(status_code=400, detail="Nur Audio/Video erlaubt")
+    save_path = VOICE_DIR / file.filename
+    with open(save_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    if suffix != ".wav":
+        wav_path = save_path.with_suffix(".wav")
+        convert_to_wav(save_path, wav_path)
+        save_path.unlink()
+        save_path = wav_path
+    if save_path in _cached_latents:
+        del _cached_latents[str(save_path)]
+    return {"status": "ok", "datei": save_path.name}
+
+@app.post("/tts/convert-to-text")
+@app.post("/admin/colab-url")
+async def set_colab_url(url: str):
+    """Colab URL vom Notebook empfangen und speichern"""
+    with open("/tmp/colab_url.txt", "w") as f:
+        f.write(url)
+    return {"status": "ok", "url": url}
+
+@app.get("/admin/colab-url")
+def get_colab_url():
+    """Gespeicherte Colab URL abrufen"""
+    try:
+        with open("/tmp/colab_url.txt", "r") as f:
+            url = f.read().strip()
+        return {"status": "ok", "url": url}
+    except:
+        return {"status": "empty", "url": ""}
+
+
+async def convert_to_text(file: UploadFile = File(...)):
+    """PDF, DOCX, EPUB etc. zu Text konvertieren"""
+    suffix = Path(file.filename).suffix.lower()
+    tmp_path = Path(tempfile.mktemp(suffix=suffix))
+    
+    try:
+        with open(tmp_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        
+        text = ""
+        
+        if suffix == ".txt":
+            text = tmp_path.read_text(encoding="utf-8", errors="ignore")
+            
+        elif suffix == ".pdf":
+            try:
+                import PyPDF2
+                with open(tmp_path, "rb") as f:
+                    reader = PyPDF2.PdfReader(f)
+                    for page in reader.pages:
+                        text += page.extract_text() + "\n"
+            except:
+                # Calibre als Fallback
+                txt_path = tmp_path.with_suffix(".txt")
+                subprocess.run(["ebook-convert", str(tmp_path), str(txt_path)], capture_output=True)
+                if txt_path.exists():
+                    text = txt_path.read_text(encoding="utf-8", errors="ignore")
+                    txt_path.unlink(missing_ok=True)
+                    
+        elif suffix in {".docx", ".doc"}:
+            try:
+                from docx import Document
+                doc = Document(str(tmp_path))
+                text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+            except:
+                txt_path = tmp_path.with_suffix(".txt")
+                subprocess.run(["ebook-convert", str(tmp_path), str(txt_path)], capture_output=True)
+                if txt_path.exists():
+                    text = txt_path.read_text(encoding="utf-8", errors="ignore")
+                    txt_path.unlink(missing_ok=True)
+                    
+        elif suffix in {".epub", ".mobi", ".azw3"}:
+            txt_path = tmp_path.with_suffix(".txt")
+            subprocess.run(["ebook-convert", str(tmp_path), str(txt_path)], capture_output=True)
+            if txt_path.exists():
+                text = txt_path.read_text(encoding="utf-8", errors="ignore")
+                txt_path.unlink(missing_ok=True)
+                
+        elif suffix in {".jpg", ".jpeg", ".png"}:
+            import pytesseract
+            from PIL import Image
+            img = Image.open(str(tmp_path))
+            text = pytesseract.image_to_string(img, lang="tur+deu+eng")
+            
+        if not text.strip():
+            raise HTTPException(status_code=400, detail="Text konnte nicht extrahiert werden!")
+            
+        return {
+            "status": "ok",
+            "text": text.strip(),
+            "zeichen": len(text.strip()),
+            "datei": file.filename
+        }
+        
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
 async def upload_cover(file: UploadFile = File(...), book_name: str = "hoerbuch"):
     """Buchcover hochladen"""
     suffix = Path(file.filename).suffix.lower()
