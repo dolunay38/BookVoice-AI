@@ -632,11 +632,22 @@ async def convert_to_text(file: UploadFile = File(...)):
                     txt_path.unlink(missing_ok=True)
 
         elif suffix == ".doc":
-            # .doc via python-docx, antiword oder calibre
+            # .doc via LibreOffice → docx → python-docx
             try:
-                from docx import Document
-                doc = Document(str(tmp_path))
-                text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+                import tempfile, os
+                out_dir = Path(tempfile.mkdtemp())
+                result = subprocess.run(
+                    ["libreoffice", "--headless", "--convert-to", "docx", 
+                     "--outdir", str(out_dir), str(tmp_path)],
+                    capture_output=True, timeout=30
+                )
+                docx_path = out_dir / (tmp_path.stem + ".docx")
+                if docx_path.exists():
+                    from docx import Document
+                    doc = Document(str(docx_path))
+                    text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+                    docx_path.unlink(missing_ok=True)
+                out_dir.rmdir()
             except:
                 pass
             if not text.strip():
@@ -652,16 +663,6 @@ async def convert_to_text(file: UploadFile = File(...)):
                 if txt_path.exists():
                     text = txt_path.read_text(encoding="utf-8", errors="ignore")
                     txt_path.unlink(missing_ok=True)
-            if not text.strip():
-                # Letzter Versuch: als Binär lesen und Text extrahieren
-                try:
-                    raw = tmp_path.read_bytes()
-                    text = raw.decode("latin-1", errors="ignore")
-                    # Nur druckbare Zeichen behalten
-                    import re
-                    text = " ".join(re.findall(r"[\w\s,.!?;:()\-]{4,}", text))
-                except:
-                    pass
         
         # ── PowerPoint (pptx, ppt) ──
         elif suffix in {".pptx", ".ppt"}:

@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y \
     poppler-utils \
     libgl1 \
     libglib2.0-0 \
+    libreoffice \
+    antiword \
     && rm -rf /var/lib/apt/lists/*
 
 # PyTorch CPU (GPU auto-detect zur Laufzeit)
@@ -35,7 +37,11 @@ RUN pip install --no-cache-dir \
     PyPDF2 \
     pillow \
     ebooklib \
-    edge-tts
+    edge-tts \
+    python-docx \
+    openpyxl \
+    python-pptx \
+    xlrd
 
 COPY tts_server.py /app/tts_server.py
 
