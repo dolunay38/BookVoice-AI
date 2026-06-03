@@ -808,6 +808,14 @@ def list_voices():
                 voices.append({"name": f.name, "groesse_kb": round(f.stat().st_size / 1024, 1)})
     return {"stimmen": voices}
 
+@app.get("/tts/voices/{filename}")
+def get_voice(filename: str):
+    """Einzelne Stimmdatei herunterladen"""
+    path = VOICE_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Stimme nicht gefunden")
+    return FileResponse(str(path), media_type="audio/wav", filename=filename)
+
 @app.delete("/tts/voices/{filename}")
 def delete_voice(filename: str):
     if filename == "stimme.wav":
