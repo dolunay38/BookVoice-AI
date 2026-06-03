@@ -1234,6 +1234,34 @@ function disconnectGPU(){
   addLog('[GPU] Verbindung getrennt', 'warn');
 }
 
+async function uploadVoiceToColab(){
+  // Ausgewählte Stimme von lokalem Server holen und zu Colab hochladen
+  const voicePath = getVoicePath();
+  const voiceFilename = voicePath.split('/').pop();
+  
+  try {
+    // Stimme von lokalem Server als Blob holen
+    addLog(`[GPU] Stimme hochladen: ${voiceFilename}`, 'info');
+    const resp = await fetch(`${TTS_URL}/tts/voices/${voiceFilename}`);
+    if(!resp.ok) throw new Error('Stimme nicht gefunden');
+    const blob = await resp.blob();
+    
+    // Als FormData zu Colab hochladen
+    const formData = new FormData();
+    formData.append('file', blob, voiceFilename);
+    const uploadResp = await fetch(`${gpuUrl}/tts/upload-voice`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await uploadResp.json();
+    addLog(`[GPU] ✅ Stimme geladen: ${voiceFilename}`, 'ok');
+    return `/content/tts_models/${voiceFilename}`;
+  } catch(e) {
+    addLog(`[GPU] ⚠ Stimme Fallback: stimme.wav`, 'warn');
+    return '/content/tts_models/stimme.wav';
+  }
+}
+
 async function connectGPU(){
   const url = document.getElementById('gpu-url').value.trim().replace(/\/$/, '');
   if(!url){ addLog('Bitte Colab URL eingeben!','err'); return; }
@@ -1428,7 +1456,7 @@ async function startSynthesis(){
     try {
       const resp = await fetch(`${gpuUrl}/tts/book`, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({chapters, language:lang, speaker_wav:'/content/tts_models/stimme.wav', book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed, cover_path:currentCoverPath})
+        body: JSON.stringify({chapters, language:lang, speaker_wav: await uploadVoiceToColab(), book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed, cover_path:currentCoverPath})
       });
       const data = await resp.json();
       activeJobId = data.job_id;
