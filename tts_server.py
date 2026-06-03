@@ -783,6 +783,7 @@ async def upload_cover(file: UploadFile = File(...), book_name: str = "hoerbuch"
     return {"status": "ok", "cover_path": str(cover_path), "datei": f"cover{suffix}"}
 
 
+@app.post("/tts/upload-voice")
 async def upload_voice(file: UploadFile = File(...)):
     suffix = Path(file.filename).suffix.lower()
     if suffix not in (AUDIO_FORMATS | VIDEO_FORMATS):
