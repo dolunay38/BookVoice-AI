@@ -8,10 +8,24 @@ from pydantic import BaseModel
 # ── Konfiguration ──────────────────────────────────────────────
 OUTPUT_DIR = Path(os.getenv("TTS_OUTPUT", "/app/HOERBUCH"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-MODEL_DIR = Path("/app/tts_models/tts_models--multilingual--multi-dataset--xtts_v2")
-VOICE_DIR = Path("/app/tts_models")
+# Dynamischer Modell-Pfad — funktioniert auf Docker und Colab
+_possible_model_dirs = [
+    Path("/app/tts_models/tts_models--multilingual--multi-dataset--xtts_v2"),
+    Path("/root/.local/share/tts/tts_models--multilingual--multi-dataset--xtts_v2"),
+    Path("/content/tts_models/tts_models--multilingual--multi-dataset--xtts_v2"),
+]
+MODEL_DIR = next((p for p in _possible_model_dirs if p.exists()), _possible_model_dirs[0])
+
+_possible_voice_dirs = [
+    Path("/app/tts_models"),
+    Path("/content/tts_models"),
+]
+VOICE_DIR = next((p for p in _possible_voice_dirs if p.exists()), _possible_voice_dirs[0])
+
 DEFAULT_LANG = os.getenv("TTS_LANG", "tr")
-DEFAULT_SPEAKER_WAV = "/app/tts_models/stimme.wav"
+
+_possible_stimme = [Path("/app/tts_models/stimme.wav"), Path("/content/tts_models/stimme.wav")]
+DEFAULT_SPEAKER_WAV = str(next((p for p in _possible_stimme if p.exists()), _possible_stimme[0]))
 
 # CPU/GPU Auto-Detect
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -634,7 +648,6 @@ async def convert_to_text(file: UploadFile = File(...)):
         elif suffix == ".doc":
             # .doc via LibreOffice → docx → python-docx
             try:
-                import tempfile, os
                 out_dir = Path(tempfile.mkdtemp())
                 result = subprocess.run(
                     ["libreoffice", "--headless", "--convert-to", "docx", 
