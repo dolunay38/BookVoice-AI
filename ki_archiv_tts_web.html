@@ -1254,8 +1254,8 @@ async function uploadVoiceToColab(){
       body: formData
     });
     const data = await uploadResp.json();
-    addLog(`[GPU] ✅ Stimme geladen: ${voiceFilename}`, 'ok');
-    return `/content/tts_models/${voiceFilename}`;
+    addLog(`[GPU] ✅ Stimme geladen: ${data.datei}`, 'ok');
+    return `/content/tts_models/${data.datei}`;
   } catch(e) {
     addLog(`[GPU] ⚠ Stimme Fallback: stimme.wav`, 'warn');
     return '/content/tts_models/stimme.wav';
