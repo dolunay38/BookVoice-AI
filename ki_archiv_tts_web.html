@@ -1461,7 +1461,8 @@ async function startSynthesis(){
       const data = await resp.json();
       activeJobId = data.job_id;
       addLog(`Job: ${data.job_id}`, 'ok');
-      startJobPolling(data.job_id, chapters.length, gpuUrl);
+      const currentGpuUrl = gpuUrl || document.getElementById('gpu-url').value.trim();
+      startJobPolling(data.job_id, chapters.length, currentGpuUrl);
     } catch(e) {
       addLog(`Fehler: ${e.message}`,'err');
       btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
