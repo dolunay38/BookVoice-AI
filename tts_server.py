@@ -31,7 +31,7 @@ DEFAULT_SPEAKER_WAV = str(next((p for p in _possible_stimme if p.exists()), _pos
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"🖥️ Device: {DEVICE.upper()}")
 
-AUDIO_FORMATS = {".wav", ".mp3", ".m4a", ".ogg", ".flac", ".aac"}
+AUDIO_FORMATS = {".wav", ".mp3", ".m4a", ".ogg", ".flac", ".aac", ".weba", ".opus"}
 VIDEO_FORMATS = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".webm"}
 IMAGE_FORMATS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".heic"}
 EBOOK_FORMATS = {".epub", ".mobi", ".azw3", ".fb2", ".lrf", ".txt", ".html", ".rtf", ".docx", ".pdf"}
@@ -578,6 +578,16 @@ async def upload_voice(file: UploadFile = File(...)):
     if save_path in _cached_latents:
         del _cached_latents[str(save_path)]
     return {"status": "ok", "datei": save_path.name}
+
+@app.post("/tts/upload-audio")
+async def upload_audio(file: UploadFile = File(...)):
+    """MP3/M4B von Colab GPU empfangen und auf Server speichern"""
+    suffix = Path(file.filename).suffix.lower()
+    save_path = OUTPUT_DIR / file.filename
+    with open(save_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    size_kb = save_path.stat().st_size // 1024
+    return {"status": "ok", "datei": file.filename, "groesse_kb": size_kb}
 
 @app.post("/admin/colab-url")
 async def set_colab_url(url: str):

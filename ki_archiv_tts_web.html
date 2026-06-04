@@ -638,7 +638,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <div class="card">
             <div class="card-header"><span class="card-title">Stimme hochladen</span></div>
             <div class="upload-zone">
-              <input type="file" accept=".wav,.mp3,.mp4,.m4a,.ogg" onchange="handleVoiceUpload(this)">
+              <input type="file" accept=".wav,.mp3,.mp4,.m4a,.ogg,.weba,.opus,.webm" onchange="handleVoiceUpload(this)">
               <div class="upload-icon"><i class="ti ti-microphone"></i></div>
               <div class="upload-text">Stimme hochladen</div>
               <div class="upload-formats">WAV · MP3 · MP4 · M4A · 20–60 Sek empfohlen</div>
@@ -1528,6 +1528,29 @@ function startJobPolling(jobId, total, baseUrl){
         btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
         addLog(`✔ Fertig! ${sd.done}/${sd.total} Kapitel · ${sd.output||''}`, 'ok');
         if(sd.errors&&sd.errors.length) sd.errors.forEach(e=>addLog(`⚠ ${e}`,'warn'));
+        
+        // GPU Colab: MP3 von Colab herunterladen und auf Server hochladen
+        if(baseUrl && sd.output){
+          addLog(`[GPU] 📥 MP3 von Colab herunterladen...`, 'info');
+          try {
+            // MP3 von Colab laden
+            const mp3Resp = await fetch(`${baseUrl}/tts/download/${sd.output}`);
+            const mp3Blob = await mp3Resp.blob();
+            
+            // MP3 auf lokalen Server hochladen
+            const formData = new FormData();
+            formData.append('file', mp3Blob, sd.output);
+            const uploadResp = await fetch(`${TTS_URL}/tts/upload-audio`, {
+              method: 'POST',
+              body: formData
+            });
+            const uploadData = await uploadResp.json();
+            addLog(`[GPU] ✅ MP3 auf Server gespeichert: ${uploadData.datei}`, 'ok');
+          } catch(e) {
+            addLog(`[GPU] ⚠ Upload fehlgeschlagen: ${e.message}`, 'warn');
+          }
+        }
+        
         loadFilesFromServer(); loadDashboardStats();
       }
     } catch(e) {}
