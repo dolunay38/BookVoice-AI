@@ -562,6 +562,12 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
               <button class="btn btn-secondary btn-sm" onclick="resetSettings()">Reset</button>
             </div>
 
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text2)">
+                <input type="checkbox" id="auto-tag-cb" style="accent-color:var(--green)">
+                🎭 <span data-i18n="auto_tag_label">Emotionen automatisch erkennen</span>
+              </label>
+            </div>
             <button onclick="togglePresets()" id="preset-toggle-btn" style="width:100%;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius);padding:.4rem .75rem;font-size:11px;color:var(--green);cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;font-family:var(--sans);transition:all .2s">
               <span>🎛️ <span data-i18n="preset_desc">Preset auswählen oder manuell einstellen</span></span>
               <span id="preset-arrow" style="font-size:10px;transition:transform 0.2s">▼</span>
@@ -2052,7 +2058,7 @@ const i18n = {
     gpu_connect:"Verbinden", gpu_disconnect:"Trennen",
     voice_change:"Wechseln", btn_activate:"Aktivieren", btn_deactivate:"Deaktivieren",
     btn_save:"Speichern", btn_clear:"Leeren", btn_refresh:"Aktualisieren",
-    btn_lock:"🔒 Sperren", btn_generate_key:"Generieren", btn_change_pw:"Passwort ändern", btn_stop:"GENERIERUNG STOPPEN",
+    btn_lock:"🔒 Sperren", btn_generate_key:"Generieren", btn_change_pw:"Passwort ändern", btn_stop:"GENERIERUNG STOPPEN", auto_tag_label:"Emotionen automatisch erkennen",
     btn_test_connection:"Verbindung testen",
     slider_temp:"Wärme", slider_nat:"Natürlichkeit", slider_krea:"Kreativität", slider_speed:"Geschwindigkeit",
     output_generate:"HÖRBUCH GENERIEREN", output_test:"Test-Audio generieren",
@@ -2079,7 +2085,7 @@ const i18n = {
     gpu_connect:"Bağlan", gpu_disconnect:"Ayır",
     voice_change:"Değiştir", btn_activate:"Etkinleştir", btn_deactivate:"Devre dışı",
     btn_save:"Kaydet", btn_clear:"Temizle", btn_refresh:"Yenile",
-    btn_lock:"🔒 Kilitle", btn_generate_key:"Oluştur", btn_change_pw:"Şifreyi Değiştir", btn_stop:"ÜRETIMI DURDUR",
+    btn_lock:"🔒 Kilitle", btn_generate_key:"Oluştur", btn_change_pw:"Şifreyi Değiştir", btn_stop:"ÜRETIMI DURDUR", auto_tag_label:"Duyguları otomatik tanı",
     btn_test_connection:"Bağlantıyı Test Et",
     slider_temp:"Sıcaklık", slider_nat:"Doğallık", slider_krea:"Yaratıcılık", slider_speed:"Hız",
     output_generate:"SESLİ KİTAP OLUŞTUR", output_test:"Test sesi oluştur",
@@ -2106,7 +2112,7 @@ const i18n = {
     gpu_connect:"Connect", gpu_disconnect:"Disconnect",
     voice_change:"Change", btn_activate:"Activate", btn_deactivate:"Deactivate",
     btn_save:"Save", btn_clear:"Clear", btn_refresh:"Refresh",
-    btn_lock:"🔒 Lock", btn_generate_key:"Generate", btn_change_pw:"Change Password", btn_stop:"STOP GENERATION",
+    btn_lock:"🔒 Lock", btn_generate_key:"Generate", btn_change_pw:"Change Password", btn_stop:"STOP GENERATION", auto_tag_label:"Auto-detect emotions",
     btn_test_connection:"Test Connection",
     slider_temp:"Warmth", slider_nat:"Naturalness", slider_krea:"Creativity", slider_speed:"Speed",
     output_generate:"GENERATE AUDIOBOOK", output_test:"Generate test audio",

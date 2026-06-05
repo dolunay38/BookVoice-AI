@@ -150,7 +150,9 @@ class ChapterRequest(BaseModel):
     repetition_penalty: float = 5.0
     top_k: int = 30
     speed: float = 1.0
-    cover_path: str = ""  # Optionales Cover-Bild  # mp3, wav, m4b
+    cover_path: str = ""
+    use_emotion_tags: bool = False
+    auto_tag: bool = False  # Optionales Cover-Bild  # mp3, wav, m4b
 
 class EbookRequest(BaseModel):
     language: str = DEFAULT_LANG
@@ -198,6 +200,83 @@ def clean_extracted_text(text):
     text = ' '.join(cleaned)
     text = re.sub(r'  +', ' ', text)
     return text.strip()
+TAG_PRESETS = {
+    'dramatic':   {'temperature': 0.85, 'repetition_penalty': 3.0, 'top_k': 50, 'speed': 0.95},
+    'whispers':   {'temperature': 0.2,  'repetition_penalty': 8.0, 'top_k': 10, 'speed': 0.75},
+    'sighs':      {'temperature': 0.5,  'repetition_penalty': 5.0, 'top_k': 30, 'speed': 0.8,  'silence': 0.4},
+    'laughs':     {'temperature': 0.9,  'repetition_penalty': 2.5, 'top_k': 55, 'speed': 1.2},
+    'sad':        {'temperature': 0.7,  'repetition_penalty': 3.5, 'top_k': 40, 'speed': 0.75},
+    'happy':      {'temperature': 0.8,  'repetition_penalty': 3.0, 'top_k': 45, 'speed': 1.15},
+    'pause':      {'silence': 0.8},
+    'normal':     {'temperature': 0.5,  'repetition_penalty': 5.0, 'top_k': 30, 'speed': 1.0},
+}
+
+def auto_tag_text(text: str) -> str:
+    """Regel-basierte Emotions-Tags automatisch erkennen und einfügen"""
+    import re
+    lines = text.split('\n')
+    result = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            result.append('')
+            continue
+        # Bereits getaggt
+        if line.startswith('['):
+            result.append(line)
+            continue
+        # Ausrufezeichen → dramatic
+        if '!' in line and len(line) > 10:
+            result.append(f'[dramatic] {line}')
+        # Drei Punkte am Ende → sighs
+        elif line.endswith('...') or line.endswith('…'):
+            result.append(f'[sighs] {line}')
+        # Sehr kurzer Satz → whispers
+        elif len(line) < 30 and line.endswith('.'):
+            result.append(f'[whispers] {line}')
+        # Fragezeichen → normal
+        elif line.endswith('?'):
+            result.append(line)
+        # Anführungszeichen → leicht dramatisch
+        elif line.startswith('"') or line.startswith('"'):
+            result.append(f'[dramatic] {line}')
+        else:
+            result.append(line)
+    return '\n'.join(result)
+
+def parse_emotion_chunks(text: str, base_req) -> list[dict]:
+    """Text mit Emotion-Tags in Chunks mit Preset-Parametern aufteilen"""
+    import re
+    TAGS = list(TAG_PRESETS.keys())
+    pattern = r'\[(' + '|'.join(TAGS) + r')\]'
+    parts = re.split(pattern, text)
+    
+    chunks = []
+    current_tag = 'normal'
+    
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        if part in TAG_PRESETS:
+            current_tag = part
+        else:
+            preset = TAG_PRESETS.get(current_tag, TAG_PRESETS['normal'])
+            if 'silence' in preset:
+                chunks.append({'type': 'silence', 'duration': preset['silence']})
+            if part:
+                chunks.append({
+                    'type': 'speech',
+                    'text': part,
+                    'temperature': preset.get('temperature', base_req.temperature),
+                    'repetition_penalty': preset.get('repetition_penalty', base_req.repetition_penalty),
+                    'top_k': preset.get('top_k', base_req.top_k),
+                    'speed': preset.get('speed', base_req.speed),
+                })
+            current_tag = 'normal'
+    
+    return chunks
+
 def split_text(text: str, max_chars: int = 220) -> list[str]:
     sentences = re.split(r'(?<=[.!?،؟\n])\s+', text.strip())
     chunks = []
@@ -1064,6 +1143,8 @@ class EdgeTTSBookRequest(BaseModel):
     rate: str = "+0%"
     pitch: str = "+0Hz"
     cover_path: str = ""
+    use_emotion_tags: bool = False
+    auto_tag: bool = False
 
 @app.get("/edge/voices")
 async def edge_voices():
@@ -1217,8 +1298,31 @@ def _process_book(job_id: str, req: ChapterRequest):
         if chapter_text and chapter_text[-1] not in '.!?،؟…':
             chapter_text = chapter_text + '.'
         try:
-            synthesize(chapter_text, req.language, req.speaker_wav, out_path,
-                      req.temperature, req.repetition_penalty, req.top_k, req.speed)
+            # Auto-Tag wenn aktiviert
+            if req.auto_tag:
+                chapter_text = auto_tag_text(chapter_text)
+            # Emotion Tags verarbeiten wenn vorhanden
+            if req.use_emotion_tags and any(f'[{t}]' in chapter_text for t in TAG_PRESETS):
+                chunks = parse_emotion_chunks(chapter_text, req)
+                wav_parts = []
+                for chunk in chunks:
+                    if chunk['type'] == 'silence':
+                        sil_path = out_path.parent / f"_sil_{uuid.uuid4().hex[:6]}.wav"
+                        make_silence(chunk['duration'], sil_path)
+                        wav_parts.append(sil_path)
+                    elif chunk['type'] == 'speech' and chunk['text'].strip():
+                        part_path = out_path.parent / f"_part_{uuid.uuid4().hex[:6]}.wav"
+                        synthesize(chunk['text'], req.language, req.speaker_wav, part_path,
+                                  chunk['temperature'], chunk['repetition_penalty'], 
+                                  chunk['top_k'], chunk['speed'])
+                        wav_parts.append(part_path)
+                if wav_parts:
+                    merge_wav_files(wav_parts, out_path)
+                    for p in wav_parts:
+                        p.unlink(missing_ok=True)
+            else:
+                synthesize(chapter_text, req.language, req.speaker_wav, out_path,
+                          req.temperature, req.repetition_penalty, req.top_k, req.speed)
             kapitel_files.append(out_path)
             with jobs_lock:
                 jobs[job_id]["done"] += 1
