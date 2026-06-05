@@ -179,26 +179,11 @@ def parse_sml_tags(text: str) -> list[dict]:
     return [s for s in segments if s.get("content", "x")]
 
 # ── Text-Splitting ─────────────────────────────────────────────
-def clean_extracted_text(text: str) -> str:
-    """PDF/OCR Text bereinigen — Silbentrennung, extra Leerzeichen entfernen"""
+def clean_extracted_text(text):
     import re
-    # Zeilenumbrüche innerhalb von Sätzen entfernen (Silbentrennung)
-    # "haya-
-lar" → "hayalar"
-    text = re.sub(r'-
-\s*', '', text)
-    # Einzelne Buchstaben die durch Leerzeichen von Wort getrennt wurden
-    # "y apıyor" → "yapıyor" aber nur wenn davor nichts oder Leerzeichen steht
-    text = re.sub(r'(?<!\w)([bcçdfgğhjklmnprsştvyz])\s+([a-züşçğıöa-z]{2,})', r'', text)
-    # Mehrere Leerzeichen → ein Leerzeichen
+    text = re.sub(r'-\n\s*', '', text)
     text = re.sub(r'  +', ' ', text)
-    # Leerzeichen vor Satzzeichen entfernen
-    text = re.sub(r'\s+([.!?,;:])', r'', text)
-    # Leerzeilen normalisieren
-    text = re.sub(r'
-{3,}', '
-
-', text)
+    text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
 def split_text(text: str, max_chars: int = 220) -> list[str]:
