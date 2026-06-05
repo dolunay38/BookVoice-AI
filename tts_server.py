@@ -179,6 +179,28 @@ def parse_sml_tags(text: str) -> list[dict]:
     return [s for s in segments if s.get("content", "x")]
 
 # ── Text-Splitting ─────────────────────────────────────────────
+def clean_extracted_text(text: str) -> str:
+    """PDF/OCR Text bereinigen — Silbentrennung, extra Leerzeichen entfernen"""
+    import re
+    # Zeilenumbrüche innerhalb von Sätzen entfernen (Silbentrennung)
+    # "haya-
+lar" → "hayalar"
+    text = re.sub(r'-
+\s*', '', text)
+    # Einzelne Buchstaben die durch Leerzeichen von Wort getrennt wurden
+    # "y apıyor" → "yapıyor" aber nur wenn davor nichts oder Leerzeichen steht
+    text = re.sub(r'(?<!\w)([bcçdfgğhjklmnprsştvyz])\s+([a-züşçğıöa-z]{2,})', r'', text)
+    # Mehrere Leerzeichen → ein Leerzeichen
+    text = re.sub(r'  +', ' ', text)
+    # Leerzeichen vor Satzzeichen entfernen
+    text = re.sub(r'\s+([.!?,;:])', r'', text)
+    # Leerzeilen normalisieren
+    text = re.sub(r'
+{3,}', '
+
+', text)
+    return text.strip()
+
 def split_text(text: str, max_chars: int = 220) -> list[str]:
     sentences = re.split(r'(?<=[.!?،؟\n])\s+', text.strip())
     chunks = []
@@ -224,10 +246,15 @@ def merge_wav_files(input_files: list[Path], output_file: Path):
     if len(input_files) == 1:
         shutil.copy(input_files[0], output_file)
         return
+    # Kurze Stille (300ms) zwischen Chunks einfügen — verhindert Knackser
+    silence_path = output_file.parent / f"_silence_{uuid.uuid4().hex[:6]}.wav"
+    make_silence(0.3, silence_path)
     list_file = output_file.parent / f"_list_{uuid.uuid4().hex[:6]}.txt"
     with open(list_file, "w") as f:
-        for wav in input_files:
+        for i, wav in enumerate(input_files):
             f.write(f"file '{wav.resolve()}'\n")
+            if i < len(input_files) - 1:
+                f.write(f"file '{silence_path.resolve()}'\n")
     subprocess.run([
         "ffmpeg", "-f", "concat", "-safe", "0",
         "-i", str(list_file),
@@ -235,6 +262,7 @@ def merge_wav_files(input_files: list[Path], output_file: Path):
         str(output_file), "-y"
     ], capture_output=True)
     list_file.unlink(missing_ok=True)
+    silence_path.unlink(missing_ok=True)
 
 def merge_to_mp3(input_files: list[Path], output_file: Path, cover_path: Path = None):
     if not input_files:
@@ -340,6 +368,7 @@ def extract_text_from_ebook(file_path: Path) -> list[str]:
             from PyPDF2 import PdfReader
             reader = PdfReader(str(file_path))
             text = " ".join(page.extract_text() or "" for page in reader.pages)
+            text = clean_extracted_text(text)
             chapters = [text]
         except:
             chapters = ["PDF konnte nicht gelesen werden"]
@@ -650,6 +679,7 @@ async def convert_to_text(file: UploadFile = File(...)):
                     for page in reader.pages:
                         t = page.extract_text()
                         if t: text += t + "\n"
+                text = clean_extracted_text(text)
             except:
                 pass
             if not text.strip():
