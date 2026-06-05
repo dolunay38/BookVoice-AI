@@ -204,7 +204,15 @@ def split_text(text: str, max_chars: int = 220) -> list[str]:
             current = s
     if current.strip():
         chunks.append(current.strip())
-    return [c for c in chunks if len(c) > 2]
+    # Sicherstellen dass jeder Chunk mit Satzzeichen endet (verhindert Halluzination)
+    result = []
+    for chunk in chunks:
+        chunk = chunk.strip()
+        if len(chunk) > 2:
+            if chunk[-1] not in '.!?،؟…':
+                chunk = chunk + '.'
+            result.append(chunk)
+    return result
 
 # ── Audio Merge ────────────────────────────────────────────────
 def make_silence(duration: float, out_path: Path, sample_rate: int = 24000):
@@ -1177,6 +1185,10 @@ def _process_book(job_id: str, req: ChapterRequest):
         kapitel_num = str(i + 1).zfill(3)
         filename = f"kapitel_{kapitel_num}.wav"
         out_path = book_dir / filename
+        # Text bereinigen — Halluzination am Ende verhindern
+        chapter_text = chapter_text.strip()
+        if chapter_text and chapter_text[-1] not in '.!?،؟…':
+            chapter_text = chapter_text + '.'
         try:
             synthesize(chapter_text, req.language, req.speaker_wav, out_path,
                       req.temperature, req.repetition_penalty, req.top_k, req.speed)
