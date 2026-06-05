@@ -562,16 +562,23 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
               <button class="btn btn-secondary btn-sm" onclick="resetSettings()">Reset</button>
             </div>
 
-            <div class="preset-grid">
+            <button onclick="togglePresets()" id="preset-toggle-btn" style="width:100%;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius);padding:.4rem .75rem;font-size:11px;color:var(--green);cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;font-family:var(--sans);transition:all .2s">
+              <span>🎛️ <span data-i18n="preset_desc">Preset auswählen oder manuell einstellen</span></span>
+              <span id="preset-arrow" style="font-size:10px;transition:transform 0.2s">▼</span>
+            </button>
+            <div class="preset-grid" id="preset-grid" style="display:none">
               <button class="preset-btn" onclick="applyPreset('original')" style="border-color:var(--green);color:var(--green)">🎯 <span data-i18n="preset_original">Original</span></button>
-              <button class="preset-btn" onclick="applyPreset('sufi')">🕌 Sufi</button>
-              <button class="preset-btn" onclick="applyPreset('roman')">📖 Roman</button>
-              <button class="preset-btn" onclick="applyPreset('sachtext')">📰 Sachtext</button>
-              <button class="preset-btn" onclick="applyPreset('dramatisch')">🎭 Dramatisch</button>
-              <button class="preset-btn" onclick="applyPreset('schnell')">⚡ Schnell</button>
-              <button class="preset-btn" onclick="applyPreset('kind')">👶 Kinder</button>
+              <button class="preset-btn" onclick="applyPreset('sufi')">🕌 <span data-i18n="preset_sufi">Sufi</span></button>
+              <button class="preset-btn" onclick="applyPreset('roman')">📖 <span data-i18n="preset_roman">Roman</span></button>
+              <button class="preset-btn" onclick="applyPreset('sachtext')">📰 <span data-i18n="preset_sachtext">Sachtext</span></button>
+              <button class="preset-btn" onclick="applyPreset('dramatisch')">🎭 <span data-i18n="preset_dramatisch">Dramatisch</span></button>
+              <button class="preset-btn" onclick="applyPreset('schnell')">⚡ <span data-i18n="preset_schnell">Schnell</span></button>
+              <button class="preset-btn" onclick="applyPreset('kinder')">👶 <span data-i18n="preset_kinder">Kinder</span></button>
+              <button class="preset-btn" onclick="applyPreset('traurig')">😢 <span data-i18n="preset_traurig">Traurig</span></button>
+              <button class="preset-btn" onclick="applyPreset('frohlich')">😄 <span data-i18n="preset_frohlich">Fröhlich</span></button>
+              <button class="preset-btn" onclick="applyPreset('geheimnisvoll')">🤫 <span data-i18n="preset_geheimnisvoll">Geheimnisvoll</span></button>
+              <button class="preset-btn" onclick="applyPreset('nachricht')">📢 <span data-i18n="preset_nachricht">Nachricht</span></button>
             </div>
-            <div class="preset-desc" id="preset-desc">Preset auswählen oder manuell einstellen</div>
 
             <div class="slider-row">
               <div class="slider-label"><span>🌡️ Wärme</span><span id="temp-val">0.50</span></div>
@@ -902,8 +909,12 @@ let voices = [
 ];
 
 const PRESETS = {
-  original:  {temp:0.1,  rep:10.0, topk:10, speed:1.0,  desc:'🎯 Original — maximale Treue zur Referenzstimme'},
-  sufi:      {temp:0.65, rep:4.0,  topk:25, speed:0.85, desc:'🕌 Ruhig, melodisch — für Sufi & religiöse Texte'},
+  original:     {temp:0.1,  rep:10.0, topk:10, speed:1.0,  desc:'🎯 Original — maximale Treue zur Referenzstimme'},
+  sufi:         {temp:0.65, rep:4.0,  topk:25, speed:0.85, desc:'🕌 Ruhig, melodisch — für Sufi & religiöse Texte'},
+  traurig:      {temp:0.7,  rep:3.5,  topk:40, speed:0.75, desc:'😢 Traurig — langsam, tief, emotional'},
+  frohlich:     {temp:0.8,  rep:3.0,  topk:45, speed:1.15, desc:'😄 Fröhlich — lebhaft, hell, energetisch'},
+  geheimnisvoll:{temp:0.75, rep:4.0,  topk:35, speed:0.9,  desc:'🤫 Geheimnisvoll — flüsternd, ruhig'},
+  nachricht:    {temp:0.35, rep:7.0,  topk:15, speed:1.1,  desc:'📢 Nachricht — klar, professionell, neutral'},
   roman:     {temp:0.60, rep:5.0, topk:30, speed:1.00, desc:'📖 Natürlich, ausdrucksstark — für Romane'},
   sachtext:  {temp:0.35, rep:8.0, topk:40, speed:1.10, desc:'📰 Klar, neutral — für Sachtexte'},
   dramatisch:{temp:0.80, rep:3.0, topk:20, speed:0.90, desc:'🎭 Emotional — für dramatische Szenen'},
@@ -1242,6 +1253,23 @@ function disconnectGPU(){
   document.getElementById('gpu-connect-btn').style.display = 'block';
   document.getElementById('gpu-disconnect-btn').style.display = 'none';
   addLog('[GPU] Verbindung getrennt', 'warn');
+}
+
+function togglePresets(){
+  const grid = document.getElementById('preset-grid');
+  const arrow = document.getElementById('preset-arrow');
+  const btn = document.getElementById('preset-toggle-btn');
+  if(grid.style.display === 'none'){
+    grid.style.display = 'grid';
+    arrow.textContent = '▲';
+    btn.style.background = 'var(--green)';
+    btn.style.color = 'var(--bg)';
+  } else {
+    grid.style.display = 'none';
+    arrow.textContent = '▼';
+    btn.style.background = 'var(--green-dim)';
+    btn.style.color = 'var(--green)';
+  }
 }
 
 async function cancelJob(){
@@ -2028,7 +2056,7 @@ const i18n = {
     output_generate:"HÖRBUCH GENERIEREN", output_test:"Test-Audio generieren",
     gpu_open:"📓 Google Colab öffnen & warten",
     preset_original:"Original", preset_sufi:"Sufi", preset_roman:"Roman",
-    preset_sachtext:"Sachtext", preset_dramatisch:"Dramatisch", preset_schnell:"Schnell", preset_kinder:"Kinder",
+    preset_sachtext:"Sachtext", preset_dramatisch:"Dramatisch", preset_schnell:"Schnell", preset_kinder:"Kinder", preset_traurig:"Traurig", preset_frohlich:"Fröhlich", preset_geheimnisvoll:"Geheimnisvoll", preset_nachricht:"Nachricht",
     new_book:"Neues Hörbuch",
     stat_files:"Fertige Dateien", stat_musik:"Musik-Tracks", stat_device:"Device",
     action_create:"Hörbuch erstellen", action_voices:"Stimmen verwalten",
@@ -2055,7 +2083,7 @@ const i18n = {
     output_generate:"SESLİ KİTAP OLUŞTUR", output_test:"Test sesi oluştur",
     gpu_open:"📓 Google Colab'ı aç ve bekle",
     preset_original:"Orijinal", preset_sufi:"Sufi", preset_roman:"Roman",
-    preset_sachtext:"Makale", preset_dramatisch:"Dramatik", preset_schnell:"Hızlı", preset_kinder:"Çocuk",
+    preset_sachtext:"Makale", preset_dramatisch:"Dramatik", preset_schnell:"Hızlı", preset_kinder:"Çocuk", preset_traurig:"Üzgün", preset_frohlich:"Neşeli", preset_geheimnisvoll:"Gizemli", preset_nachricht:"Haber",
     new_book:"Yeni Sesli Kitap",
     stat_files:"Tamamlanan Dosyalar", stat_musik:"Müzik Parçaları", stat_device:"Cihaz",
     action_create:"Sesli Kitap Oluştur", action_voices:"Sesleri Yönet",
@@ -2082,7 +2110,7 @@ const i18n = {
     output_generate:"GENERATE AUDIOBOOK", output_test:"Generate test audio",
     gpu_open:"📓 Open Google Colab & wait",
     preset_original:"Original", preset_sufi:"Sufi", preset_roman:"Novel",
-    preset_sachtext:"Article", preset_dramatisch:"Dramatic", preset_schnell:"Fast", preset_kinder:"Children",
+    preset_sachtext:"Article", preset_dramatisch:"Dramatic", preset_schnell:"Fast", preset_kinder:"Children", preset_traurig:"Sad", preset_frohlich:"Happy", preset_geheimnisvoll:"Mysterious", preset_nachricht:"News",
     new_book:"New Audiobook",
     stat_files:"Completed Files", stat_musik:"Music Tracks", stat_device:"Device",
     action_create:"Create Audiobook", action_voices:"Manage Voices",
