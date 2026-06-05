@@ -216,7 +216,7 @@ BookVoice-AI/
 
 ## 📄 Lizenz
 
-MIT License — kostenlos für private und kommerzielle Nutzung.
+MIT License — kostenlos für private nutzung.
 
 **Powered by:** XTTS-v2 · Edge TTS · FastAPI · Docker · Cloudflare · Google Colab · LibreOffice · Tesseract
 
