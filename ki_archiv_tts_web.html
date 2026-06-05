@@ -200,7 +200,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
   </div>
   <div class="sb-item" onclick="showPanel('files')" id="nav-files">
     <i class="ti ti-folder"></i>
-    <div class="sb-tooltip">Dateien</div>
+    <div class="sb-tooltip"><span data-i18n="admin_files">Dateien</span></div>
   </div>
 
   <div class="sb-divider"></div>
@@ -229,6 +229,11 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
   <div class="topbar">
     <div class="page-title" id="page-title">Dashboard</div>
     <div class="topbar-right">
+      <div style="display:flex;gap:3px;margin-right:8px">
+        <button onclick="setLang('de')" id="lang-de" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇩🇪</button>
+        <button onclick="setLang('tr')" id="lang-tr" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇹🇷</button>
+        <button onclick="setLang('en')" id="lang-en" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇬🇧</button>
+      </div>
       <div class="server-info">
         <span id="server-status-text">Verbinde…</span>
       </div>
@@ -254,12 +259,12 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
           </div>
           <div style="font-size:13px;color:var(--text2);max-width:500px;line-height:1.6">
-            Dein selbst-gehostetes KI-Hörbuch-Studio. Wandle Texte, eBooks und Fotos in hochwertige Hörbücher um — mit eigener Stimme, in Türkisch, Deutsch und Englisch.
+            <span data-i18n="hero_desc">Dein selbst-gehostetes KI-Hörbuch-Studio. Wandle Texte, eBooks und Fotos in hochwertige Hörbücher um — mit eigener Stimme, in Türkisch, Deutsch und Englisch.</span>
           </div>
           <div style="display:flex;gap:.5rem;margin-top:1rem">
             <button class="btn btn-primary" onclick="showPanel('studio')"><i class="ti ti-wand"></i> Neues Hörbuch</button>
-            <button class="btn btn-secondary" onclick="showPanel('voices')"><i class="ti ti-microphone"></i> Stimmen</button>
-            <button class="btn btn-secondary" onclick="showPanel('files')"><i class="ti ti-folder"></i> Bibliothek</button>
+            <button class="btn btn-secondary" onclick="showPanel('voices')"><i class="ti ti-microphone"></i> <span data-i18n="nav_voices">Stimmen</span></button>
+            <button class="btn btn-secondary" onclick="showPanel('files')"><i class="ti ti-folder"></i> <span data-i18n="nav_library">Bibliothek</span></button>
           </div>
         </div>
         <div style="font-size:64px;opacity:.15">🎙️</div>
@@ -269,19 +274,19 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-value" id="stat-files">—</div>
-          <div class="stat-label">Fertige Dateien</div>
+          <div class="stat-label"><span data-i18n="stat_files">Fertige Dateien</span></div>
         </div>
         <div class="stat-card">
           <div class="stat-value" id="stat-voices">—</div>
-          <div class="stat-label">Stimmen</div>
+          <div class="stat-label"><span data-i18n="nav_voices">Stimmen</span></div>
         </div>
         <div class="stat-card">
           <div class="stat-value" id="stat-musik">—</div>
-          <div class="stat-label">Musik-Tracks</div>
+          <div class="stat-label"><span data-i18n="stat_musik">Musik-Tracks</span></div>
         </div>
         <div class="stat-card">
           <div class="stat-value" id="stat-device">—</div>
-          <div class="stat-label">Device</div>
+          <div class="stat-label"><span data-i18n="stat_device">Device</span></div>
         </div>
       </div>
 
@@ -290,29 +295,29 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <div class="action-card" onclick="showPanel('studio')">
           <div class="action-icon" style="background:rgba(34,197,94,.1)">🎙️</div>
           <div>
-            <div class="action-title">Hörbuch erstellen</div>
-            <div class="action-sub">Text, EPUB, PDF oder Foto hochladen und in Audio umwandeln</div>
+            <div class="action-title"><span data-i18n="action_create">Hörbuch erstellen</span></div>
+            <div class="action-sub"><span data-i18n="action_create_sub">Text, EPUB, PDF oder Foto hochladen und in Audio umwandeln</span></div>
           </div>
         </div>
         <div class="action-card" onclick="showPanel('voices')">
           <div class="action-icon" style="background:rgba(168,85,247,.1)">🎵</div>
           <div>
-            <div class="action-title">Stimmen verwalten</div>
-            <div class="action-sub">11 Standard-Stimmen · Eigene Stimme hochladen · Vorschau anhören</div>
+            <div class="action-title"><span data-i18n="action_voices">Stimmen verwalten</span></div>
+            <div class="action-sub"><span data-i18n="action_voices_sub">11 Standard-Stimmen · Eigene Stimme hochladen · Vorschau anhören</span></div>
           </div>
         </div>
         <div class="action-card" onclick="showPanel('musik')">
           <div class="action-icon" style="background:rgba(245,158,11,.1)">🎼</div>
           <div>
-            <div class="action-title">Hintergrundmusik</div>
-            <div class="action-sub">Musik hochladen und mit Hörbuch mischen</div>
+            <div class="action-title"><span data-i18n="action_musik">Hintergrundmusik</span></div>
+            <div class="action-sub"><span data-i18n="action_musik_sub">Musik hochladen und mit Hörbuch mischen</span></div>
           </div>
         </div>
         <div class="action-card" onclick="showPanel('files')">
           <div class="action-icon" style="background:rgba(59,130,246,.1)">📂</div>
           <div>
-            <div class="action-title">Bibliothek</div>
-            <div class="action-sub">Fertige Hörbücher herunterladen, anhören oder löschen</div>
+            <div class="action-title"><span data-i18n="nav_library">Bibliothek</span></div>
+            <div class="action-sub"><span data-i18n="action_lib_sub">Fertige Hörbücher herunterladen, anhören oder löschen</span></div>
           </div>
         </div>
       </div>
@@ -336,8 +341,8 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       <!-- Log -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title">System Log</span>
-          <button class="btn btn-secondary btn-sm" onclick="clearLog()">Leeren</button>
+          <span class="card-title"><span data-i18n="system_log">System Log</span>
+          <button class="btn btn-secondary btn-sm" onclick="clearLog()" data-i18n="btn_clear">Leeren</button>
         </div>
         <div class="log-box" id="log-box">
           <div class="log-info">[SYSTEM] BookVoice-AI gestartet</div>
@@ -353,7 +358,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <div>
           <!-- Engine Auswahl -->
           <div class="card">
-            <div class="card-header"><span class="card-title">Engine</span></div>
+            <div class="card-header"><span class="card-title" data-i18n="nav_studio">Engine</span></div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem">
               <button class="btn btn-primary" id="engine-xtts" onclick="setEngine('xtts')" style="justify-content:center;font-size:11px">
                 🧠 XTTS-v2
@@ -366,7 +371,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
               </button>
             </div>
             <div id="engine-hint" style="font-size:10px;color:var(--text3);padding:.4rem .6rem;background:var(--surface2);border-radius:var(--radius)">
-              🧠 XTTS-v2: Lokal · Voice Cloning · Eigene Stimme
+              <span data-i18n="engine_xtts_hint">🧠 XTTS-v2: Lokal · Voice Cloning · Eigene Stimme</span>
             </div>
           </div>
 
@@ -374,30 +379,30 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <div class="card" id="gpu-card" style="display:none">
             <div class="card-header">
               <div style="display:flex;align-items:center;gap:.5rem">
-                <span class="card-title">☁️ GPU Colab</span>
+                <span class="card-title" data-i18n="gpu_title">☁️ GPU Colab</span>
                 <div id="gpu-live-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3)"></div>
               </div>
               <span class="badge badge-amber">Beta</span>
             </div>
             <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;line-height:1.6">
-              Nutze Google Colab T4 GPU kostenlos für schnelle Hörbuch-Generierung.
-              <br>~10x schneller als CPU!
+              <span data-i18n="gpu_desc">Nutze Google Colab T4 GPU kostenlos für schnelle Hörbuch-Generierung.</span>
+              <br><span data-i18n="gpu_desc2">~10x schneller als CPU!</span>
             </div>
 
             <!-- URL + Verbinden -->
             <div style="margin-bottom:.5rem">
-              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Colab API URL</div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem"><span data-i18n="gpu_url_label">Colab API URL</span></div>
               <div style="display:flex;gap:.5rem">
                 <input type="text" id="gpu-url" placeholder="https://xxxx.trycloudflare.com" style="flex:1">
-                <button class="btn btn-secondary btn-sm" id="gpu-connect-btn" onclick="connectGPU()">Verbinden</button>
-                <button class="btn btn-danger btn-sm" id="gpu-disconnect-btn" onclick="disconnectGPU()" style="display:none">Trennen</button>
+                <button class="btn btn-secondary btn-sm" id="gpu-connect-btn" onclick="connectGPU()"><span data-i18n="gpu_connect">Verbinden</span></button>
+                <button class="btn btn-danger btn-sm" id="gpu-disconnect-btn" onclick="disconnectGPU()" style="display:none"><span data-i18n="gpu_disconnect">Trennen</span></button>
               </div>
             </div>
 
             <!-- Community GPU -->
             <div id="community-gpu-btn" style="display:none;margin-bottom:.5rem">
               <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center" onclick="connectCommunityGPU()">
-                ☁️ Community GPU verbinden (colab.aksoy-net.de)
+                <span data-i18n="gpu_community">☁️ Community GPU verbinden (colab.aksoy-net.de)</span>
               </button>
             </div>
 
@@ -422,7 +427,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
             <a href="https://colab.research.google.com/github/dolunay38/BookVoice-AI/blob/main/BookVoice_AI_Colab.ipynb" 
                target="_blank" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;text-decoration:none" onclick="startUrlPolling()">
-              📓 Google Colab öffnen & warten
+              <span data-i18n="gpu_open">📓 Google Colab öffnen & warten</span>
             </a>
             <div id="polling-status" style="font-size:10px;color:var(--text3);text-align:center;margin-top:.35rem"></div>
           </div>
@@ -430,12 +435,12 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <!-- Edge TTS Stimmen (nur wenn Edge aktiv) -->
           <div class="card" id="edge-voices-card" style="display:none">
             <div class="card-header">
-              <span class="card-title">Edge TTS Stimme</span>
+              <span class="card-title"><span data-i18n="edge_voice_title">Edge TTS Stimme</span>
               <span class="char-count" id="edge-voice-count">Lädt...</span>
             </div>
             <div style="display:flex;gap:.5rem;margin-bottom:.5rem">
               <select id="edge-lang-filter" style="flex:none;width:auto" onchange="filterEdgeVoices()">
-                <option value="">Alle</option>
+                <option value=""><span data-i18n="filter_all">Alle</span></option>
                 <option value="tr" selected>🇹🇷 TR</option>
                 <option value="de">🇩🇪 DE</option>
                 <option value="en">🇬🇧 EN</option>
@@ -452,23 +457,23 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </select>
             <div style="display:flex;gap:.5rem">
               <div style="flex:1">
-                <div style="font-size:10px;color:var(--text2);margin-bottom:.25rem">Tempo</div>
+                <div style="font-size:10px;color:var(--text2);margin-bottom:.25rem"><span data-i18n="edge_tempo">Tempo</span></div>
                 <select id="edge-rate" style="width:100%;font-size:11px">
-                  <option value="-20%">-20% Langsam</option>
+                  <option value="-20%"><span data-i18n="speed_slow">-20% Langsam</span></option>
                   <option value="-10%">-10%</option>
                   <option value="+0%" selected>Normal</option>
                   <option value="+10%">+10%</option>
-                  <option value="+20%">+20% Schnell</option>
+                  <option value="+20%"><span data-i18n="speed_fast">+20% Schnell</span></option>
                 </select>
               </div>
               <div style="flex:1">
-                <div style="font-size:10px;color:var(--text2);margin-bottom:.25rem">Tonhöhe</div>
+                <div style="font-size:10px;color:var(--text2);margin-bottom:.25rem"><span data-i18n="edge_pitch">Tonhöhe</span></div>
                 <select id="edge-pitch" style="width:100%;font-size:11px">
-                  <option value="-20Hz">-20Hz Tiefer</option>
+                  <option value="-20Hz"><span data-i18n="pitch_lower">-20Hz Tiefer</span></option>
                   <option value="-10Hz">-10Hz</option>
                   <option value="+0Hz" selected>Normal</option>
                   <option value="+10Hz">+10Hz</option>
-                  <option value="+20Hz">+20Hz Höher</option>
+                  <option value="+20Hz"><span data-i18n="pitch_higher">+20Hz Höher</span></option>
                 </select>
               </div>
             </div>
@@ -477,7 +482,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <!-- Projekt -->
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Projekt</span>
+              <span class="card-title" data-i18n="project_title">Projekt</span>
               <span class="char-count" id="char-count">0 Zeichen</span>
             </div>
             <div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;margin-bottom:.75rem">
@@ -490,10 +495,10 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
             <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
               <select id="tts-lang" style="flex:1">
-                <option value="tr">🇹🇷 Türkisch</option>
-                <option value="de">🇩🇪 Deutsch</option>
-                <option value="en">🇬🇧 Englisch</option>
-                <option value="ar">🇸🇦 Arabisch</option>
+                <option value="tr"><span data-i18n="lang_tr">🇹🇷 Türkisch</span></option>
+                <option value="de"><span data-i18n="lang_de">🇩🇪 Deutsch</span></option>
+                <option value="en"><span data-i18n="lang_en">🇬🇧 Englisch</span></option>
+                <option value="ar"><span data-i18n="lang_ar">🇸🇦 Arabisch</span></option>
               </select>
             </div>
 
@@ -503,8 +508,8 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
                 📖
               </div>
               <div style="flex:1">
-                <div style="font-size:11px;color:var(--text2);margin-bottom:.25rem">Buchcover (optional)</div>
-                <div style="font-size:10px;color:var(--text3)">JPG/PNG · Wird in M4B eingebettet</div>
+                <div style="font-size:11px;color:var(--text2);margin-bottom:.25rem"><span data-i18n="cover_optional">Buchcover (optional)</span></div>
+                <div style="font-size:10px;color:var(--text3)"><span data-i18n="cover_desc">JPG/PNG · Wird in M4B eingebettet</span></div>
                 <input type="file" id="cover-input" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="handleCoverUpload(this)">
               </div>
               <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cover-input').click()">
@@ -516,18 +521,18 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <!-- Text -->
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Text eingeben</span>
+              <span class="card-title" data-i18n="text_title">Text eingeben</span>
             </div>
             <textarea id="test-text" placeholder="Text hier eingeben oder Datei hochladen..." oninput="updateCharCount()"></textarea>
           </div>
 
           <!-- Upload -->
           <div class="card">
-            <div class="card-header"><span class="card-title">Datei hochladen</span></div>
+            <div class="card-header"><span class="card-title" data-i18n="upload_title">Datei hochladen</span></div>
             <div class="upload-zone" id="drop-zone">
               <input type="file" accept=".txt,.md,.csv,.pdf,.doc,.docx,.odt,.rtf,.pptx,.ppt,.xlsx,.xls,.epub,.mobi,.azw3,.fb2,.html,.jpg,.jpeg,.png,.webp,.tiff,.bmp" onchange="handleFileUpload(this)">
               <div class="upload-icon"><i class="ti ti-upload"></i></div>
-              <div class="upload-text">Drag & Drop oder <strong>klicken</strong></div>
+              <div class="upload-text"><span data-i18n="upload_desc">Drag & Drop oder</span> <strong data-i18n="upload_click">klicken</strong></div>
               <div class="upload-formats">TXT · PDF · WORD · EPUB · MOBI · PPTX · XLSX · HTML · Foto (JPG/PNG/WEBP)</div>
             </div>
           </div>
@@ -535,8 +540,8 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <!-- Aktive Stimme -->
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Aktive Stimme</span>
-              <button class="btn btn-secondary btn-sm" onclick="showPanel('voices')">Wechseln</button>
+              <span class="card-title" data-i18n="voice_title">Aktive Stimme</span>
+              <button class="btn btn-secondary btn-sm" onclick="showPanel('voices')"><span data-i18n="voice_change">Wechseln</span></button>
             </div>
             <div style="display:flex;align-items:center;gap:.75rem">
               <div class="vc-avatar" id="active-avatar" style="background:rgba(34,197,94,.15);color:var(--green);width:36px;height:36px;font-size:12px;font-weight:600;border-radius:50%;display:flex;align-items:center;justify-content:center">SM</div>
@@ -553,37 +558,37 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <!-- Einstellungen -->
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Stimme Einstellungen</span>
+              <span class="card-title" data-i18n="slider_speed">Stimme Einstellungen</span>
               <button class="btn btn-secondary btn-sm" onclick="resetSettings()">Reset</button>
             </div>
 
             <div class="preset-grid">
-              <button class="preset-btn" onclick="applyPreset('sufi')">🕌 Sufi</button>
-              <button class="preset-btn" onclick="applyPreset('roman')">📖 Roman</button>
-              <button class="preset-btn" onclick="applyPreset('sachtext')">📰 Sachtext</button>
-              <button class="preset-btn" onclick="applyPreset('dramatisch')">🎭 Dramatisch</button>
-              <button class="preset-btn" onclick="applyPreset('schnell')">⚡ Schnell</button>
-              <button class="preset-btn" onclick="applyPreset('kind')">👶 Kinder</button>
+              <button class="preset-btn" onclick="applyPreset('sufi')">🕌 <span data-i18n="preset_sufi">Sufi</span></button>
+              <button class="preset-btn" onclick="applyPreset('roman')">📖 <span data-i18n="preset_roman">Roman</span></button>
+              <button class="preset-btn" onclick="applyPreset('sachtext')">📰 <span data-i18n="preset_sachtext">Sachtext</span></button>
+              <button class="preset-btn" onclick="applyPreset('dramatisch')">🎭 <span data-i18n="preset_dramatisch">Dramatisch</span></button>
+              <button class="preset-btn" onclick="applyPreset('schnell')">⚡ <span data-i18n="preset_schnell">Schnell</span></button>
+              <button class="preset-btn" onclick="applyPreset('kind')">👶 <span data-i18n="preset_kinder">Kinder</span></button>
             </div>
-            <div class="preset-desc" id="preset-desc">Preset auswählen oder manuell einstellen</div>
+            <div class="preset-desc" id="preset-desc"><span data-i18n="preset_desc">Preset auswählen oder manuell einstellen</span></div>
 
             <div class="slider-row">
-              <div class="slider-label"><span>🌡️ Wärme</span><span id="temp-val">0.50</span></div>
+              <div class="slider-label"><span>🌡️ <span data-i18n="slider_temp">Wärme</span></span><span id="temp-val">0.50</span></div>
               <input type="range" id="temperature" min="0.1" max="1.0" step="0.05" value="0.5" oninput="document.getElementById('temp-val').textContent=parseFloat(this.value).toFixed(2)">
-              <div class="slider-hint"><span>Stabil</span><span>Emotional</span></div>
+              <div class="slider-hint"><span><span data-i18n="hint_stable">Stabil</span><span data-i18n="hint_emotional">Emotional</span></div>
             </div>
             <div class="slider-row">
-              <div class="slider-label"><span>🎵 Natürlichkeit</span><span id="rep-val">5.0</span></div>
+              <div class="slider-label"><span>🎵 <span data-i18n="slider_nat">Natürlichkeit</span></span><span id="rep-val">5.0</span></div>
               <input type="range" id="rep-penalty" min="2" max="15" step="0.5" value="5" oninput="document.getElementById('rep-val').textContent=parseFloat(this.value).toFixed(1)">
-              <div class="slider-hint"><span>Natürlich</span><span>Strukturiert</span></div>
+              <div class="slider-hint"><span><span data-i18n="hint_natural">Natürlich</span><span data-i18n="hint_structured">Strukturiert</span></div>
             </div>
             <div class="slider-row">
-              <div class="slider-label"><span>🎨 Kreativität</span><span id="topk-val">30</span></div>
+              <div class="slider-label"><span>🎨 <span data-i18n="slider_krea">Kreativität</span></span><span id="topk-val">30</span></div>
               <input type="range" id="top-k" min="10" max="100" step="5" value="30" oninput="document.getElementById('topk-val').textContent=this.value">
-              <div class="slider-hint"><span>Weich</span><span>Variabel</span></div>
+              <div class="slider-hint"><span><span data-i18n="hint_soft">Weich</span><span data-i18n="hint_variable">Variabel</span></div>
             </div>
             <div class="slider-row">
-              <div class="slider-label"><span>⚡ Geschwindigkeit</span><span id="speed-val">1.00x</span></div>
+              <div class="slider-label"><span>⚡ <span data-i18n="slider_speed">Geschwindigkeit</span></span><span id="speed-val">1.00x</span></div>
               <input type="range" id="speed" min="0.5" max="2.0" step="0.05" value="1.0" oninput="document.getElementById('speed-val').textContent=parseFloat(this.value).toFixed(2)+'x'">
               <div class="slider-hint"><span>0.5x</span><span>2.0x</span></div>
             </div>
@@ -591,9 +596,9 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
           <!-- Test + Generate -->
           <div class="card">
-            <div class="card-header"><span class="card-title">Ausgabe</span></div>
+            <div class="card-header"><span class="card-title" data-i18n="output_title">Ausgabe</span></div>
             <button class="btn btn-secondary btn-block" id="test-btn" onclick="generatePreview()" style="margin-bottom:.5rem">
-              <i class="ti ti-player-play"></i> Test-Audio generieren
+              <i class="ti ti-player-play"></i> <span data-i18n="output_test">Test-Audio generieren</span>
             </button>
             <audio id="preview-player" controls></audio>
 
@@ -606,15 +611,15 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
 
             <button class="btn btn-primary btn-block" id="gen-btn" onclick="startSynthesis()" style="margin-top:.75rem">
-              <i class="ti ti-wand"></i> HÖRBUCH GENERIEREN
+              <i class="ti ti-wand"></i> <span data-i18n="output_generate">HÖRBUCH GENERIEREN</span>
             </button>
           </div>
 
           <!-- Log -->
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Log</span>
-              <button class="btn btn-secondary btn-sm" onclick="clearLog()">Leeren</button>
+              <span class="card-title" data-i18n="log_title"><span data-i18n="log_title">Log</span>
+              <button class="btn btn-secondary btn-sm" onclick="clearLog()" data-i18n="btn_clear">Leeren</button>
             </div>
             <div class="log-box" id="studio-log"></div>
           </div>
@@ -628,8 +633,8 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <div>
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Stimm-Bibliothek</span>
-              <span class="char-count" id="voice-count">0 Stimmen</span>
+              <span class="card-title"><span data-i18n="voice_library">Stimm-Bibliothek</span>
+              <span class="char-count" id="voice-count"><span data-i18n="voice_count_zero">0 Stimmen</span>
             </div>
             <div class="voice-grid" id="voice-grid"></div>
           </div>
@@ -640,18 +645,18 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             <div class="upload-zone">
               <input type="file" accept=".wav,.mp3,.mp4,.m4a,.ogg,.weba,.opus,.webm" onchange="handleVoiceUpload(this)">
               <div class="upload-icon"><i class="ti ti-microphone"></i></div>
-              <div class="upload-text">Stimme hochladen</div>
-              <div class="upload-formats">WAV · MP3 · MP4 · M4A · 20–60 Sek empfohlen</div>
+              <div class="upload-text"><span data-i18n="voice_upload_title">Stimme hochladen</span></div>
+              <div class="upload-formats"><span data-i18n="voice_formats">WAV · MP3 · MP4 · M4A · 20–60 Sek empfohlen</span></div>
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><span class="card-title">Tipps für gute Stimmen</span></div>
+            <div class="card-header"><span class="card-title"><span data-i18n="voice_tips_title">Tipps für gute Stimmen</span></span></div>
             <div style="font-size:11px;color:var(--text3);line-height:1.8">
-              ✅ 30–60 Sekunden Aufnahme<br>
-              ✅ Stilles Zimmer, kein Hintergrundrauschen<br>
-              ✅ Gleichmäßig und deutlich sprechen<br>
-              ✅ In der Zielsprache aufnehmen<br>
-              ✅ WAV Format bevorzugen
+              <span data-i18n="voice_tip1">✅ 30–60 Sekunden Aufnahme</span><br>
+              <span data-i18n="voice_tip2">✅ Stilles Zimmer, kein Hintergrundrauschen</span><br>
+              <span data-i18n="voice_tip3">✅ Gleichmäßig und deutlich sprechen</span><br>
+              <span data-i18n="voice_tip4">✅ In der Zielsprache aufnehmen</span><br>
+              <span data-i18n="voice_tip5">✅ WAV Format bevorzugen</span>
             </div>
           </div>
         </div>
@@ -663,37 +668,37 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       <div class="two-col">
         <div>
           <div class="card">
-            <div class="card-header"><span class="card-title">Musik-Bibliothek</span></div>
-            <div id="musik-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Musik hochgeladen</div></div>
+            <div class="card-header"><span class="card-title"><span data-i18n="musik_library">Musik-Bibliothek</span></span></div>
+            <div id="musik-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px"><span data-i18n="musik_empty">Noch keine Musik hochgeladen</span></div></div>
           </div>
           <div class="card">
             <div class="card-header"><span class="card-title">Musik hochladen</span></div>
             <div class="upload-zone">
               <input type="file" accept=".mp3,.wav,.m4a,.ogg" onchange="handleMusikUpload(this)">
               <div class="upload-icon"><i class="ti ti-music"></i></div>
-              <div class="upload-text">Musik hochladen</div>
+              <div class="upload-text"><span data-i18n="musik_upload">Musik hochladen</span></div>
               <div class="upload-formats">MP3 · WAV · M4A · OGG</div>
             </div>
           </div>
         </div>
         <div>
           <div class="card">
-            <div class="card-header"><span class="card-title">Mit Hörbuch mischen</span></div>
+            <div class="card-header"><span class="card-title"><span data-i18n="musik_mix_title">Mit Hörbuch mischen</span></span></div>
             <div style="margin-bottom:.75rem">
-              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Hintergrundmusik</div>
-              <select id="musik-select"><option value="">— Keine Musik —</option></select>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem"><span data-i18n="action_musik">Hintergrundmusik</span></div>
+              <select id="musik-select"><option value=""><span data-i18n="musik_none">— Keine Musik —</span></option></select>
             </div>
             <div class="slider-row">
-              <div class="slider-label"><span>🔊 Musik-Lautstärke</span><span id="musik-vol-val">15%</span></div>
+              <div class="slider-label"><span>🔊 <span data-i18n="musik_volume">Musik-Lautstärke</span></span><span id="musik-vol-val">15%</span></div>
               <input type="range" id="musik-volume" min="0" max="50" step="1" value="15" oninput="document.getElementById('musik-vol-val').textContent=this.value+'%'">
-              <div class="slider-hint"><span>Leise</span><span>Laut</span></div>
+              <div class="slider-hint"><span><span data-i18n="hint_quiet">Leise</span></span><span data-i18n="hint_loud">Laut</span></div>
             </div>
             <div style="margin-bottom:.75rem">
               <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projekt</div>
               <input type="text" id="mix-project" placeholder="hoerbuch" value="hoerbuch">
             </div>
             <button class="btn btn-primary btn-block" onclick="mixMusikWithAudio()">
-              <i class="ti ti-music"></i> Mit Musik mischen
+              <i class="ti ti-music"></i> <span data-i18n="musik_mix_btn">Mit Musik mischen</span>
             </button>
             <div id="mix-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:.5rem"></div>
           </div>
@@ -707,11 +712,11 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <div>
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Cover-Bibliothek</span>
-              <span class="char-count" id="cover-count">0 Cover</span>
+              <span class="card-title"><span data-i18n="cover_library">Cover-Bibliothek</span></span>
+              <span class="char-count" id="cover-count"><span data-i18n="cover_count_zero">0 Cover</span>
             </div>
             <div id="cover-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.75rem">
-              <div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px;grid-column:1/-1">Noch keine Cover hochgeladen</div>
+              <div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px;grid-column:1/-1"><span data-i18n="cover_empty">Noch keine Cover hochgeladen</span></div>
             </div>
           </div>
         </div>
@@ -721,22 +726,22 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             <div class="upload-zone">
               <input type="file" accept=".jpg,.jpeg,.png,.webp" onchange="handleCoverLibraryUpload(this)">
               <div class="upload-icon"><i class="ti ti-photo"></i></div>
-              <div class="upload-text">Cover hochladen</div>
-              <div class="upload-formats">JPG · PNG · WEBP · Empfohlen: 500×500px</div>
+              <div class="upload-text"><span data-i18n="cover_upload">Cover hochladen</span></div>
+              <div class="upload-formats"><span data-i18n="cover_formats">JPG · PNG · WEBP · Empfohlen: 500×500px</span></div>
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><span class="card-title">Cover zu Hörbuch hinzufügen</span></div>
+            <div class="card-header"><span class="card-title"><span data-i18n="cover_add_title">Cover zu Hörbuch hinzufügen</span></span></div>
             <div style="margin-bottom:.75rem">
-              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Hörbuch-Datei</div>
-              <select id="cover-audio-select" style="width:100%"><option value="">— Datei auswählen —</option></select>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem"><span data-i18n="cover_audio_label">Hörbuch-Datei</span></div>
+              <select id="cover-audio-select" style="width:100%"><option value=""><span data-i18n="select_file">— Datei auswählen —</span></option></select>
             </div>
             <div style="margin-bottom:.75rem">
-              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Cover</div>
-              <select id="cover-select" style="width:100%"><option value="">— Cover auswählen —</option></select>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem"><span data-i18n="cover_label">Cover</span></div>
+              <select id="cover-select" style="width:100%"><option value=""><span data-i18n="select_cover">— Cover auswählen —</span></option></select>
             </div>
             <button class="btn btn-primary btn-block" onclick="addCoverToFile()">
-              <i class="ti ti-photo"></i> Cover hinzufügen
+              <i class="ti ti-photo"></i> <span data-i18n="cover_add_btn">Cover hinzufügen</span>
             </button>
             <div id="cover-add-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:.5rem"></div>
           </div>
@@ -748,12 +753,12 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
     <div class="panel" id="panel-files">
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Fertige Hörbücher</span>
+          <span class="card-title"><span data-i18n="files_title">Fertige Hörbücher</span>
           <button class="btn btn-secondary btn-sm" onclick="loadFilesFromServer()">
-            <i class="ti ti-refresh"></i> Aktualisieren
+            <i class="ti ti-refresh"></i> <span data-i18n="btn_refresh">Aktualisieren</span>
           </button>
         </div>
-        <div id="file-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Dateien</div></div>
+        <div id="file-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px"><span data-i18n="files_empty">Noch keine Dateien</span></div></div>
       </div>
     </div>
 
@@ -763,15 +768,15 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem">
         <div style="width:36px;height:36px;background:rgba(239,68,68,.15);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--red)"><i class="ti ti-shield"></i></div>
         <div>
-          <div style="font-size:15px;font-weight:600;color:var(--text)">Admin Panel</div>
-          <div style="font-size:11px;color:var(--text3)">BookVoice-AI · Nur für Administratoren</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text)"><span data-i18n="admin_title">Admin Panel</span></div>
+          <div style="font-size:11px;color:var(--text3)"><span data-i18n="admin_desc">BookVoice-AI · Nur für Administratoren</span></div>
         </div>
-        <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="lockAdmin()">🔒 Sperren</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="lockAdmin()"><span data-i18n="btn_lock">🔒 Sperren</span></button>
       </div>
 
       <!-- Server Status -->
       <div class="card">
-        <div class="card-header"><span class="card-title">Server Status</span></div>
+        <div class="card-header"><span class="card-title"><span data-i18n="admin_server_status">Server Status</span></span></div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;text-align:center">
             <div style="font-size:18px;font-weight:600;color:var(--green)" id="admin-stat-files">—</div>
@@ -779,7 +784,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           </div>
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;text-align:center">
             <div style="font-size:18px;font-weight:600;color:var(--blue)" id="admin-stat-voices">—</div>
-            <div style="font-size:10px;color:var(--text3)">Stimmen</div>
+            <div style="font-size:10px;color:var(--text3)"><span data-i18n="nav_voices">Stimmen</span></div>
           </div>
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;text-align:center">
             <div style="font-size:18px;font-weight:600;color:var(--amber)" id="admin-stat-device">—</div>
@@ -790,20 +795,20 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
       <!-- Cloudflare Tunnel -->
       <div class="card">
-        <div class="card-header"><span class="card-title">Community GPU</span></div>
+        <div class="card-header"><span class="card-title"><span data-i18n="community_gpu_title">Community GPU</span></span></div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;line-height:1.6">
-          Aktiviere Community GPU damit User direkt mit deinem Colab verbinden können — ohne eigenen Account.
+          <span data-i18n="community_gpu_desc">Aktiviere Community GPU damit User direkt mit deinem Colab verbinden können — ohne eigenen Account.</span>
         </div>
         <div style="margin-bottom:.75rem">
-          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Cloudflare Tunnel Token</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem"><span data-i18n="cf_token_label">Cloudflare Tunnel Token</span></div>
           <div style="display:flex;gap:.5rem">
             <input type="password" id="cf-token" placeholder="eyJh..." style="flex:1" value="">
-            <button class="btn btn-secondary btn-sm" onclick="saveCFToken()">Speichern</button>
+            <button class="btn btn-secondary btn-sm" onclick="saveCFToken()"><span data-i18n="btn_save">Speichern</span></button>
           </div>
-          <div style="font-size:10px;color:var(--text3);margin-top:.25rem">Token aus Cloudflare → Zero Trust → Tunnels → Add connector</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:.25rem"><span data-i18n="cf_token_hint">Token aus Cloudflare → Zero Trust → Tunnels → Add connector</span></div>
         </div>
         <div style="margin-bottom:.75rem">
-          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Community Colab URL</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem"><span data-i18n="community_url_label">Community Colab URL</span></div>
           <div style="display:flex;gap:.5rem">
             <input type="text" id="cf-fixed-url" placeholder="https://colab.aksoy-net.de" style="flex:1">
             <button class="btn btn-primary btn-sm" onclick="saveCommunityGPU()">Aktivieren</button>
@@ -815,7 +820,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
       <!-- GPU Verwaltung -->
       <div class="card">
-        <div class="card-header"><span class="card-title">GPU Verwaltung</span><span class="badge badge-amber">v3.0</span></div>
+        <div class="card-header"><span class="card-title"><span data-i18n="gpu_management">GPU Verwaltung</span><span class="badge badge-amber">v3.0</span></div>
         <div style="font-size:12px;color:var(--text3);line-height:1.8">
           <div>🔜 RunPod.io Integration</div>
           <div>🔜 User Credits System</div>
@@ -827,12 +832,12 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
       <!-- API Key -->
       <div class="card">
-        <div class="card-header"><span class="card-title">API Sicherheit</span></div>
+        <div class="card-header"><span class="card-title"><span data-i18n="api_security">API Sicherheit</span></span></div>
         <div style="margin-bottom:.75rem">
-          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Admin API Key (für Colab → Server Kommunikation)</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem"><span data-i18n="api_key_label">Admin API Key (für Colab → Server Kommunikation)</span></div>
           <div style="display:flex;gap:.5rem">
             <input type="password" id="admin-api-key" placeholder="Geheimer API Key" style="flex:1" value="">
-            <button class="btn btn-secondary btn-sm" onclick="generateApiKey()">Generieren</button>
+            <button class="btn btn-secondary btn-sm" onclick="generateApiKey()"><span data-i18n="btn_generate_key">Generieren</span></button>
             <button class="btn btn-secondary btn-sm" onclick="saveApiKey()">Speichern</button>
           </div>
         </div>
@@ -840,25 +845,25 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
       <!-- Passwort ändern -->
       <div class="card">
-        <div class="card-header"><span class="card-title">Admin Passwort ändern</span></div>
+        <div class="card-header"><span class="card-title"><span data-i18n="admin_pw_title">Admin Passwort ändern</span></span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
           <input type="password" id="new-admin-pw" placeholder="Neues Passwort">
           <input type="password" id="new-admin-pw2" placeholder="Wiederholen">
         </div>
-        <button class="btn btn-danger btn-sm" onclick="changeAdminPassword()">Passwort ändern</button>
+        <button class="btn btn-danger btn-sm" onclick="changeAdminPassword()"><span data-i18n="btn_change_pw">Passwort ändern</span></button>
       </div>
     </div>
 
     <!-- ══ Einstellungen ══ -->
     <div class="panel" id="panel-settings">
       <div class="card">
-        <div class="card-header"><span class="card-title">Server</span></div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem">API URL</div>
+        <div class="card-header"><span class="card-title"><span data-i18n="settings_server">Server</span></span></div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem"><span data-i18n="settings_api_url">API URL</span></div>
         <input type="text" id="api-url" value="/api" style="margin-bottom:.75rem">
-        <button class="btn btn-primary btn-sm" onclick="checkApi()">Verbindung testen</button>
+        <button class="btn btn-primary btn-sm" onclick="checkApi()"><span data-i18n="btn_test_connection">Verbindung testen</span></button>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">Info</span></div>
+        <div class="card-header"><span class="card-title"><span data-i18n="settings_info">Info</span></span></div>
         <div style="font-size:12px;color:var(--text3);line-height:2">
           <div>Version: <span style="color:var(--text)">BookVoice-AI v1.0</span></div>
           <div>Model: <span style="color:var(--text)">XTTS-v2</span></div>
@@ -1982,7 +1987,261 @@ async function checkApi(){
       status.style.color = 'var(--green)';
     }
   }
-})();
+})()
+
+// ── i18n Multi-Language ──────────────────────────────────
+const i18n = {
+  de: {
+    nav_studio:"Studio", nav_library:"Bibliothek", nav_voices:"Stimmen",
+    nav_musik:"Musik", nav_covers:"Cover", nav_files:"Dateien",
+    nav_settings:"Einstellungen", nav_admin:"Admin",
+    gpu_title:"☁️ GPU Colab", project_title:"Projekt", text_title:"Text eingeben",
+    upload_title:"Datei hochladen", voice_title:"Aktive Stimme",
+    output_title:"Ausgabe", log_title:"Log", system_log:"System Log",
+    upload_desc:"Drag & Drop oder", upload_click:"klicken",
+    gpu_connect:"Verbinden", gpu_disconnect:"Trennen",
+    voice_change:"Wechseln", btn_activate:"Aktivieren", btn_deactivate:"Deaktivieren",
+    btn_save:"Speichern", btn_clear:"Leeren", btn_refresh:"Aktualisieren",
+    btn_lock:"🔒 Sperren", btn_generate_key:"Generieren", btn_change_pw:"Passwort ändern",
+    btn_test_connection:"Verbindung testen",
+    slider_temp:"Wärme", slider_nat:"Natürlichkeit", slider_krea:"Kreativität", slider_speed:"Geschwindigkeit",
+    output_generate:"HÖRBUCH GENERIEREN", output_test:"Test-Audio generieren",
+    gpu_open:"📓 Google Colab öffnen & warten", gpu_community:"☁️ Community GPU verbinden (colab.aksoy-net.de)",
+    gpu_desc:"Nutze Google Colab T4 GPU kostenlos für schnelle Hörbuch-Generierung.",
+    gpu_desc2:"~10x schneller als CPU!", gpu_url_label:"Colab API URL",
+    preset_sufi:"Sufi", preset_roman:"Roman", preset_sachtext:"Sachtext",
+    preset_dramatisch:"Dramatisch", preset_schnell:"Schnell", preset_kinder:"Kinder",
+    preset_desc:"Preset auswählen oder manuell einstellen",
+    new_book:"Neues Hörbuch", engine_title:"Engine",
+    engine_xtts_hint:"🧠 XTTS-v2: Lokal · Voice Cloning · Eigene Stimme",
+    hero_desc:"Dein selbst-gehostetes KI-Hörbuch-Studio. Wandle Texte, eBooks und Fotos in hochwertige Hörbücher um.",
+    stat_files:"Fertige Dateien", stat_musik:"Musik-Tracks", stat_device:"Device",
+    action_create:"Hörbuch erstellen", action_create_sub:"Text, EPUB, PDF oder Foto hochladen und in Audio umwandeln",
+    action_voices:"Stimmen verwalten", action_voices_sub:"11 Standard-Stimmen · Eigene Stimme hochladen · Vorschau anhören",
+    action_musik:"Hintergrundmusik", action_musik_sub:"Musik hochladen und mit Hörbuch mischen",
+    action_lib_sub:"Fertige Hörbücher herunterladen, anhören oder löschen",
+    edge_voice_title:"Edge TTS Stimme", filter_all:"Alle", filter_female:"Weiblich", filter_male:"Männlich",
+    edge_tempo:"Tempo", edge_pitch:"Tonhöhe",
+    speed_slow:"-20% Langsam", speed_fast:"+20% Schnell", pitch_lower:"-20Hz Tiefer", pitch_higher:"+20Hz Höher",
+    hint_stable:"Stabil", hint_emotional:"Emotional", hint_natural:"Natürlich", hint_structured:"Strukturiert",
+    hint_soft:"Weich", hint_variable:"Variabel", hint_quiet:"Leise", hint_loud:"Laut",
+    cover_optional:"Buchcover (optional)", cover_desc:"JPG/PNG · Wird in M4B eingebettet",
+    lang_tr:"🇹🇷 Türkisch", lang_de:"🇩🇪 Deutsch", lang_en:"🇬🇧 Englisch", lang_ar:"🇸🇦 Arabisch",
+    voice_library:"Stimm-Bibliothek", voice_upload_title:"Stimme hochladen",
+    voice_formats:"WAV · MP3 · MP4 · M4A · 20–60 Sek empfohlen",
+    voice_tips_title:"Tipps für gute Stimmen",
+    voice_tip1:"✅ 30–60 Sekunden Aufnahme", voice_tip2:"✅ Stilles Zimmer, kein Hintergrundrauschen",
+    voice_tip3:"✅ Gleichmäßig und deutlich sprechen", voice_tip4:"✅ In der Zielsprache aufnehmen",
+    voice_tip5:"✅ WAV Format bevorzugen", voice_count_zero:"0 Stimmen",
+    musik_library:"Musik-Bibliothek", musik_upload:"Musik hochladen", musik_empty:"Noch keine Musik hochgeladen",
+    musik_mix_title:"Mit Hörbuch mischen", musik_volume:"Musik-Lautstärke",
+    musik_none:"— Keine Musik —", musik_mix_btn:"Mit Musik mischen",
+    cover_library:"Cover-Bibliothek", cover_upload:"Cover hochladen", cover_empty:"Noch keine Cover hochgeladen",
+    cover_formats:"JPG · PNG · WEBP · Empfohlen: 500×500px", cover_add_title:"Cover zu Hörbuch hinzufügen",
+    cover_audio_label:"Hörbuch-Datei", cover_label:"Cover", cover_add_btn:"Cover hinzufügen",
+    select_file:"— Datei auswählen —", select_cover:"— Cover auswählen —", cover_count_zero:"0 Cover",
+    files_title:"Fertige Hörbücher", files_empty:"Noch keine Dateien",
+    admin_title:"Admin Panel", admin_desc:"BookVoice-AI · Nur für Administratoren",
+    admin_server_status:"Server Status", admin_files:"Dateien",
+    community_gpu_title:"Community GPU",
+    community_gpu_desc:"Aktiviere Community GPU damit User direkt mit deinem Colab verbinden können — ohne eigenen Account.",
+    cf_token_label:"Cloudflare Tunnel Token",
+    cf_token_hint:"Token aus Cloudflare → Zero Trust → Tunnels → Add connector",
+    community_url_label:"Community Colab URL", gpu_management:"GPU Verwaltung",
+    api_security:"API Sicherheit", api_key_label:"Admin API Key (für Colab → Server Kommunikation)",
+    admin_pw_title:"Admin Passwort ändern",
+    settings_server:"Server", settings_api_url:"API URL", settings_info:"Info"
+  },
+  tr: {
+    nav_studio:"Stüdyo", nav_library:"Kütüphane", nav_voices:"Sesler",
+    nav_musik:"Müzik", nav_covers:"Kapaklar", nav_files:"Dosyalar",
+    nav_settings:"Ayarlar", nav_admin:"Yönetici",
+    gpu_title:"☁️ GPU Colab", project_title:"Proje", text_title:"Metin Gir",
+    upload_title:"Dosya Yükle", voice_title:"Aktif Ses",
+    output_title:"Çıktı", log_title:"Log", system_log:"Sistem Logu",
+    upload_desc:"Sürükle & Bırak veya", upload_click:"tıkla",
+    gpu_connect:"Bağlan", gpu_disconnect:"Ayır",
+    voice_change:"Değiştir", btn_activate:"Etkinleştir", btn_deactivate:"Devre dışı",
+    btn_save:"Kaydet", btn_clear:"Temizle", btn_refresh:"Yenile",
+    btn_lock:"🔒 Kilitle", btn_generate_key:"Oluştur", btn_change_pw:"Şifreyi Değiştir",
+    btn_test_connection:"Bağlantıyı Test Et",
+    slider_temp:"Sıcaklık", slider_nat:"Doğallık", slider_krea:"Yaratıcılık", slider_speed:"Hız",
+    output_generate:"SESLİ KİTAP OLUŞTUR", output_test:"Test sesi oluştur",
+    gpu_open:"📓 Google Colab'ı aç ve bekle", gpu_community:"☁️ Topluluk GPU'ya bağlan (colab.aksoy-net.de)",
+    gpu_desc:"Hızlı sesli kitap oluşturmak için ücretsiz Google Colab T4 GPU kullanın.",
+    gpu_desc2:"~CPU'dan 10x hızlı!", gpu_url_label:"Colab API URL",
+    preset_sufi:"Sufi", preset_roman:"Roman", preset_sachtext:"Makale",
+    preset_dramatisch:"Dramatik", preset_schnell:"Hızlı", preset_kinder:"Çocuk",
+    preset_desc:"Önayar seç veya manuel ayarla",
+    new_book:"Yeni Sesli Kitap", engine_title:"Motor",
+    engine_xtts_hint:"🧠 XTTS-v2: Yerel · Ses Klonlama · Kendi Sesin",
+    hero_desc:"Kendi barındırdığınız KI sesli kitap stüdyosu. Metinleri, e-kitapları ve fotoğrafları yüksek kaliteli sesli kitaplara dönüştürün.",
+    stat_files:"Tamamlanan Dosyalar", stat_musik:"Müzik Parçaları", stat_device:"Cihaz",
+    action_create:"Sesli Kitap Oluştur", action_create_sub:"Metin, EPUB, PDF veya fotoğraf yükle ve sese dönüştür",
+    action_voices:"Sesleri Yönet", action_voices_sub:"11 Standart Ses · Kendi Sesini Yükle · Önizle",
+    action_musik:"Arka Plan Müziği", action_musik_sub:"Müzik yükle ve sesli kitapla karıştır",
+    action_lib_sub:"Tamamlanan sesli kitapları indir, dinle veya sil",
+    edge_voice_title:"Edge TTS Sesi", filter_all:"Tümü", filter_female:"Kadın", filter_male:"Erkek",
+    edge_tempo:"Tempo", edge_pitch:"Perde",
+    speed_slow:"-20% Yavaş", speed_fast:"+20% Hızlı", pitch_lower:"-20Hz Daha Derin", pitch_higher:"+20Hz Daha Yüksek",
+    hint_stable:"Stabil", hint_emotional:"Duygusal", hint_natural:"Doğal", hint_structured:"Yapısal",
+    hint_soft:"Yumuşak", hint_variable:"Değişken", hint_quiet:"Sessiz", hint_loud:"Yüksek",
+    cover_optional:"Kitap kapağı (isteğe bağlı)", cover_desc:"JPG/PNG · M4B'ye gömülür",
+    lang_tr:"🇹🇷 Türkçe", lang_de:"🇩🇪 Almanca", lang_en:"🇬🇧 İngilizce", lang_ar:"🇸🇦 Arapça",
+    voice_library:"Ses Kütüphanesi", voice_upload_title:"Ses Yükle",
+    voice_formats:"WAV · MP3 · MP4 · M4A · 20–60 Saniye Önerilir",
+    voice_tips_title:"İyi Ses İçin İpuçları",
+    voice_tip1:"✅ 30–60 Saniye Kayıt", voice_tip2:"✅ Sessiz Oda, Arka Plan Gürültüsü Yok",
+    voice_tip3:"✅ Düzenli ve Net Konuş", voice_tip4:"✅ Hedef Dilde Kayıt Yap",
+    voice_tip5:"✅ WAV Formatını Tercih Et", voice_count_zero:"0 Ses",
+    musik_library:"Müzik Kütüphanesi", musik_upload:"Müzik Yükle", musik_empty:"Henüz müzik yüklenmedi",
+    musik_mix_title:"Sesli Kitapla Karıştır", musik_volume:"Müzik Ses Seviyesi",
+    musik_none:"— Müzik Yok —", musik_mix_btn:"Müzikle Karıştır",
+    cover_library:"Kapak Kütüphanesi", cover_upload:"Kapak Yükle", cover_empty:"Henüz kapak yüklenmedi",
+    cover_formats:"JPG · PNG · WEBP · Önerilen: 500×500px", cover_add_title:"Sesli Kitaba Kapak Ekle",
+    cover_audio_label:"Sesli Kitap Dosyası", cover_label:"Kapak", cover_add_btn:"Kapak Ekle",
+    select_file:"— Dosya Seç —", select_cover:"— Kapak Seç —", cover_count_zero:"0 Kapak",
+    files_title:"Tamamlanan Sesli Kitaplar", files_empty:"Henüz dosya yok",
+    admin_title:"Yönetici Paneli", admin_desc:"BookVoice-AI · Yalnızca Yöneticiler İçin",
+    admin_server_status:"Sunucu Durumu", admin_files:"Dosyalar",
+    community_gpu_title:"Topluluk GPU",
+    community_gpu_desc:"Topluluk GPU'yu etkinleştirerek kullanıcıların kendi hesapları olmadan doğrudan Colab'a bağlanmasını sağlayın.",
+    cf_token_label:"Cloudflare Tünel Token'ı",
+    cf_token_hint:"Token: Cloudflare → Zero Trust → Tunnels → Add connector",
+    community_url_label:"Topluluk Colab URL'si", gpu_management:"GPU Yönetimi",
+    api_security:"API Güvenliği", api_key_label:"Admin API Anahtarı (Colab → Sunucu İletişimi)",
+    admin_pw_title:"Admin Şifresini Değiştir",
+    settings_server:"Sunucu", settings_api_url:"API URL", settings_info:"Bilgi"
+  },
+  en: {
+    nav_studio:"Studio", nav_library:"Library", nav_voices:"Voices",
+    nav_musik:"Music", nav_covers:"Covers", nav_files:"Files",
+    nav_settings:"Settings", nav_admin:"Admin",
+    gpu_title:"☁️ GPU Colab", project_title:"Project", text_title:"Enter Text",
+    upload_title:"Upload File", voice_title:"Active Voice",
+    output_title:"Output", log_title:"Log", system_log:"System Log",
+    upload_desc:"Drag & Drop or", upload_click:"click",
+    gpu_connect:"Connect", gpu_disconnect:"Disconnect",
+    voice_change:"Change", btn_activate:"Activate", btn_deactivate:"Deactivate",
+    btn_save:"Save", btn_clear:"Clear", btn_refresh:"Refresh",
+    btn_lock:"🔒 Lock", btn_generate_key:"Generate", btn_change_pw:"Change Password",
+    btn_test_connection:"Test Connection",
+    slider_temp:"Warmth", slider_nat:"Naturalness", slider_krea:"Creativity", slider_speed:"Speed",
+    output_generate:"GENERATE AUDIOBOOK", output_test:"Generate test audio",
+    gpu_open:"📓 Open Google Colab & wait", gpu_community:"☁️ Connect Community GPU (colab.aksoy-net.de)",
+    gpu_desc:"Use Google Colab T4 GPU for free for fast audiobook generation.",
+    gpu_desc2:"~10x faster than CPU!", gpu_url_label:"Colab API URL",
+    preset_sufi:"Sufi", preset_roman:"Novel", preset_sachtext:"Article",
+    preset_dramatisch:"Dramatic", preset_schnell:"Fast", preset_kinder:"Children",
+    preset_desc:"Choose preset or adjust manually",
+    new_book:"New Audiobook", engine_title:"Engine",
+    engine_xtts_hint:"🧠 XTTS-v2: Local · Voice Cloning · Own Voice",
+    hero_desc:"Your self-hosted AI audiobook studio. Convert texts, eBooks and photos into high-quality audiobooks.",
+    stat_files:"Completed Files", stat_musik:"Music Tracks", stat_device:"Device",
+    action_create:"Create Audiobook", action_create_sub:"Upload text, EPUB, PDF or photo and convert to audio",
+    action_voices:"Manage Voices", action_voices_sub:"11 Standard Voices · Upload Own Voice · Preview",
+    action_musik:"Background Music", action_musik_sub:"Upload music and mix with audiobook",
+    action_lib_sub:"Download, play or delete completed audiobooks",
+    edge_voice_title:"Edge TTS Voice", filter_all:"All", filter_female:"Female", filter_male:"Male",
+    edge_tempo:"Speed", edge_pitch:"Pitch",
+    speed_slow:"-20% Slow", speed_fast:"+20% Fast", pitch_lower:"-20Hz Lower", pitch_higher:"+20Hz Higher",
+    hint_stable:"Stable", hint_emotional:"Emotional", hint_natural:"Natural", hint_structured:"Structured",
+    hint_soft:"Soft", hint_variable:"Variable", hint_quiet:"Quiet", hint_loud:"Loud",
+    cover_optional:"Book cover (optional)", cover_desc:"JPG/PNG · Embedded in M4B",
+    lang_tr:"🇹🇷 Turkish", lang_de:"🇩🇪 German", lang_en:"🇬🇧 English", lang_ar:"🇸🇦 Arabic",
+    voice_library:"Voice Library", voice_upload_title:"Upload Voice",
+    voice_formats:"WAV · MP3 · MP4 · M4A · 20–60 Sec recommended",
+    voice_tips_title:"Tips for Good Voices",
+    voice_tip1:"✅ 30–60 Second Recording", voice_tip2:"✅ Quiet Room, No Background Noise",
+    voice_tip3:"✅ Speak Evenly and Clearly", voice_tip4:"✅ Record in Target Language",
+    voice_tip5:"✅ Prefer WAV Format", voice_count_zero:"0 Voices",
+    musik_library:"Music Library", musik_upload:"Upload Music", musik_empty:"No music uploaded yet",
+    musik_mix_title:"Mix with Audiobook", musik_volume:"Music Volume",
+    musik_none:"— No Music —", musik_mix_btn:"Mix with Music",
+    cover_library:"Cover Library", cover_upload:"Upload Cover", cover_empty:"No covers uploaded yet",
+    cover_formats:"JPG · PNG · WEBP · Recommended: 500×500px", cover_add_title:"Add Cover to Audiobook",
+    cover_audio_label:"Audiobook File", cover_label:"Cover", cover_add_btn:"Add Cover",
+    select_file:"— Select File —", select_cover:"— Select Cover —", cover_count_zero:"0 Covers",
+    files_title:"Completed Audiobooks", files_empty:"No files yet",
+    admin_title:"Admin Panel", admin_desc:"BookVoice-AI · Administrators Only",
+    admin_server_status:"Server Status", admin_files:"Files",
+    community_gpu_title:"Community GPU",
+    community_gpu_desc:"Activate Community GPU so users can connect directly to your Colab — without their own account.",
+    cf_token_label:"Cloudflare Tunnel Token",
+    cf_token_hint:"Token from Cloudflare → Zero Trust → Tunnels → Add connector",
+    community_url_label:"Community Colab URL", gpu_management:"GPU Management",
+    api_security:"API Security", api_key_label:"Admin API Key (for Colab → Server communication)",
+    admin_pw_title:"Change Admin Password",
+    settings_server:"Server", settings_api_url:"API URL", settings_info:"Info"
+  }
+};
+
+let currentLang = localStorage.getItem('bookvoice_lang') || 'de';
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('bookvoice_lang', lang);
+  applyLang();
+}
+
+function applyLang() {
+  const t = i18n[currentLang];
+  if(!t) return;
+  
+  // data-i18n Elemente updaten
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(t[key] !== undefined) el.textContent = t[key];
+  });
+  
+  // Sprachbutton Stil
+  ['de','tr','en'].forEach(l => {
+    const btn = document.getElementById('lang-' + l);
+    if(btn) btn.style.opacity = l === currentLang ? '1' : '0.4';
+  });
+  
+  // Generate Button
+  const genBtn = document.getElementById('gen-btn');
+  if(genBtn && !genBtn.disabled) {
+    genBtn.innerHTML = '<i class="ti ti-wand"></i> ' + (t.output_generate || 'HÖRBUCH GENERIEREN');
+  }
+  
+  // Neues Hörbuch Buttons
+  document.querySelectorAll('.btn').forEach(btn => {
+    if(btn.textContent.trim().includes('Hörbuch') || btn.textContent.trim().includes('Kitap') || btn.textContent.trim().includes('Audiobook')) {
+      if(btn.querySelector('i.ti-plus') || btn.textContent.includes('Neu') || btn.textContent.includes('Yeni') || btn.textContent.includes('New')) {
+        btn.innerHTML = '<i class="ti ti-plus"></i> ' + (t.new_book || 'Neues Hörbuch');
+      }
+    }
+  });
+  
+  // GPU Connect/Disconnect Buttons
+  const connectBtn = document.getElementById('gpu-connect-btn');
+  if(connectBtn) connectBtn.innerHTML = '<span data-i18n="gpu_connect">' + (t.gpu_connect || 'Verbinden') + '</span>';
+  const disconnectBtn = document.getElementById('gpu-disconnect-btn');
+  if(disconnectBtn) disconnectBtn.innerHTML = '<span data-i18n="gpu_disconnect">' + (t.gpu_disconnect || 'Trennen') + '</span>';
+  
+  // Page title
+  const pageTitle = document.getElementById('page-title');
+  if(pageTitle) {
+    const panel = document.querySelector('.panel.active');
+    if(panel) {
+      const id = panel.id.replace('panel-', '');
+      const titles = {studio:'Studio/Stüdyo/Studio', dashboard:'Dashboard', voices:'nav_voices', musik:'nav_musik', covers:'nav_covers', files:'files_title', settings:'nav_settings', admin:'admin_title'};
+      if(titles[id] && t[titles[id]]) pageTitle.textContent = t[titles[id]];
+    }
+  }
+  
+  // Placeholder Texte
+  const testText = document.getElementById('test-text');
+  if(testText) testText.placeholder = currentLang === 'tr' ? 'Metni buraya girin veya dosya yükleyin...' : currentLang === 'en' ? 'Enter text here or upload a file...' : 'Text hier eingeben oder Datei hochladen...';
+}
+
+// Beim Laden Sprache anwenden
+document.addEventListener('DOMContentLoaded', () => {
+  applyLang();
+});
+
 </script>
 </body>
 </html>
