@@ -180,12 +180,24 @@ def parse_sml_tags(text: str) -> list[dict]:
 
 # ── Text-Splitting ─────────────────────────────────────────────
 def clean_extracted_text(text):
+    stopwords = {'ve', 'de', 'da', 'ki', 'bu', 'bir', 'en', 'ya', 'mi'}
     import re
-    text = re.sub(r'-\n\s*', '', text)
+    text = re.sub(r'-[ \t]*\n[ \t]*', '', text)
+    words = text.split()
+    cleaned = []
+    i = 0
+    while i < len(words):
+        w = words[i]
+        if (len(w) <= 2 and w.isalpha() and w.lower() not in stopwords
+                and i + 1 < len(words) and len(words[i+1]) >= 3):
+            cleaned.append(w + words[i+1])
+            i += 2
+        else:
+            cleaned.append(w)
+            i += 1
+    text = ' '.join(cleaned)
     text = re.sub(r'  +', ' ', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
-
 def split_text(text: str, max_chars: int = 220) -> list[str]:
     sentences = re.split(r'(?<=[.!?،؟\n])\s+', text.strip())
     chunks = []
