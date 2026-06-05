@@ -1585,14 +1585,21 @@ async function generatePreview(){
   btn.disabled=true; btn.innerHTML='<i class="ti ti-loader"></i> Generiert…';
   addLog('👂 Test-Audio wird generiert…');
   try {
-    const resp = await fetch(`${TTS_URL}/tts/generate`, {
+    // GPU Engine: Stimme hochladen und GPU nutzen
+    let speakerWav = getVoicePath();
+    let testUrl = TTS_URL;
+    if(currentEngine === 'gpu' && gpuUrl){
+      testUrl = gpuUrl;
+      speakerWav = await uploadVoiceToColab();
+    }
+    const resp = await fetch(`${testUrl}/tts/generate`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({text:PREVIEW_TEXTS[lang]||PREVIEW_TEXTS.tr, language:lang, speaker_wav:getVoicePath(), filename:`_preview_${Date.now()}.wav`, temperature, speed})
+      body: JSON.stringify({text:PREVIEW_TEXTS[lang]||PREVIEW_TEXTS.tr, language:lang, speaker_wav:speakerWav, filename:`_preview_${Date.now()}.wav`, temperature, speed})
     });
     const data = await resp.json();
     if(data.status==='ok'){
       const player = document.getElementById('preview-player');
-      player.src = `${TTS_URL}/tts/download/${data.datei}`;
+      player.src = `${testUrl}/tts/download/${data.datei}`;
       player.style.display='block'; player.play();
       addLog(`✔ Test bereit — ${data.groesse_kb} KB`,'ok');
     }
