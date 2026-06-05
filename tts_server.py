@@ -513,6 +513,15 @@ async def image_to_speech(
     finally:
         tmp_path.unlink(missing_ok=True)
 
+@app.post("/tts/cancel/{job_id}")
+def cancel_job(job_id: str):
+    """Laufenden Job abbrechen"""
+    if job_id in active_jobs:
+        active_jobs[job_id]['status'] = 'abgebrochen'
+        active_jobs[job_id]['cancelled'] = True
+        return {"status": "ok", "message": f"Job {job_id} abgebrochen"}
+    return {"status": "not_found", "message": "Job nicht gefunden"}
+
 @app.get("/tts/book/status/{job_id}")
 def book_status(job_id: str):
     with jobs_lock:
@@ -1160,6 +1169,11 @@ def _process_book(job_id: str, req: ChapterRequest):
     kapitel_files = []
 
     for i, chapter_text in enumerate(req.chapters):
+        # Cancel Check
+        with jobs_lock:
+            if jobs[job_id].get("cancelled"):
+                jobs[job_id]["status"] = "abgebrochen"
+                return
         kapitel_num = str(i + 1).zfill(3)
         filename = f"kapitel_{kapitel_num}.wav"
         out_path = book_dir / filename

@@ -229,6 +229,11 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
   <div class="topbar">
     <div class="page-title" id="page-title">Dashboard</div>
     <div class="topbar-right">
+      <div style="display:flex;gap:3px;margin-right:8px">
+        <button onclick="setLang('de')" id="lang-de" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇩🇪</button>
+        <button onclick="setLang('tr')" id="lang-tr" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇹🇷</button>
+        <button onclick="setLang('en')" id="lang-en" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇬🇧</button>
+      </div>
       <div class="server-info">
         <span id="server-status-text">Verbinde…</span>
       </div>
@@ -608,6 +613,9 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
             <button class="btn btn-primary btn-block" id="gen-btn" onclick="startSynthesis()" style="margin-top:.75rem">
               <i class="ti ti-wand"></i> HÖRBUCH GENERIEREN
+            </button>
+            <button class="btn btn-danger btn-block" id="stop-btn" onclick="cancelJob()" style="margin-top:.4rem;display:none">
+              <i class="ti ti-player-stop"></i> <span data-i18n="btn_stop">GENERIERUNG STOPPEN</span>
             </button>
           </div>
 
@@ -1236,6 +1244,42 @@ function disconnectGPU(){
   addLog('[GPU] Verbindung getrennt', 'warn');
 }
 
+async function cancelJob(){
+  if(!activeJobId){ addLog('Kein aktiver Job', 'warn'); return; }
+  try {
+    const url = getActiveUrl();
+    await fetch(`${url}/tts/cancel/${activeJobId}`, {method:'POST'});
+    addLog('⛔ Generierung abgebrochen!', 'warn');
+    document.getElementById('stop-btn').style.display = 'none';
+    const btn = document.getElementById('gen-btn');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+    activeJobId = null;
+  } catch(e) {
+    addLog(`Fehler beim Abbrechen: ${e.message}`, 'err');
+  }
+}
+
+async function uploadVoiceToColab(){
+  const voicePath = getVoicePath();
+  const voiceFilename = voicePath.split('/').pop();
+  try {
+    addLog(`[GPU] Stimme hochladen: ${voiceFilename}`, 'info');
+    const resp = await fetch(`${TTS_URL}/tts/voices/${voiceFilename}`);
+    if(!resp.ok) throw new Error('Stimme nicht gefunden');
+    const blob = await resp.blob();
+    const formData = new FormData();
+    formData.append('file', blob, voiceFilename);
+    const uploadResp = await fetch(`${gpuUrl}/tts/upload-voice`, {method:'POST', body:formData});
+    const data = await uploadResp.json();
+    addLog(`[GPU] ✅ Stimme geladen: ${data.datei}`, 'ok');
+    return `/content/tts_models/${data.datei}`;
+  } catch(e) {
+    addLog(`[GPU] ⚠ Stimme Fallback: stimme.wav`, 'warn');
+    return '/content/tts_models/stimme.wav';
+  }
+}
+
 async function connectGPU(){
   const url = document.getElementById('gpu-url').value.trim().replace(/\/$/, '');
   if(!url){ addLog('Bitte Colab URL eingeben!','err'); return; }
@@ -1420,7 +1464,8 @@ async function startSynthesis(){
 
   // GPU Colab — nutzt XTTS-v2 auf Colab
   if(currentEngine === 'gpu'){
-    if(!gpuUrl){ addLog('Bitte zuerst mit Colab verbinden!','err'); btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN'; return; }
+    if(!gpuUrl){ addLog('Bitte zuerst mit Colab verbinden!','err'); btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none'; return; }
     const lang = document.getElementById('tts-lang').value || 'tr';
     const temperature = parseFloat(document.getElementById('temperature').value);
     const repPenalty = parseFloat(document.getElementById('rep-penalty').value);
@@ -1430,15 +1475,18 @@ async function startSynthesis(){
     try {
       const resp = await fetch(`${gpuUrl}/tts/book`, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({chapters, language:lang, speaker_wav:'/content/tts_models/stimme.wav', book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed, cover_path:currentCoverPath})
+        body: JSON.stringify({chapters, language:lang, speaker_wav: await uploadVoiceToColab(), book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed, cover_path:currentCoverPath})
       });
       const data = await resp.json();
       activeJobId = data.job_id;
+      document.getElementById('stop-btn').style.display = 'block';
       addLog(`Job: ${data.job_id}`, 'ok');
-      startJobPolling(data.job_id, chapters.length, gpuUrl);
+      const currentGpuUrl = gpuUrl || document.getElementById('gpu-url').value.trim();
+      startJobPolling(data.job_id, chapters.length, currentGpuUrl);
     } catch(e) {
       addLog(`Fehler: ${e.message}`,'err');
       btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none';
     }
     return;
   }
@@ -1446,7 +1494,8 @@ async function startSynthesis(){
     const voice = document.getElementById('edge-voice-select').value;
     const rate = document.getElementById('edge-rate').value;
     const pitch = document.getElementById('edge-pitch').value;
-    if(!voice){ addLog('Bitte Edge TTS Stimme auswählen!','err'); btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN'; return; }
+    if(!voice){ addLog('Bitte Edge TTS Stimme auswählen!','err'); btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none'; return; }
     addLog(`⚡ Edge TTS: ${chapters.length} Kapitel · ${voice}`, 'ok');
     try {
       const resp = await fetch(`${TTS_URL}/edge/book`, {
@@ -1455,11 +1504,13 @@ async function startSynthesis(){
       });
       const data = await resp.json();
       activeJobId = data.job_id;
+      document.getElementById('stop-btn').style.display = 'block';
       addLog(`Job: ${data.job_id}`, 'ok');
       startJobPolling(data.job_id, chapters.length);
     } catch(e) {
       addLog(`Fehler: ${e.message}`,'err');
       btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none';
     }
     return;
   }
@@ -1482,6 +1533,7 @@ async function startSynthesis(){
   } catch(e) {
     addLog(`Fehler: ${e.message}`,'err');
     btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none';
   }
 }
 
@@ -1500,8 +1552,24 @@ function startJobPolling(jobId, total, baseUrl){
       if(sd.status==='fertig'||sd.status==='fertig_mit_fehlern'){
         clearInterval(pollInterval);
         btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none';
         addLog(`✔ Fertig! ${sd.done}/${sd.total} Kapitel · ${sd.output||''}`, 'ok');
         if(sd.errors&&sd.errors.length) sd.errors.forEach(e=>addLog(`⚠ ${e}`,'warn'));
+        // GPU Colab: MP3 von Colab herunterladen und auf Server hochladen
+        if(baseUrl && sd.output){
+          addLog(`[GPU] 📥 MP3 von Colab herunterladen...`, 'info');
+          try {
+            const mp3Resp = await fetch(`${baseUrl}/tts/download/${sd.output}`);
+            const mp3Blob = await mp3Resp.blob();
+            const formData = new FormData();
+            formData.append('file', mp3Blob, sd.output);
+            const uploadResp = await fetch(`${TTS_URL}/tts/upload-audio`, {method:'POST', body:formData});
+            const uploadData = await uploadResp.json();
+            addLog(`[GPU] ✅ MP3 auf Server gespeichert: ${uploadData.datei}`, 'ok');
+          } catch(e) {
+            addLog(`[GPU] ⚠ Upload fehlgeschlagen: ${e.message}`, 'warn');
+          }
+        }
         loadFilesFromServer(); loadDashboardStats();
       }
     } catch(e) {}
@@ -1933,6 +2001,122 @@ async function checkApi(){
     }
   }
 })();
+
+// ── i18n Multi-Language ──────────────────────────────────
+const i18n = {
+  de: {
+    nav_studio:"Studio", nav_library:"Bibliothek", nav_voices:"Stimmen",
+    nav_musik:"Musik", nav_covers:"Cover", nav_files:"Dateien",
+    nav_settings:"Einstellungen", nav_admin:"Admin",
+    project_title:"Projekt", text_title:"Text eingeben",
+    upload_title:"Datei hochladen", voice_title:"Aktive Stimme",
+    output_title:"Ausgabe", log_title:"Log", system_log:"System Log",
+    upload_desc:"Drag & Drop oder", upload_click:"klicken",
+    gpu_connect:"Verbinden", gpu_disconnect:"Trennen",
+    voice_change:"Wechseln", btn_activate:"Aktivieren", btn_deactivate:"Deaktivieren",
+    btn_save:"Speichern", btn_clear:"Leeren", btn_refresh:"Aktualisieren",
+    btn_lock:"🔒 Sperren", btn_generate_key:"Generieren", btn_change_pw:"Passwort ändern", btn_stop:"GENERIERUNG STOPPEN",
+    btn_test_connection:"Verbindung testen",
+    slider_temp:"Wärme", slider_nat:"Natürlichkeit", slider_krea:"Kreativität", slider_speed:"Geschwindigkeit",
+    output_generate:"HÖRBUCH GENERIEREN", output_test:"Test-Audio generieren",
+    gpu_open:"📓 Google Colab öffnen & warten",
+    preset_original:"Original", preset_sufi:"Sufi", preset_roman:"Roman",
+    preset_sachtext:"Sachtext", preset_dramatisch:"Dramatisch", preset_schnell:"Schnell", preset_kinder:"Kinder",
+    new_book:"Neues Hörbuch",
+    stat_files:"Fertige Dateien", stat_musik:"Musik-Tracks", stat_device:"Device",
+    action_create:"Hörbuch erstellen", action_voices:"Stimmen verwalten",
+    action_musik:"Hintergrundmusik", files_title:"Fertige Hörbücher", files_empty:"Noch keine Dateien",
+    admin_title:"Admin Panel", community_gpu_title:"Community GPU",
+    voice_library:"Stimm-Bibliothek", musik_library:"Musik-Bibliothek",
+    cover_library:"Cover-Bibliothek", cover_upload:"Cover hochladen",
+    settings_server:"Server", settings_info:"Info"
+  },
+  tr: {
+    nav_studio:"Stüdyo", nav_library:"Kütüphane", nav_voices:"Sesler",
+    nav_musik:"Müzik", nav_covers:"Kapaklar", nav_files:"Dosyalar",
+    nav_settings:"Ayarlar", nav_admin:"Yönetici",
+    project_title:"Proje", text_title:"Metin Gir",
+    upload_title:"Dosya Yükle", voice_title:"Aktif Ses",
+    output_title:"Çıktı", log_title:"Log", system_log:"Sistem Logu",
+    upload_desc:"Sürükle & Bırak veya", upload_click:"tıkla",
+    gpu_connect:"Bağlan", gpu_disconnect:"Ayır",
+    voice_change:"Değiştir", btn_activate:"Etkinleştir", btn_deactivate:"Devre dışı",
+    btn_save:"Kaydet", btn_clear:"Temizle", btn_refresh:"Yenile",
+    btn_lock:"🔒 Kilitle", btn_generate_key:"Oluştur", btn_change_pw:"Şifreyi Değiştir", btn_stop:"ÜRETIMI DURDUR",
+    btn_test_connection:"Bağlantıyı Test Et",
+    slider_temp:"Sıcaklık", slider_nat:"Doğallık", slider_krea:"Yaratıcılık", slider_speed:"Hız",
+    output_generate:"SESLİ KİTAP OLUŞTUR", output_test:"Test sesi oluştur",
+    gpu_open:"📓 Google Colab'ı aç ve bekle",
+    preset_original:"Orijinal", preset_sufi:"Sufi", preset_roman:"Roman",
+    preset_sachtext:"Makale", preset_dramatisch:"Dramatik", preset_schnell:"Hızlı", preset_kinder:"Çocuk",
+    new_book:"Yeni Sesli Kitap",
+    stat_files:"Tamamlanan Dosyalar", stat_musik:"Müzik Parçaları", stat_device:"Cihaz",
+    action_create:"Sesli Kitap Oluştur", action_voices:"Sesleri Yönet",
+    action_musik:"Arka Plan Müziği", files_title:"Tamamlanan Sesli Kitaplar", files_empty:"Henüz dosya yok",
+    admin_title:"Yönetici Paneli", community_gpu_title:"Topluluk GPU",
+    voice_library:"Ses Kütüphanesi", musik_library:"Müzik Kütüphanesi",
+    cover_library:"Kapak Kütüphanesi", cover_upload:"Kapak Yükle",
+    settings_server:"Sunucu", settings_info:"Bilgi"
+  },
+  en: {
+    nav_studio:"Studio", nav_library:"Library", nav_voices:"Voices",
+    nav_musik:"Music", nav_covers:"Covers", nav_files:"Files",
+    nav_settings:"Settings", nav_admin:"Admin",
+    project_title:"Project", text_title:"Enter Text",
+    upload_title:"Upload File", voice_title:"Active Voice",
+    output_title:"Output", log_title:"Log", system_log:"System Log",
+    upload_desc:"Drag & Drop or", upload_click:"click",
+    gpu_connect:"Connect", gpu_disconnect:"Disconnect",
+    voice_change:"Change", btn_activate:"Activate", btn_deactivate:"Deactivate",
+    btn_save:"Save", btn_clear:"Clear", btn_refresh:"Refresh",
+    btn_lock:"🔒 Lock", btn_generate_key:"Generate", btn_change_pw:"Change Password", btn_stop:"STOP GENERATION",
+    btn_test_connection:"Test Connection",
+    slider_temp:"Warmth", slider_nat:"Naturalness", slider_krea:"Creativity", slider_speed:"Speed",
+    output_generate:"GENERATE AUDIOBOOK", output_test:"Generate test audio",
+    gpu_open:"📓 Open Google Colab & wait",
+    preset_original:"Original", preset_sufi:"Sufi", preset_roman:"Novel",
+    preset_sachtext:"Article", preset_dramatisch:"Dramatic", preset_schnell:"Fast", preset_kinder:"Children",
+    new_book:"New Audiobook",
+    stat_files:"Completed Files", stat_musik:"Music Tracks", stat_device:"Device",
+    action_create:"Create Audiobook", action_voices:"Manage Voices",
+    action_musik:"Background Music", files_title:"Completed Audiobooks", files_empty:"No files yet",
+    admin_title:"Admin Panel", community_gpu_title:"Community GPU",
+    voice_library:"Voice Library", musik_library:"Music Library",
+    cover_library:"Cover Library", cover_upload:"Upload Cover",
+    settings_server:"Server", settings_info:"Info"
+  }
+};
+
+let currentLang = localStorage.getItem('bookvoice_lang') || 'de';
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('bookvoice_lang', lang);
+  applyLang();
+}
+
+function applyLang() {
+  const t = i18n[currentLang];
+  if(!t) return;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(t[key] !== undefined) el.textContent = t[key];
+  });
+  ['de','tr','en'].forEach(l => {
+    const btn = document.getElementById('lang-' + l);
+    if(btn) btn.style.opacity = l === currentLang ? '1' : '0.4';
+  });
+  const genBtn = document.getElementById('gen-btn');
+  if(genBtn && !genBtn.disabled) {
+    genBtn.innerHTML = '<i class="ti ti-wand"></i> ' + (t.output_generate || 'HÖRBUCH GENERIEREN');
+  }
+  const testText = document.getElementById('test-text');
+  if(testText) testText.placeholder = currentLang === 'tr' ? 'Metni buraya girin veya dosya yükleyin...' : currentLang === 'en' ? 'Enter text here or upload a file...' : 'Text hier eingeben oder Datei hochladen...';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  applyLang();
+});
 </script>
 </body>
 </html>
