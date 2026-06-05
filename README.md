@@ -10,15 +10,7 @@
 
 ## 🎥 Demo
 
-
-
-> 
-
-https://github.com/user-attachments/assets/9dff41d4-b5e4-40a0-b128-4654722febc4
-
-
-
-
+> 📹 Video folgt
 
 ---
 
@@ -59,11 +51,12 @@ Lädt automatisch die neueste Version von GitHub!
 | 🎵 Hintergrundmusik | Musik hochladen und mischen |
 | ▶️ Audio-Player | Direkt im Browser abspielen |
 | 🌍 Multi-Sprache | Türkisch, Deutsch, Englisch |
-| 🌐 Multi-Language UI | Oberfläche auf TR / DE / EN |
+| 🌐 Multi-Language UI | Oberfläche auf TR / DE / EN umschalten |
 | 🎛️ Stil-Presets | Sufi, Roman, Sachtext, Dramatisch, Kinder... |
 | 📱 M4B Format | iPhone Hörbuch-Format mit Kapitel-Navigation |
 | 👑 Admin Panel | Community GPU aktivieren, API Key, Passwort |
 | ☁️ Community GPU | Admin stellt GPU für alle User bereit |
+| 💾 Auto-Speicher | GPU generierte MP3 automatisch auf Server |
 | 🐳 Docker | One-Click Install · CPU & GPU Auto-Detection |
 | 🔒 Cloudflare | Sicher hinter Cloudflare Zero Trust |
 
@@ -89,6 +82,7 @@ Lädt automatisch die neueste Version von GitHub!
 - Google Account benötigt
 - ~3-4 Stunden pro Session
 - Community GPU: Admin stellt GPU für alle User bereit
+- MP3 automatisch auf Server gespeichert ✅
 
 ---
 
@@ -97,13 +91,26 @@ Lädt automatisch die neueste Version von GitHub!
 | Kategorie | Formate |
 |---|---|
 | Dokumente | TXT, MD, CSV, RTF |
-| Word | DOC, DOCX, ODT |
+| Word | DOC (LibreOffice), DOCX, ODT |
 | PDF | PDF (PyPDF2 + Calibre Fallback) |
 | Präsentationen | PPTX, PPT |
 | Tabellen | XLSX, XLS |
 | E-Books | EPUB, MOBI, AZW3, FB2 |
 | Web | HTML, XML |
 | Bilder (OCR) | JPG, PNG, WEBP, TIFF, BMP |
+| Audio (Stimme) | WAV, MP3, M4A, OGG, WEBA, OPUS |
+
+---
+
+## ⚡ Performance Vergleich
+
+| | CPU (Dell i3-9th/32GB) | Edge TTS | GPU Colab T4 |
+|---|---|---|---|
+| 1.679 Zeichen (1 Kap.) | ~16 Min | 9 Sek | ~2 Min |
+| 11.325 Zeichen (6 Kap.) | ~108 Min | 72 Sek | ~9 Min |
+| Qualität | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| Voice Cloning | ✅ | ❌ | ✅ |
+| Kosten | $0 | $0 | ~$0.05/Kap |
 
 ---
 
@@ -113,7 +120,7 @@ Lädt automatisch die neueste Version von GitHub!
 2. Runtime → T4 GPU aktivieren
 3. Strg+F9 → Alle ausführen (~10 Min beim ersten Mal)
 4. URL kopieren → BookVoice-AI GUI → GPU Colab → Verbinden
-5. ✅ Verbunden! GPU: CUDA
+5. ✅ Verbunden! GPU: CUDA — MP3 wird automatisch auf Server gespeichert
 
 ---
 
@@ -131,13 +138,14 @@ docker compose -f compose.server.yaml up -d
 
 ## 🚀 Verwendung
 
-1. **Engine** wählen (XTTS-v2 / Edge TTS / GPU Colab)
-2. **Text** eingeben oder Datei hochladen (PDF, DOCX, EPUB...)
-3. **Stimme** auswählen (11 Standard + eigene)
-4. **Preset** wählen (Sufi, Roman, Sachtext...)
-5. **Test-Audio** anhören
-6. **HÖRBUCH GENERIEREN**
-7. **Bibliothek** → direkt abspielen oder herunterladen
+1. **Sprache** wählen (🇩🇪 DE / 🇹🇷 TR / 🇬🇧 EN) — oben rechts
+2. **Engine** wählen (XTTS-v2 / Edge TTS / GPU Colab)
+3. **Text** eingeben oder Datei hochladen (PDF, DOCX, EPUB...)
+4. **Stimme** auswählen (11 Standard + eigene)
+5. **Preset** wählen (Sufi, Roman, Sachtext...)
+6. **Test-Audio** anhören
+7. **HÖRBUCH GENERIEREN**
+8. **Bibliothek** → direkt abspielen oder herunterladen
 
 ---
 
@@ -155,7 +163,7 @@ BookVoice-AI/
 ├── compose.server.yaml      # Server Docker
 ├── Dockerfile.tts           # Container Build
 ├── tts_server.py            # FastAPI Backend
-├── ki_archiv_tts_web.html   # Web-GUI
+├── ki_archiv_tts_web.html   # Web-GUI (TR/DE/EN)
 └── nginx-bookvoice.conf     # Reverse Proxy
 ```
 
@@ -175,7 +183,7 @@ BookVoice-AI/
 ## 🛠️ Tech Stack
 
 - **Backend:** FastAPI · Python · Coqui TTS (XTTS-v2) · Edge TTS
-- **Frontend:** Vanilla JS · HTML · CSS
+- **Frontend:** Vanilla JS · HTML · CSS · i18n (TR/DE/EN)
 - **Infrastruktur:** Docker · Nginx · Cloudflare Zero Trust
 - **GPU:** Google Colab T4 · Cloudflare Tunnel
 - **Dokumente:** LibreOffice · Calibre · PyPDF2 · python-docx · Tesseract OCR
@@ -184,11 +192,12 @@ BookVoice-AI/
 
 ## 🚀 Roadmap
 
-- [ ] User-Verwaltung & Login System
+- [ ] User-Verwaltung & Login System (Keycloak)
 - [ ] RunPod.io GPU Integration (Pay-per-Use)
-- [ ] Automatische Übersetzung
+- [ ] CosyVoice 2 Engine (bessere Qualität)
+- [ ] Queue System für mehrere User
+- [ ] Google Drive Integration
 - [ ] Mobile App
-- [ ] Keycloak Authentication
 
 ---
 
@@ -207,7 +216,7 @@ BookVoice-AI/
 
 ## 📄 Lizenz
 
-MIT License — kostenlos für private Nutzung.
+MIT License — kostenlos für private und kommerzielle Nutzung.
 
 **Powered by:** XTTS-v2 · Edge TTS · FastAPI · Docker · Cloudflare · Google Colab · LibreOffice · Tesseract
 
