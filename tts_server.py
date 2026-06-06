@@ -1,6 +1,7 @@
 import os, uuid, threading, torchaudio, torch, shutil, subprocess, re, tempfile
+from faster_whisper import WhisperModel
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -8,6 +9,12 @@ from pydantic import BaseModel
 # ── Konfiguration ──────────────────────────────────────────────
 OUTPUT_DIR = Path(os.getenv("TTS_OUTPUT", "/app/HOERBUCH"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+TRANSCRIPTION_DIR = Path("/app/TRANSKRIPTIONEN")
+TRANSCRIPTION_DIR.mkdir(parents=True, exist_ok=True)
+EINGABE_DIR = Path("/app/EINGABE")
+EINGABE_DIR.mkdir(parents=True, exist_ok=True)
+ARCHIV_DIR = Path("/app/ARCHIV")
+ARCHIV_DIR.mkdir(parents=True, exist_ok=True)
 # Dynamischer Modell-Pfad — funktioniert auf Docker und Colab
 _possible_model_dirs = [
     Path("/app/tts_models/tts_models--multilingual--multi-dataset--xtts_v2"),
@@ -1354,3 +1361,340 @@ def _process_book(job_id: str, req: ChapterRequest):
     with jobs_lock:
         jobs[job_id]["status"] = "fertig" if not jobs[job_id]["errors"] else "fertig_mit_fehlern"
         jobs[job_id]["ausgabe_ordner"] = str(book_dir)
+
+
+# ════════════════════════════════════════════════════════════════
+# FastWhisper Transkription
+# ════════════════════════════════════════════════════════════════
+
+_whisper_model = None
+_whisper_model_size = None
+_whisper_lock = threading.Lock()
+
+def get_whisper_model(size: str = "small"):
+    global _whisper_model, _whisper_model_size
+    with _whisper_lock:
+        if _whisper_model is None or _whisper_model_size != size:
+            _whisper_model = None  # altes Modell freigeben
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            compute = "float16" if device == "cuda" else "int8"
+            _whisper_model = WhisperModel(size, device=device, compute_type=compute)
+            _whisper_model_size = size
+    return _whisper_model
+
+
+# ── Transkription Background Jobs ────────────────────────────
+_transcribe_jobs: dict = {}
+_transcribe_jobs_lock = threading.Lock()
+
+@app.post("/transcribe/async")
+async def transcribe_async(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    language: str = Form("auto"),
+    model_size: str = Form("small"),
+    archive: bool = Form(True),
+    project_name: str = Form(""),
+    folder: str = Form("")
+):
+    """Transkription als Background Job — kein Cloudflare Timeout"""
+    job_id = uuid.uuid4().hex[:12]
+    content = await file.read()
+    suffix = Path(file.filename).suffix.lower()
+    filename = file.filename
+
+    with _transcribe_jobs_lock:
+        _transcribe_jobs[job_id] = {"status": "running", "fortschritt": 0, "text": "", "srt": "", "modell": model_size, "fehler": ""}
+
+    background_tasks.add_task(
+        _run_transcribe_job, job_id, content, suffix, filename,
+        language, model_size, archive, project_name, folder
+    )
+    return {"job_id": job_id, "status": "gestartet"}
+
+def _run_transcribe_job(job_id, content, suffix, filename, language, model_size, archive, project_name, folder):
+    import asyncio
+    try:
+        tmp_path = EINGABE_DIR / f"{uuid.uuid4().hex}{suffix}"
+        with open(tmp_path, "wb") as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+
+        wav_path = tmp_path.with_suffix(".wav")
+        if suffix not in [".wav"]:
+            result = subprocess.run([
+                "ffmpeg", "-i", str(tmp_path),
+                "-ar", "16000", "-ac", "1", "-y", str(wav_path)
+            ], capture_output=True)
+            if result.returncode != 0 or not wav_path.exists():
+                raise Exception(f"FFmpeg Fehler: {result.stderr.decode()[:200]}")
+        else:
+            wav_path = tmp_path
+
+        model = get_whisper_model(model_size)
+        lang = None if language == "auto" else language
+        segments_list, info = model.transcribe(str(wav_path), language=lang, beam_size=5, vad_filter=True)
+        segments = list(segments_list)
+
+        text_parts = []
+        srt_parts = []
+        for i, seg in enumerate(segments, 1):
+            text_parts.append(seg.text.strip())
+            start = f"{int(seg.start//3600):02d}:{int((seg.start%3600)//60):02d}:{seg.start%60:06.3f}".replace(".", ",")
+            end = f"{int(seg.end//3600):02d}:{int((seg.end%3600)//60):02d}:{seg.end%60:06.3f}".replace(".", ",")
+            srt_parts.append(f"{i}\n{start} --> {end}\n{seg.text.strip()}\n")
+
+        full_text = "\n".join(text_parts)
+        srt_text = "\n".join(srt_parts)
+
+        base_name = project_name.strip() if project_name.strip() else Path(filename).stem
+        base_name = re.sub(r'[^\w\-_]', '_', base_name)
+        if folder.strip():
+            folder_clean = re.sub(r'[^\w\-_]', '_', folder.strip())
+            save_dir = TRANSCRIPTION_DIR / folder_clean
+            save_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            save_dir = TRANSCRIPTION_DIR
+
+        (save_dir / f"{base_name}.txt").write_text(full_text, encoding="utf-8")
+        (save_dir / f"{base_name}.srt").write_text(srt_text, encoding="utf-8")
+
+        if archive:
+            shutil.copy2(tmp_path, ARCHIV_DIR / tmp_path.name)
+
+        with _transcribe_jobs_lock:
+            _transcribe_jobs[job_id].update({
+                "status": "fertig",
+                "text": full_text,
+                "srt": srt_text,
+                "sprache": info.language,
+                "sprache_wahrscheinlichkeit": round(info.language_probability, 2),
+                "dauer_sek": round(info.duration, 1),
+                "woerter": len(full_text.split()),
+                "txt_datei": f"{base_name}.txt",
+                "srt_datei": f"{base_name}.srt",
+                "modell": model_size
+            })
+    except Exception as e:
+        with _transcribe_jobs_lock:
+            _transcribe_jobs[job_id]["status"] = "fehler"
+            _transcribe_jobs[job_id]["fehler"] = str(e)
+    finally:
+        if wav_path != tmp_path and wav_path.exists():
+            wav_path.unlink()
+
+@app.get("/transcribe/status/{job_id}")
+def transcribe_status(job_id: str):
+    with _transcribe_jobs_lock:
+        job = _transcribe_jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job nicht gefunden")
+    return job
+
+@app.post("/transcribe")
+async def transcribe_audio(
+    file: UploadFile = File(...),
+    language: str = Form("auto"),
+    model_size: str = Form("small"),
+    archive: bool = Form(True),
+    project_name: str = Form(""),
+    folder: str = Form("")
+):
+    """Audio/Video Datei transkribieren mit FastWhisper"""
+    suffix = Path(file.filename).suffix.lower()
+    tmp_path = EINGABE_DIR / f"{uuid.uuid4().hex}{suffix}"
+
+    try:
+        # Datei speichern — komplett schreiben
+        content = await file.read()
+        with open(tmp_path, "wb") as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+
+        # FFmpeg: zu WAV konvertieren falls nötig
+        wav_path = tmp_path.with_suffix(".wav")
+        if suffix not in [".wav"]:
+            result = subprocess.run([
+                "ffmpeg", "-i", str(tmp_path),
+                "-ar", "16000", "-ac", "1", "-y", str(wav_path)
+            ], capture_output=True)
+            if result.returncode != 0 or not wav_path.exists():
+                raise HTTPException(status_code=400, detail=f"FFmpeg Fehler: {result.stderr.decode()[:500]}")
+        else:
+            wav_path = tmp_path
+        
+        if not wav_path.exists():
+            raise HTTPException(status_code=500, detail=f"WAV Datei nicht gefunden: {wav_path}")
+
+        # FastWhisper transkribieren
+        model = get_whisper_model(model_size)
+        lang = None if language == "auto" else language
+        segments_list, info = model.transcribe(
+            str(wav_path),
+            language=lang,
+            beam_size=5,
+            vad_filter=True
+        )
+        # Segmente sofort konsumieren (Generator leeren bevor WAV gelöscht wird)
+        segments = list(segments_list)
+
+        # Segmente zusammenführen
+        text_parts = []
+        srt_parts = []
+        for i, seg in enumerate(segments, 1):
+            text_parts.append(seg.text.strip())
+            start = f"{int(seg.start//3600):02d}:{int((seg.start%3600)//60):02d}:{seg.start%60:06.3f}".replace(".", ",")
+            end = f"{int(seg.end//3600):02d}:{int((seg.end%3600)//60):02d}:{seg.end%60:06.3f}".replace(".", ",")
+            srt_parts.append(f"{i}\n{start} --> {end}\n{seg.text.strip()}\n")
+
+        full_text = "\n".join(text_parts)
+        srt_text = "\n".join(srt_parts)
+
+        # Transkription speichern — Projektname + Ordner nutzen
+        base_name = project_name.strip() if project_name.strip() else Path(file.filename).stem
+        base_name = re.sub(r'[^\w\-_]', '_', base_name)
+
+        # Zielordner bestimmen
+        if folder.strip():
+            folder_clean = re.sub(r'[^\w\-_]', '_', folder.strip())
+            save_dir = TRANSCRIPTION_DIR / folder_clean
+            save_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            save_dir = TRANSCRIPTION_DIR
+
+        txt_path = save_dir / f"{base_name}.txt"
+        srt_path = save_dir / f"{base_name}.srt"
+        txt_path.write_text(full_text, encoding="utf-8")
+        srt_path.write_text(srt_text, encoding="utf-8")
+
+        # Archivieren
+        if archive:
+            archiv_path = ARCHIV_DIR / tmp_path.name
+            shutil.copy2(tmp_path, archiv_path)
+
+        return {
+            "status": "ok",
+            "sprache": info.language,
+            "sprache_wahrscheinlichkeit": round(info.language_probability, 2),
+            "dauer_sek": round(info.duration, 1),
+            "text": full_text,
+            "srt": srt_text,
+            "woerter": len(full_text.split()),
+            "txt_datei": txt_path.name,
+            "srt_datei": srt_path.name,
+            "ordner": folder_clean if folder.strip() else "",
+            "modell": model_size
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        # Temp WAV aufräumen
+        if wav_path != tmp_path and wav_path.exists():
+            wav_path.unlink()
+
+@app.get("/transcribe/files")
+def list_transcriptions():
+    """Alle Transkriptionen + Ordner auflisten"""
+    files = []
+    ordner = []
+    for f in sorted(TRANSCRIPTION_DIR.iterdir()):
+        if f.is_dir():
+            ordner.append({
+                "name": f.name,
+                "typ": "ordner",
+                "dateien_anzahl": len(list(f.glob("*.txt"))) + len(list(f.glob("*.srt")))
+            })
+        elif f.suffix in [".txt", ".srt"]:
+            files.append({
+                "name": f.name,
+                "groesse_kb": round(f.stat().st_size / 1024, 1),
+                "datum": f.stat().st_mtime,
+                "typ": "datei"
+            })
+    return {"dateien": files, "ordner": ordner}
+
+@app.get("/transcribe/download/{filename}")
+def download_transcription(filename: str):
+    path = TRANSCRIPTION_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    return FileResponse(path, filename=filename)
+
+@app.delete("/transcribe/files/{filename}")
+def delete_transcription(filename: str):
+    path = TRANSCRIPTION_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    path.unlink()
+    return {"status": "ok", "geloescht": filename}
+
+@app.get("/transcribe/folder/{folder_name}")
+def get_folder_contents(folder_name: str):
+    """Inhalt eines Transkriptions-Ordners abrufen"""
+    folder = TRANSCRIPTION_DIR / folder_name
+    if not folder.exists() or not folder.is_dir():
+        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    files = []
+    for f in sorted(folder.iterdir()):
+        if f.suffix in [".txt", ".srt"]:
+            files.append({
+                "name": f.name,
+                "pfad": f"{folder_name}/{f.name}",
+                "groesse_kb": round(f.stat().st_size / 1024, 1),
+                "datum": f.stat().st_mtime
+            })
+    return {"ordner": folder_name, "dateien": files}
+
+@app.get("/transcribe/download/{folder_or_file}/{filename}")
+def download_transcription_in_folder(folder_or_file: str, filename: str):
+    """Datei aus Unterordner herunterladen"""
+    path = TRANSCRIPTION_DIR / folder_or_file / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    return FileResponse(path, filename=filename)
+@app.post("/transcribe/folder")
+async def create_transcription_folder(data: dict):
+    """Neuen Ordner in TRANSKRIPTIONEN erstellen"""
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Kein Ordnername angegeben")
+    name = re.sub(r'[^\w\-_]', '_', name)
+    folder = TRANSCRIPTION_DIR / name
+    folder.mkdir(parents=True, exist_ok=True)
+    return {"status": "ok", "ordner": name}
+
+# ════════════════════════════════════════════════════════════════
+# Admin Logging
+# ════════════════════════════════════════════════════════════════
+import logging as _logging
+from collections import deque
+
+_log_buffer = deque(maxlen=500)  # max 500 Zeilen im Speicher
+
+class BufferHandler(_logging.Handler):
+    def emit(self, record):
+        _log_buffer.append({
+            "zeit": self.formatter.formatTime(record, "%H:%M:%S"),
+            "level": record.levelname,
+            "nachricht": record.getMessage()
+        })
+
+_buf_handler = BufferHandler()
+_buf_handler.setFormatter(_logging.Formatter())
+_logging.getLogger().addHandler(_buf_handler)
+_logging.getLogger("faster_whisper").addHandler(_buf_handler)
+_logging.getLogger("uvicorn").addHandler(_buf_handler)
+
+@app.get("/admin/logs")
+def get_logs(n: int = 100):
+    """Letzte n Log-Einträge abrufen"""
+    entries = list(_log_buffer)[-n:]
+    return {"logs": entries, "gesamt": len(_log_buffer)}
+
+@app.delete("/admin/logs")
+def clear_logs():
+    _log_buffer.clear()
+    return {"status": "ok"}

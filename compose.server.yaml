@@ -67,8 +67,10 @@ services:
       - "7500:7500"
     volumes:
       - /mnt/data/docker-data/ki-archiv/tts_models:/root/.local/share/tts
+      - /mnt/data/docker-data/ki-archiv/tts_models:/app/tts_models
       - /mnt/data/docker-data/ki-archiv/ERGEBNISSE:/app/ERGEBNISSE
       - /mnt/data/docker-data/ki-archiv/HOERBUCH:/app/HOERBUCH
+      - /mnt/data/docker-data/ki-archiv/TRANSKRIPTIONEN:/app/TRANSKRIPTIONEN
     environment:
       - TTS_OUTPUT=/app/HOERBUCH
       - TTS_LANG=tr

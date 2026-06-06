@@ -202,9 +202,12 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
     <i class="ti ti-folder"></i>
     <div class="sb-tooltip">Dateien</div>
   </div>
+  <div class="sb-item" onclick="showPanel('transcribe')" id="nav-transcribe">
+    <i class="ti ti-file-text"></i>
+    <div class="sb-tooltip" data-i18n="nav_transcribe">Transkription</div>
+  </div>
 
   <div class="sb-divider"></div>
-
   <div class="sb-item" onclick="showPanel('settings')" id="nav-settings">
     <i class="ti ti-settings"></i>
     <div class="sb-tooltip">Einstellungen</div>
@@ -771,12 +774,25 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
     <div class="panel" id="panel-files">
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Fertige Hörbücher</span>
+          <span class="card-title">📚 Fertige Hörbücher</span>
           <button class="btn btn-secondary btn-sm" onclick="loadFilesFromServer()">
             <i class="ti ti-refresh"></i> Aktualisieren
           </button>
         </div>
         <div id="file-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Dateien</div></div>
+      </div>
+
+      <!-- Transkriptionen im Dateien-Tab -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📄 Transkriptionen</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFilesIntoElement('files-transcription-list')">
+            <i class="ti ti-refresh"></i>
+          </button>
+        </div>
+        <div id="files-transcription-list" style="font-size:12px;color:var(--text2)">
+          <div style="color:var(--text3);padding:.5rem">Klick Aktualisieren zum Laden</div>
+        </div>
       </div>
     </div>
 
@@ -870,6 +886,208 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         </div>
         <button class="btn btn-danger btn-sm" onclick="changeAdminPassword()">Passwort ändern</button>
       </div>
+
+      <!-- Server Log -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 Server Log</span>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminLogs()"><i class="ti ti-refresh"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="clearAdminLogs()"><i class="ti ti-trash"></i> Leeren</button>
+          </div>
+        </div>
+        <div style="margin-bottom:.5rem;display:flex;gap:.5rem;align-items:center">
+          <label style="font-size:11px;display:flex;align-items:center;gap:.35rem;cursor:pointer">
+            <input type="checkbox" id="log-auto-refresh" onchange="toggleLogAutoRefresh()">
+            Auto-Refresh (5s)
+          </label>
+          <select id="log-level-filter" onchange="loadAdminLogs()" style="font-size:11px;padding:.2rem">
+            <option value="">Alle Level</option>
+            <option value="ERROR">Nur Fehler</option>
+            <option value="WARNING">Warning+</option>
+            <option value="INFO">Info+</option>
+          </select>
+        </div>
+        <div id="admin-log-window" style="height:400px;overflow-y:auto;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem;font-family:monospace;font-size:11px;line-height:1.6">
+          <div style="color:var(--text3)">Log wird geladen...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Transkription ══ -->
+    <div class="panel" id="panel-transcribe">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎙️ Transkription</span>
+          <span class="badge badge-green">FastWhisper</span>
+        </div>
+
+        <!-- Modus Tabs -->
+        <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+          <button class="btn btn-primary btn-sm" id="tab-audio-btn" onclick="setTranscribeMode('audio')" style="flex:1;justify-content:center">
+            🎙️ Audio / Video
+          </button>
+          <button class="btn btn-secondary btn-sm" id="tab-ocr-btn" onclick="setTranscribeMode('ocr')" style="flex:1;justify-content:center">
+            📸 Bild / Dokument (OCR)
+          </button>
+        </div>
+
+        <!-- Audio Mode -->
+        <div id="transcribe-audio-mode">
+          <!-- Projektname -->
+          <div style="margin-bottom:.75rem">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+              <div>
+                <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projektname</div>
+                <input type="text" id="transcribe-project" placeholder="z.B. rafet_interview" style="width:100%">
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">In Ordner speichern</div>
+                <select id="transcribe-folder-select" style="width:100%">
+                  <option value="">— Root (kein Ordner) —</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload -->
+          <div style="margin-bottom:.75rem">
+            <div class="drop-zone" id="transcribe-drop" onclick="document.getElementById('transcribe-file').click()"
+                 ondragover="event.preventDefault()" ondrop="handleTranscribeDrop(event)"
+                 style="padding:1.25rem;text-align:center;cursor:pointer;border:2px dashed var(--border);border-radius:8px">
+              <i class="ti ti-upload" style="font-size:1.75rem;color:var(--text3)"></i>
+              <div style="font-size:12px;color:var(--text2);margin-top:.35rem">MP3, WAV, M4A, OGG, MP4, MKV hochladen</div>
+            </div>
+            <input type="file" id="transcribe-file" accept=".mp3,.wav,.m4a,.ogg,.mp4,.mkv,.webm"
+                   style="display:none" onchange="handleTranscribeUpload(this)">
+          </div>
+
+          <!-- Optionen -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+            <div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Sprache</div>
+              <select id="transcribe-lang" style="width:100%">
+                <option value="auto">🌐 Auto-Erkennung</option>
+                <option value="tr">🇹🇷 Türkisch</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="en">🇬🇧 Englisch</option>
+                <option value="ar">🇸🇦 Arabisch</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Modell</div>
+              <select id="transcribe-model" style="width:100%">
+                <option value="small">Small (schnell, CPU)</option>
+                <option value="medium">Medium (besser)</option>
+                <option value="large-v3">Large-v3 (beste Qualität, GPU)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Diarization (GPU Vorbereitung) -->
+          <div id="diarization-option" style="display:none;margin-bottom:.5rem;padding:.5rem;background:var(--surface2);border-radius:6px;font-size:11px">
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+              <input type="checkbox" id="transcribe-diarize">
+              <span>👥 Sprecher-Erkennung (Speaker Diarization) — nur GPU</span>
+            </label>
+            <div style="color:var(--text3);margin-top:.25rem;margin-left:1.25rem">Erkennt automatisch verschiedene Sprecher mit Timestamps</div>
+          </div>
+        </div>
+
+        <!-- OCR Mode -->
+        <div id="transcribe-ocr-mode" style="display:none">
+          <!-- Projektname OCR -->
+          <div style="margin-bottom:.75rem">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projektname</div>
+            <input type="text" id="transcribe-ocr-project" placeholder="z.B. scan_buch" style="width:100%">
+          </div>
+          <div style="margin-bottom:.75rem">
+            <div class="drop-zone" id="transcribe-ocr-drop" onclick="document.getElementById('transcribe-ocr-file').click()"
+                 ondragover="event.preventDefault()" ondrop="handleOCRDrop(event)"
+                 style="padding:1.25rem;text-align:center;cursor:pointer;border:2px dashed var(--border);border-radius:8px">
+              <i class="ti ti-photo" style="font-size:1.75rem;color:var(--text3)"></i>
+              <div style="font-size:12px;color:var(--text2);margin-top:.35rem">JPG, PNG, WEBP, TIFF, PDF, DOCX hochladen</div>
+            </div>
+            <input type="file" id="transcribe-ocr-file" accept=".jpg,.jpeg,.png,.webp,.tiff,.bmp,.pdf,.docx,.doc,.odt"
+                   style="display:none" onchange="handleOCRUpload(this)">
+          </div>
+          <div style="margin-bottom:.5rem">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Sprache</div>
+            <select id="ocr-lang" style="width:100%">
+              <option value="tr">🇹🇷 Türkisch</option>
+              <option value="de">🇩🇪 Deutsch</option>
+              <option value="en">🇬🇧 Englisch</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display:flex;gap:.5rem;margin-bottom:.75rem;margin-top:.75rem">
+          <button class="btn btn-primary" id="transcribe-btn" onclick="startTranscribe()" style="flex:1;justify-content:center">
+            <i class="ti ti-wand"></i> TRANSKRIBIEREN
+          </button>
+          <button class="btn btn-danger" id="transcribe-abort-btn" onclick="abortTranscribe()" style="display:none;justify-content:center">
+            <i class="ti ti-square"></i> ABBRECHEN
+          </button>
+        </div>
+
+        <!-- Status -->
+        <div id="transcribe-status" style="font-size:11px;color:var(--text3);margin-bottom:.5rem"></div>
+
+        <!-- Ergebnis 2-spaltig -->
+        <div id="transcribe-result" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+            <div style="font-size:11px;color:var(--text2)" id="transcribe-info"></div>
+            <div style="display:flex;gap:.5rem">
+              <button class="btn btn-secondary btn-sm" onclick="downloadTranscription('txt')">
+                <i class="ti ti-download"></i> TXT
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="downloadTranscription('srt')">
+                <i class="ti ti-download"></i> SRT
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="sendToStudio()">
+                <i class="ti ti-wand"></i> → Hörbuch
+              </button>
+            </div>
+          </div>
+          <!-- 2-spaltig: Zeitstempel | Text -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+            <div>
+              <div style="font-size:10px;color:var(--text3);margin-bottom:.25rem">⏱ Mit Zeitstempel (SRT)</div>
+              <textarea id="transcribe-srt" style="width:100%;height:300px;font-size:11px;font-family:monospace;resize:vertical;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem;color:var(--text1)" readonly></textarea>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--text3);margin-bottom:.25rem">📄 Fertige Transkription</div>
+              <textarea id="transcribe-text" style="width:100%;height:300px;font-size:11px;font-family:monospace;resize:vertical;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem;color:var(--text1)" readonly></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gespeicherte Transkriptionen -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📄 Gespeicherte Transkriptionen</span>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="showNewFolderDialog()" title="Neuer Ordner">
+              <i class="ti ti-folder-plus"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFiles()">
+              <i class="ti ti-refresh"></i>
+            </button>
+          </div>
+        </div>
+        <!-- Neuer Ordner Dialog -->
+        <div id="new-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" id="new-folder-name" placeholder="z.B. interviews_2026" style="flex:1">
+            <button class="btn btn-primary btn-sm" onclick="createTranscriptionFolder()">Erstellen</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('new-folder-dialog').style.display='none'">✕</button>
+          </div>
+        </div>
+        <div id="transcription-list" style="font-size:12px;color:var(--text2)">Wird geladen...</div>
+      </div>
     </div>
 
     <!-- ══ Einstellungen ══ -->
@@ -944,12 +1162,14 @@ function showPanel(name){
   const nav = document.getElementById('nav-'+name);
   if(panel) panel.classList.add('active');
   if(nav) nav.classList.add('active');
-  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',settings:'Einstellungen',admin:'🔧 Admin Panel'};
+  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',transcribe:'🎙️ Transkription',settings:'Einstellungen',admin:'🔧 Admin Panel'};
   document.getElementById('page-title').textContent = titles[name] || name;
   if(name==='files') loadFilesFromServer();
   if(name==='voices') loadVoicesFromServer();
   if(name==='musik'){ loadMusikFromServer(); loadMusikList(); }
   if(name==='covers'){ loadCoversFromServer(); loadCoverAudioSelect(); }
+  if(name==='transcribe') { loadTranscriptionFiles(); updateFolderSelect(); }
+  if(name==='admin') { loadAdminStats(); loadAdminLogs(); }
 }
 
 // ── Char Count ──────────────────────────────────
@@ -2160,6 +2380,390 @@ function applyLang() {
 document.addEventListener('DOMContentLoaded', () => {
   applyLang();
 });
+// ── Transkription ────────────────────────────────────────────
+let _lastTranscribeBase = '';
+let _lastTranscribeFolder = '';
+let _transcribeMode = 'audio';
+let _transcribeAbortCtrl = null;
+
+function setTranscribeMode(mode){
+  _transcribeMode = mode;
+  document.getElementById('transcribe-audio-mode').style.display = mode === 'audio' ? 'block' : 'none';
+  document.getElementById('transcribe-ocr-mode').style.display = mode === 'ocr' ? 'block' : 'none';
+  document.getElementById('tab-audio-btn').className = mode === 'audio' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  document.getElementById('tab-ocr-btn').className = mode === 'ocr' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  document.getElementById('tab-audio-btn').style.cssText += ';flex:1;justify-content:center';
+  document.getElementById('tab-ocr-btn').style.cssText += ';flex:1;justify-content:center';
+  document.getElementById('transcribe-result').style.display = 'none';
+}
+
+function handleTranscribeDrop(e){
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if(file) uploadTranscribeFile(file);
+}
+function handleTranscribeUpload(input){ if(input.files[0]) uploadTranscribeFile(input.files[0]); }
+function handleOCRDrop(e){ e.preventDefault(); const file = e.dataTransfer.files[0]; if(file) uploadOCRFile(file); }
+function handleOCRUpload(input){ if(input.files[0]) uploadOCRFile(input.files[0]); }
+
+function uploadTranscribeFile(file){
+  document.getElementById('transcribe-drop').innerHTML = `<i class="ti ti-file-music" style="font-size:1.75rem;color:var(--green)"></i><div style="font-size:12px;margin-top:.35rem">${file.name}</div>`;
+  document.getElementById('transcribe-btn')._file = file;
+  const proj = document.getElementById('transcribe-project');
+  if(!proj.value) proj.value = file.name.replace(/\.[^.]+$/, '');
+}
+
+function uploadOCRFile(file){
+  document.getElementById('transcribe-ocr-drop').innerHTML = `<i class="ti ti-photo" style="font-size:1.75rem;color:var(--green)"></i><div style="font-size:12px;margin-top:.35rem">${file.name}</div>`;
+  document.getElementById('transcribe-btn')._ocrFile = file;
+  const proj = document.getElementById('transcribe-ocr-project');
+  if(!proj.value) proj.value = file.name.replace(/\.[^.]+$/, '');
+}
+
+function abortTranscribe(){
+  if(_transcribeAbortCtrl){ _transcribeAbortCtrl.abort(); _transcribeAbortCtrl = null; }
+  const btn = document.getElementById('transcribe-btn');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
+  document.getElementById('transcribe-abort-btn').style.display = 'none';
+  document.getElementById('transcribe-status').textContent = '⛔ Abgebrochen';
+  document.getElementById('transcribe-status').style.color = 'var(--red)';
+  addLog('[TRANSKRIPT] Abgebrochen', 'err');
+}
+
+async function startTranscribe(){
+  const btn = document.getElementById('transcribe-btn');
+  const abortBtn = document.getElementById('transcribe-abort-btn');
+  const status = document.getElementById('transcribe-status');
+
+  if(_transcribeMode === 'ocr'){ await startOCR(); return; }
+
+  const file = btn._file;
+  if(!file){ addLog('Bitte zuerst eine Datei hochladen!','err'); return; }
+
+  const lang = document.getElementById('transcribe-lang').value;
+  const model = document.getElementById('transcribe-model').value;
+  const project = document.getElementById('transcribe-project').value.trim() || file.name.replace(/\.[^.]+$/, '');
+  const folder = document.getElementById('transcribe-folder-select')?.value || '';
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Transkribiere...';
+  abortBtn.style.display = 'flex';
+  status.textContent = '⏳ Job wird gestartet...';
+  status.style.color = 'var(--amber)';
+  document.getElementById('transcribe-result').style.display = 'none';
+  _transcribeAbortCtrl = new AbortController();
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('language', lang);
+    fd.append('model_size', model);
+    fd.append('project_name', project);
+    fd.append('folder', folder);
+
+    // Async Job starten — kein Cloudflare Timeout
+    const resp = await fetch(`${TTS_URL}/transcribe/async`, {method:'POST', body:fd, signal:_transcribeAbortCtrl.signal});
+    if(!resp.ok) throw new Error(await resp.text());
+    const jobData = await resp.json();
+    const jobId = jobData.job_id;
+    addLog(`[TRANSKRIPT] Job gestartet: ${jobId} · Modell: ${model}`, 'ok');
+
+    // Polling bis fertig
+    let attempts = 0;
+    while(true){
+      if(_transcribeAbortCtrl?.signal.aborted) return;
+      await new Promise(r => setTimeout(r, 3000));
+      attempts++;
+      status.textContent = `⏳ Transkribiere... (${attempts * 3}s)`;
+
+      const pollResp = await fetch(`${TTS_URL}/transcribe/status/${jobId}`);
+      const data = await pollResp.json();
+
+      if(data.status === 'fertig'){
+        _lastTranscribeBase = data.txt_datei?.replace('.txt','') || project;
+        _lastTranscribeFolder = data.ordner || '';
+        document.getElementById('transcribe-text').value = data.text || '';
+        document.getElementById('transcribe-srt').value = data.srt || '';
+        document.getElementById('transcribe-info').textContent =
+          `🌐 ${data.sprache?.toUpperCase()} (${Math.round((data.sprache_wahrscheinlichkeit||0)*100)}%) · ${data.woerter} Wörter · ${data.dauer_sek}s · Modell: ${data.modell}`;
+        document.getElementById('transcribe-result').style.display = 'block';
+        status.textContent = '✅ Fertig!';
+        status.style.color = 'var(--green)';
+        addLog(`[TRANSKRIPT] ${data.woerter} Wörter · ${data.sprache?.toUpperCase()} · Modell: ${data.modell}`, 'ok');
+        loadTranscriptionFiles();
+        updateFolderSelect();
+        break;
+      } else if(data.status === 'fehler'){
+        throw new Error(data.fehler);
+      }
+    }
+  } catch(e) {
+    if(e.name === 'AbortError') return;
+    status.textContent = `❌ Fehler: ${e.message}`;
+    status.style.color = 'var(--red)';
+    addLog(`Transkription Fehler: ${e.message}`, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
+    abortBtn.style.display = 'none';
+    _transcribeAbortCtrl = null;
+  }
+}
+
+async function startOCR(){
+  const btn = document.getElementById('transcribe-btn');
+  const status = document.getElementById('transcribe-status');
+  const file = btn._ocrFile;
+  if(!file){ addLog('Bitte zuerst eine Datei hochladen!','err'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> OCR läuft...';
+  status.textContent = '⏳ Text wird erkannt...';
+  status.style.color = 'var(--amber)';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const resp = await fetch(`${TTS_URL}/tts/convert-to-text`, {method:'POST', body:fd});
+    if(!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    const text = data.text || data.content || '';
+    document.getElementById('transcribe-text').value = text;
+    document.getElementById('transcribe-srt').value = '';
+    document.getElementById('transcribe-info').textContent = `📸 OCR · ${text.split(' ').length} Wörter`;
+    document.getElementById('transcribe-result').style.display = 'block';
+    _lastTranscribeBase = document.getElementById('transcribe-ocr-project').value || 'ocr_ergebnis';
+    status.textContent = '✅ Fertig!';
+    status.style.color = 'var(--green)';
+    addLog(`[OCR] ${text.split(' ').length} Wörter erkannt`, 'ok');
+  } catch(e) {
+    status.textContent = `❌ Fehler: ${e.message}`;
+    status.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
+  }
+}
+
+function downloadTranscription(ext){
+  if(!_lastTranscribeBase){ addLog('Keine Transkription vorhanden','err'); return; }
+  window.open(`${TTS_URL}/transcribe/download/${_lastTranscribeBase}.${ext}`);
+}
+
+function sendToStudio(){
+  const text = document.getElementById('transcribe-text').value;
+  if(!text){ addLog('Kein Text vorhanden','err'); return; }
+  document.getElementById('test-text').value = text;
+  updateCharCount();
+  showPanel('studio');
+  addLog('[TRANSKRIPT] Text ins Studio übertragen ✅', 'ok');
+}
+
+async function loadTranscriptionFilesIntoElement(elementId){
+  const list = document.getElementById(elementId);
+  if(!list) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files`);
+    const data = await resp.json();
+    let html = '';
+    (data.ordner||[]).forEach(o => {
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <i class="ti ti-folder" style="color:var(--amber)"></i>
+          <div><div style="font-weight:500">${o.name}</div><div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien</div></div>
+        </div></div>`;
+    });
+    (data.dateien||[]).forEach(f => {
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+        <div><div style="font-weight:500">${f.name}</div><div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${f.name}')"><i class="ti ti-download"></i></button>
+      </div>`;
+    });
+    if(!html) html = '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
+    list.innerHTML = html;
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+async function loadTranscriptionFiles(){
+  const list = document.getElementById('transcription-list');
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files`);
+    const data = await resp.json();
+    let html = '';
+
+    // Ordner anzeigen
+    if(data.ordner && data.ordner.length > 0){
+      html += data.ordner.map(o => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <i class="ti ti-folder" style="color:var(--amber)"></i>
+            <div>
+              <div style="font-weight:500">${o.name}</div>
+              <div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="openTranscriptionFolder('${o.name}')">
+            <i class="ti ti-folder-open"></i>
+          </button>
+        </div>`).join('');
+    }
+
+    // Dateien anzeigen
+    if(data.dateien && data.dateien.length > 0){
+      html += data.dateien.map(f => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-weight:500">${f.name}</div>
+            <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB</div>
+          </div>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${f.name}')">
+              <i class="ti ti-download"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTranscription('${f.name}')">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>`).join('');
+    }
+
+    if(!html) html = '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
+    list.innerHTML = html;
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+function openTranscriptionFolder(name){
+  const list = document.getElementById('transcription-list');
+  list.innerHTML = '<div style="color:var(--text3);padding:.5rem">⏳ Lade Ordner-Inhalt...</div>';
+  fetch(`${TTS_URL}/transcribe/folder/${name}`)
+    .then(r => r.json())
+    .then(data => {
+      let html = `<div style="padding:.35rem 0;margin-bottom:.35rem;border-bottom:1px solid var(--border)">
+        <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFiles()">
+          <i class="ti ti-arrow-left"></i> Zurück
+        </button>
+        <span style="margin-left:.5rem;font-size:11px;color:var(--text2)">📁 ${name}</span>
+      </div>`;
+      if(data.dateien.length === 0){
+        html += '<div style="color:var(--text3);padding:.5rem">Ordner ist leer</div>';
+      } else {
+        html += data.dateien.map(f => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-weight:500">${f.name}</div>
+              <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB</div>
+            </div>
+            <div style="display:flex;gap:.35rem">
+              <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${name}/${f.name}')">
+                <i class="ti ti-download"></i>
+              </button>
+            </div>
+          </div>`).join('');
+      }
+      list.innerHTML = html;
+    }).catch(() => { list.innerHTML = '<div style="color:var(--red)">Fehler</div>'; });
+}
+
+async function updateFolderSelect(){
+  const sel = document.getElementById('transcribe-folder-select');
+  if(!sel) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files`);
+    const data = await resp.json();
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Root (kein Ordner) —</option>';
+    (data.ordner || []).forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.name;
+      opt.textContent = `📁 ${o.name}`;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  } catch(e) {}
+}
+
+async function deleteTranscription(filename){
+  if(!confirm(`"${filename}" löschen?`)) return;
+  await fetch(`${TTS_URL}/transcribe/files/${filename}`, {method:'DELETE'});
+  loadTranscriptionFiles();
+}
+
+function showNewFolderDialog(){
+  const d = document.getElementById('new-folder-dialog');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  if(d.style.display === 'block') document.getElementById('new-folder-name').focus();
+}
+
+async function createTranscriptionFolder(){
+  const name = document.getElementById('new-folder-name').value.trim();
+  if(!name){ addLog('Bitte Ordnername eingeben!','err'); return; }
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/folder`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+    document.getElementById('new-folder-name').value = '';
+    document.getElementById('new-folder-dialog').style.display = 'none';
+    addLog(`[ORDNER] "${name}" erstellt ✅`, 'ok');
+    loadTranscriptionFiles();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+
+
+// ── Admin Log ────────────────────────────────────────────────
+let _logRefreshTimer = null;
+
+async function loadAdminLogs(){
+  const win = document.getElementById('admin-log-window');
+  if(!win) return;
+  const filter = document.getElementById('log-level-filter')?.value || '';
+  try {
+    const resp = await fetch(`${TTS_URL}/admin/logs?n=200`);
+    const data = await resp.json();
+    let logs = data.logs;
+    if(filter) logs = logs.filter(l => l.level === filter || 
+      (filter === 'WARNING' && ['WARNING','ERROR'].includes(l.level)) ||
+      (filter === 'INFO' && ['INFO','WARNING','ERROR'].includes(l.level)));
+    
+    const levelColor = {ERROR:'var(--red)', WARNING:'var(--amber)', INFO:'var(--text2)', DEBUG:'var(--text3)'};
+    win.innerHTML = logs.map(l => 
+      `<div style="color:${levelColor[l.level]||'var(--text2)'}">
+        <span style="color:var(--text3)">[${l.zeit}]</span>
+        <span style="color:${levelColor[l.level]||'var(--text2)'}">[${l.level}]</span>
+        ${l.nachricht}
+      </div>`
+    ).join('') || '<div style="color:var(--text3)">Keine Logs vorhanden</div>';
+    win.scrollTop = win.scrollHeight;
+  } catch(e) {
+    win.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+async function clearAdminLogs(){
+  if(!confirm('Alle Logs löschen?')) return;
+  await fetch(`${TTS_URL}/admin/logs`, {method:'DELETE'});
+  loadAdminLogs();
+}
+
+function toggleLogAutoRefresh(){
+  const cb = document.getElementById('log-auto-refresh');
+  if(cb.checked){
+    _logRefreshTimer = setInterval(loadAdminLogs, 5000);
+  } else {
+    clearInterval(_logRefreshTimer);
+    _logRefreshTimer = null;
+  }
+}
+
 </script>
 </body>
 </html>
