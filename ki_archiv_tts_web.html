@@ -2452,6 +2452,8 @@ async function startTranscribe(){
   status.textContent = '⏳ Job wird gestartet...';
   status.style.color = 'var(--amber)';
   document.getElementById('transcribe-result').style.display = 'none';
+  document.getElementById('transcribe-srt').value = '';
+  document.getElementById('transcribe-text').value = '';
   _transcribeAbortCtrl = new AbortController();
 
   try {
@@ -2462,40 +2464,71 @@ async function startTranscribe(){
     fd.append('project_name', project);
     fd.append('folder', folder);
 
-    // Async Job starten — kein Cloudflare Timeout
-    const resp = await fetch(`${TTS_URL}/transcribe/async`, {method:'POST', body:fd, signal:_transcribeAbortCtrl.signal});
+    // Live-Transkription via SSE
+    const resp = await fetch(`${TTS_URL}/transcribe/stream`, {
+      method:'POST', body:fd, signal:_transcribeAbortCtrl.signal
+    });
     if(!resp.ok) throw new Error(await resp.text());
-    const jobData = await resp.json();
-    const jobId = jobData.job_id;
-    addLog(`[TRANSKRIPT] Job gestartet: ${jobId} · Modell: ${model}`, 'ok');
 
-    // Polling bis fertig
-    let attempts = 0;
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let srtLines = [];
+    let textLines = [];
+    let segCount = 0;
+
+    document.getElementById('transcribe-result').style.display = 'block';
+
     while(true){
-      if(_transcribeAbortCtrl?.signal.aborted) return;
-      await new Promise(r => setTimeout(r, 3000));
-      attempts++;
-      status.textContent = `⏳ Transkribiere... (${attempts * 3}s)`;
+      const {done, value} = await reader.read();
+      if(done) break;
 
-      const pollResp = await fetch(`${TTS_URL}/transcribe/status/${jobId}`);
-      const data = await pollResp.json();
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
 
-      if(data.status === 'fertig'){
-        _lastTranscribeBase = data.txt_datei?.replace('.txt','') || project;
-        _lastTranscribeFolder = data.ordner || '';
-        document.getElementById('transcribe-text').value = data.text || '';
-        document.getElementById('transcribe-srt').value = data.srt || '';
-        document.getElementById('transcribe-info').textContent =
-          `🌐 ${data.sprache?.toUpperCase()} (${Math.round((data.sprache_wahrscheinlichkeit||0)*100)}%) · ${data.woerter} Wörter · ${data.dauer_sek}s · Modell: ${data.modell}`;
-        document.getElementById('transcribe-result').style.display = 'block';
-        status.textContent = '✅ Fertig!';
-        status.style.color = 'var(--green)';
-        addLog(`[TRANSKRIPT] ${data.woerter} Wörter · ${data.sprache?.toUpperCase()} · Modell: ${data.modell}`, 'ok');
-        loadTranscriptionFiles();
-        updateFolderSelect();
-        break;
-      } else if(data.status === 'fehler'){
-        throw new Error(data.fehler);
+      for(const line of lines){
+        if(!line.startsWith('data: ')) continue;
+        try {
+          const data = JSON.parse(line.slice(6));
+
+          if(data.typ === 'info'){
+            status.textContent = `⏳ Transkribiere... · ${data.sprache?.toUpperCase()} · ${data.modell}`;
+            addLog(`[LIVE] Sprache: ${data.sprache?.toUpperCase()} · Modell: ${data.modell}`, 'ok');
+
+          } else if(data.typ === 'segment'){
+            segCount++;
+            textLines.push(data.text);
+            srtLines.push(data.srt);
+
+            // Panel beim ersten Segment einblenden
+            if(segCount === 1){
+              document.getElementById('transcribe-result').style.display = 'block';
+            }
+
+            // Live SRT links anzeigen
+            document.getElementById('transcribe-srt').value = srtLines.join('\n\n');
+            // Live Text rechts anzeigen
+            document.getElementById('transcribe-text').value = textLines.join('\n');
+            // Auto-scroll
+            const srtEl = document.getElementById('transcribe-srt');
+            srtEl.scrollTop = srtEl.scrollHeight;
+            status.textContent = `⏳ ${segCount} Sätze transkribiert...`;
+
+          } else if(data.typ === 'fertig'){
+            _lastTranscribeBase = data.txt_datei?.replace('.txt','') || project;
+            document.getElementById('transcribe-info').textContent =
+              `🌐 ${lang === 'auto' ? 'Auto' : lang.toUpperCase()} · ${data.woerter} Wörter · Modell: ${model}`;
+            status.textContent = '✅ Fertig!';
+            status.style.color = 'var(--green)';
+            addLog(`[TRANSKRIPT] ${data.woerter} Wörter · ${segCount} Sätze · Modell: ${model}`, 'ok');
+            loadTranscriptionFiles();
+            updateFolderSelect();
+
+          } else if(data.typ === 'fehler'){
+            throw new Error(data.nachricht);
+          }
+        } catch(parseErr) {
+          // Ungültige JSON Zeile ignorieren
+        }
       }
     }
   } catch(e) {
