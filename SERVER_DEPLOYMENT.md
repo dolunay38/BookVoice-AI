@@ -43,7 +43,7 @@ docker --version
 ### Verzeichnisse anlegen
 
 ```bash
-sudo mkdir -p /mnt/data/docker-data/ki-archiv/{HOERBUCH,tts_models,musik,EINGABE,ERGEBNISSE,ARCHIV,models,webui_storage,nllb_models}
+sudo mkdir -p /mnt/data/docker-data/ki-archiv/{HOERBUCH,TRANSKRIPTIONEN,tts_models,musik,EINGABE,ERGEBNISSE,ARCHIV,models,webui_storage,nllb_models}
 sudo chown -R $USER:$USER /mnt/data/docker-data/ki-archiv
 ```
 
@@ -197,9 +197,10 @@ docker restart ki-archiv-tts
 # Alles neu starten:
 docker restart ki-archiv-tts ki-archiv-web ki-archiv-proxy
 
-# Komplett neu bauen (Dockerfile geändert):
+# Komplett neu bauen (Dockerfile geändert) — IMMER --no-cache verwenden!
 cd /mnt/data/docker-data/ki-archiv
-docker compose -f compose.server.yaml up -d --build ki-archiv-tts
+docker compose -f compose.server.yaml build --no-cache ki-archiv-tts
+docker compose -f compose.server.yaml up -d ki-archiv-tts
 ```
 
 ### Stoppen
