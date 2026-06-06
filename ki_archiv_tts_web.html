@@ -2605,9 +2605,14 @@ async function loadTranscriptionFiles(){
               <div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien</div>
             </div>
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="openTranscriptionFolder('${o.name}')">
-            <i class="ti ti-folder-open"></i>
-          </button>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="openTranscriptionFolder('${o.name}')">
+              <i class="ti ti-folder-open"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTranscriptionFolder('${o.name}')">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
         </div>`).join('');
     }
 
@@ -2687,6 +2692,19 @@ async function updateFolderSelect(){
   } catch(e) {}
 }
 
+async function deleteTranscriptionFolder(name){
+  if(!confirm(`Ordner "${name}" und alle Dateien darin löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/folder/${name}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error(await resp.text());
+    addLog(`[ORDNER] "${name}" gelöscht`, 'ok');
+    loadTranscriptionFiles();
+    updateFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
 async function deleteTranscription(filename){
   if(!confirm(`"${filename}" löschen?`)) return;
   await fetch(`${TTS_URL}/transcribe/files/${filename}`, {method:'DELETE'});
@@ -2712,6 +2730,7 @@ async function createTranscriptionFolder(){
     document.getElementById('new-folder-dialog').style.display = 'none';
     addLog(`[ORDNER] "${name}" erstellt ✅`, 'ok');
     loadTranscriptionFiles();
+    updateFolderSelect();
   } catch(e) {
     addLog(`Fehler: ${e.message}`, 'err');
   }

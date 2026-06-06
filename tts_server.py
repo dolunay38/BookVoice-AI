@@ -1666,6 +1666,15 @@ async def create_transcription_folder(data: dict):
     folder.mkdir(parents=True, exist_ok=True)
     return {"status": "ok", "ordner": name}
 
+@app.delete("/transcribe/folder/{folder_name}")
+def delete_transcription_folder(folder_name: str):
+    """Ordner in TRANSKRIPTIONEN löschen"""
+    folder = TRANSCRIPTION_DIR / folder_name
+    if not folder.exists() or not folder.is_dir():
+        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    shutil.rmtree(folder)
+    return {"status": "ok", "geloescht": folder_name}
+
 # ════════════════════════════════════════════════════════════════
 # Admin Logging
 # ════════════════════════════════════════════════════════════════
