@@ -1380,6 +1380,42 @@ _whisper_model = None
 _whisper_model_size = None
 _whisper_lock = threading.Lock()
 
+def merge_short_segments(segments, min_words=8):
+    """Kurze Segmente zusammenführen für bessere Lesbarkeit beim Hörbuch"""
+    merged = []
+    buffer_text = ""
+    buffer_start = None
+    buffer_end = None
+
+    for seg in segments:
+        text = seg.text.strip()
+        if not text:
+            continue
+
+        if buffer_text == "":
+            buffer_text = text
+            buffer_start = seg.start
+            buffer_end = seg.end
+        else:
+            word_count = len(buffer_text.split())
+            # Zusammenführen wenn:
+            # 1. Vorheriges Segment zu kurz (unter min_words)
+            # 2. Vorheriges Segment endet nicht mit Satzzeichen
+            ends_with_punct = buffer_text[-1] in '.!?…'
+            if word_count < min_words or not ends_with_punct:
+                buffer_text += " " + text
+                buffer_end = seg.end
+            else:
+                merged.append((buffer_text, buffer_start, buffer_end))
+                buffer_text = text
+                buffer_start = seg.start
+                buffer_end = seg.end
+
+    if buffer_text:
+        merged.append((buffer_text, buffer_start, buffer_end))
+
+    return merged
+
 def get_whisper_model(size: str = "small"):
     global _whisper_model, _whisper_model_size
     with _whisper_lock:
@@ -1448,16 +1484,16 @@ def _run_transcribe_job(job_id, content, suffix, filename, language, model_size,
 
         text_parts = []
         srt_parts = []
-        for i, seg in enumerate(segments, 1):
-            text_parts.append(seg.text.strip())
-            start = f"{int(seg.start//3600):02d}:{int((seg.start%3600)//60):02d}:{seg.start%60:06.3f}".replace(".", ",")
-            end = f"{int(seg.end//3600):02d}:{int((seg.end%3600)//60):02d}:{seg.end%60:06.3f}".replace(".", ",")
-            srt_parts.append(f"{i}\n{start} --> {end}\n{seg.text.strip()}\n")
+        merged = merge_short_segments(segments, min_words=5)
+        for i, (text, start_t, end_t) in enumerate(merged, 1):
+            text_parts.append(text)
+            start = f"{int(start_t//3600):02d}:{int((start_t%3600)//60):02d}:{start_t%60:06.3f}".replace(".", ",")
+            end = f"{int(end_t//3600):02d}:{int((end_t%3600)//60):02d}:{end_t%60:06.3f}".replace(".", ",")
+            srt_parts.append(f"{i}\n{start} --> {end}\n{text}\n")
 
         full_text = "\n".join(text_parts)
         srt_text = "\n".join(srt_parts)
 
-        base_name = project_name.strip() if project_name.strip() else Path(filename).stem
         base_name = re.sub(r'[^\w\-_]', '_', base_name)
         if folder.strip():
             folder_clean = re.sub(r'[^\w\-_]', '_', folder.strip())
@@ -1548,21 +1584,31 @@ async def transcribe_stream(
             import json
             yield f"data: {json.dumps({'typ': 'info', 'sprache': info.language, 'modell': model_size})}\n\n"
 
-            # Segmente live senden
-            all_text = []
-            all_srt = []
-            seg_num = 0
+            # Live streamen UND sammeln für Merge
+            raw_segments = []
+            all_text_live = []
+            all_srt_live = []
+            seg_num_live = 0
+
             for seg in segments_list:
-                seg_num += 1
+                raw_segments.append(seg)
+                seg_num_live += 1
                 text = seg.text.strip()
                 start = f"{int(seg.start//3600):02d}:{int((seg.start%3600)//60):02d}:{seg.start%60:06.3f}".replace(".", ",")
                 end = f"{int(seg.end//3600):02d}:{int((seg.end%3600)//60):02d}:{seg.end%60:06.3f}".replace(".", ",")
-                srt_zeile = f"{seg_num}\n{start} --> {end}\n{text}"
+                srt_zeile = f"{seg_num_live}\n{start} --> {end}\n{text}"
+                all_text_live.append(text)
+                all_srt_live.append(srt_zeile)
+                yield f"data: {json.dumps({'typ': 'segment', 'nr': seg_num_live, 'text': text, 'start': start, 'end': end, 'srt': srt_zeile})}\n\n"
 
-                all_text.append(text)
-                all_srt.append(srt_zeile)
-
-                yield f"data: {json.dumps({'typ': 'segment', 'nr': seg_num, 'text': text, 'start': start, 'end': end, 'srt': srt_zeile})}\n\n"
+            # Nach dem Stream: Segmente mergen für Speicherung
+            merged = merge_short_segments(raw_segments, min_words=5)
+            all_text = [t for t, _, _ in merged]
+            all_srt = []
+            for i, (text, start_t, end_t) in enumerate(merged, 1):
+                start = f"{int(start_t//3600):02d}:{int((start_t%3600)//60):02d}:{start_t%60:06.3f}".replace(".", ",")
+                end = f"{int(end_t//3600):02d}:{int((end_t%3600)//60):02d}:{end_t%60:06.3f}".replace(".", ",")
+                all_srt.append(f"{i}\n{start} --> {end}\n{text}")
 
             # Fertig — speichern
             full_text = "\n".join(all_text)
@@ -1647,14 +1693,15 @@ async def transcribe_audio(
         # Segmente sofort konsumieren (Generator leeren bevor WAV gelöscht wird)
         segments = list(segments_list)
 
-        # Segmente zusammenführen
+        # Kurze Segmente zusammenführen für bessere Lesbarkeit
         text_parts = []
         srt_parts = []
-        for i, seg in enumerate(segments, 1):
-            text_parts.append(seg.text.strip())
-            start = f"{int(seg.start//3600):02d}:{int((seg.start%3600)//60):02d}:{seg.start%60:06.3f}".replace(".", ",")
-            end = f"{int(seg.end//3600):02d}:{int((seg.end%3600)//60):02d}:{seg.end%60:06.3f}".replace(".", ",")
-            srt_parts.append(f"{i}\n{start} --> {end}\n{seg.text.strip()}\n")
+        merged = merge_short_segments(segments, min_words=5)
+        for i, (text, start_t, end_t) in enumerate(merged, 1):
+            text_parts.append(text)
+            start = f"{int(start_t//3600):02d}:{int((start_t%3600)//60):02d}:{start_t%60:06.3f}".replace(".", ",")
+            end = f"{int(end_t//3600):02d}:{int((end_t%3600)//60):02d}:{end_t%60:06.3f}".replace(".", ",")
+            srt_parts.append(f"{i}\n{start} --> {end}\n{text}\n")
 
         full_text = "\n".join(text_parts)
         srt_text = "\n".join(srt_parts)
