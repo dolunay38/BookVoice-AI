@@ -1,8 +1,17 @@
+# Transformers Compatibility Fix (Colab)
+try:
+    import transformers.pytorch_utils as _pu
+    import torch as _torch
+    if not hasattr(_pu, 'isin_mps_friendly'):
+        _pu.isin_mps_friendly = _torch.isin
+except Exception:
+    pass
+
 import os, uuid, threading, torchaudio, torch, shutil, subprocess, re, tempfile
 from faster_whisper import WhisperModel
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -1491,6 +1500,104 @@ def transcribe_status(job_id: str):
     if not job:
         raise HTTPException(status_code=404, detail="Job nicht gefunden")
     return job
+
+@app.post("/transcribe/stream")
+async def transcribe_stream(
+    file: UploadFile = File(...),
+    language: str = Form("auto"),
+    model_size: str = Form("small"),
+    project_name: str = Form(""),
+    folder: str = Form("")
+):
+    """Live-Transkription mit Server-Sent Events — Satz für Satz"""
+    content = await file.read()
+    suffix = Path(file.filename).suffix.lower()
+    filename = file.filename
+
+    async def generate():
+        tmp_path = EINGABE_DIR / f"{uuid.uuid4().hex}{suffix}"
+        wav_path = None
+        try:
+            # Datei speichern
+            with open(tmp_path, "wb") as f:
+                f.write(content)
+                f.flush()
+                os.fsync(f.fileno())
+
+            # FFmpeg konvertieren
+            wav_path = tmp_path.with_suffix(".wav")
+            if suffix not in [".wav"]:
+                result = subprocess.run([
+                    "ffmpeg", "-i", str(tmp_path),
+                    "-ar", "16000", "-ac", "1", "-y", str(wav_path)
+                ], capture_output=True)
+                if result.returncode != 0 or not wav_path.exists():
+                    yield f"data: {{\"fehler\": \"FFmpeg Fehler\"}}\n\n"
+                    return
+            else:
+                wav_path = tmp_path
+
+            # FastWhisper streamen
+            model = get_whisper_model(model_size)
+            lang = None if language == "auto" else language
+            segments_list, info = model.transcribe(
+                str(wav_path), language=lang, beam_size=5, vad_filter=True
+            )
+
+            # Sprache senden
+            import json
+            yield f"data: {json.dumps({'typ': 'info', 'sprache': info.language, 'modell': model_size})}\n\n"
+
+            # Segmente live senden
+            all_text = []
+            all_srt = []
+            seg_num = 0
+            for seg in segments_list:
+                seg_num += 1
+                text = seg.text.strip()
+                start = f"{int(seg.start//3600):02d}:{int((seg.start%3600)//60):02d}:{seg.start%60:06.3f}".replace(".", ",")
+                end = f"{int(seg.end//3600):02d}:{int((seg.end%3600)//60):02d}:{seg.end%60:06.3f}".replace(".", ",")
+                srt_zeile = f"{seg_num}\n{start} --> {end}\n{text}"
+
+                all_text.append(text)
+                all_srt.append(srt_zeile)
+
+                yield f"data: {json.dumps({'typ': 'segment', 'nr': seg_num, 'text': text, 'start': start, 'end': end, 'srt': srt_zeile})}\n\n"
+
+            # Fertig — speichern
+            full_text = "\n".join(all_text)
+            srt_text = "\n\n".join(all_srt)
+
+            base_name = project_name.strip() if project_name.strip() else Path(filename).stem
+            base_name = re.sub(r'[^\w\-_]', '_', base_name)
+            save_dir = TRANSCRIPTION_DIR
+            if folder.strip():
+                folder_clean = re.sub(r'[^\w\-_]', '_', folder.strip())
+                save_dir = TRANSCRIPTION_DIR / folder_clean
+                save_dir.mkdir(parents=True, exist_ok=True)
+
+            (save_dir / f"{base_name}.txt").write_text(full_text, encoding="utf-8")
+            (save_dir / f"{base_name}.srt").write_text(srt_text, encoding="utf-8")
+
+            yield f"data: {json.dumps({'typ': 'fertig', 'woerter': len(full_text.split()), 'txt_datei': f'{base_name}.txt', 'srt_datei': f'{base_name}.srt', 'text': full_text, 'srt': srt_text})}\n\n"
+
+        except Exception as e:
+            import json
+            yield f"data: {json.dumps({'typ': 'fehler', 'nachricht': str(e)})}\n\n"
+        finally:
+            if wav_path and wav_path != tmp_path and wav_path.exists():
+                wav_path.unlink()
+            if tmp_path.exists():
+                tmp_path.unlink()
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 @app.post("/transcribe")
 async def transcribe_audio(
