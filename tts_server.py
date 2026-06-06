@@ -661,11 +661,19 @@ def book_status(job_id: str):
 
 @app.get("/tts/files")
 def list_files():
+    import datetime
     files = []
     for ext in ["*.wav", "*.mp3", "*.m4b"]:
-        for f in sorted(OUTPUT_DIR.rglob(ext)):
+        for f in OUTPUT_DIR.rglob(ext):
             if not f.name.startswith("_"):
-                files.append({"name": f.name, "groesse_mb": round(f.stat().st_size / 1024 / 1024, 2)})
+                files.append({
+                    "name": f.name,
+                    "groesse_mb": round(f.stat().st_size / 1024 / 1024, 2),
+                    "datum": f.stat().st_mtime,
+                    "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+                })
+    # Neueste zuerst
+    files.sort(key=lambda x: x["datum"], reverse=True)
     return {"dateien": files, "anzahl": len(files)}
 
 @app.get("/tts/download/{filename}")
@@ -1752,9 +1760,10 @@ async def transcribe_audio(
 @app.get("/transcribe/files")
 def list_transcriptions():
     """Alle Transkriptionen + Ordner auflisten"""
+    import datetime
     files = []
     ordner = []
-    for f in sorted(TRANSCRIPTION_DIR.iterdir()):
+    for f in TRANSCRIPTION_DIR.iterdir():
         if f.is_dir():
             ordner.append({
                 "name": f.name,
@@ -1766,8 +1775,11 @@ def list_transcriptions():
                 "name": f.name,
                 "groesse_kb": round(f.stat().st_size / 1024, 1),
                 "datum": f.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M"),
                 "typ": "datei"
             })
+    # Neueste zuerst
+    files.sort(key=lambda x: x["datum"], reverse=True)
     return {"dateien": files, "ordner": ordner}
 
 @app.get("/transcribe/download/{filename}")
@@ -1777,29 +1789,32 @@ def download_transcription(filename: str):
         raise HTTPException(status_code=404, detail="Datei nicht gefunden")
     return FileResponse(path, filename=filename)
 
-@app.delete("/transcribe/files/{filename}")
-def delete_transcription(filename: str):
-    path = TRANSCRIPTION_DIR / filename
+@app.delete("/transcribe/files/{filepath:path}")
+def delete_transcription(filepath: str):
+    path = TRANSCRIPTION_DIR / filepath
     if not path.exists():
         raise HTTPException(status_code=404, detail="Datei nicht gefunden")
     path.unlink()
-    return {"status": "ok", "geloescht": filename}
+    return {"status": "ok", "geloescht": filepath}
 
 @app.get("/transcribe/folder/{folder_name}")
 def get_folder_contents(folder_name: str):
     """Inhalt eines Transkriptions-Ordners abrufen"""
+    import datetime
     folder = TRANSCRIPTION_DIR / folder_name
     if not folder.exists() or not folder.is_dir():
         raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
     files = []
-    for f in sorted(folder.iterdir()):
+    for f in folder.iterdir():
         if f.suffix in [".txt", ".srt"]:
             files.append({
                 "name": f.name,
                 "pfad": f"{folder_name}/{f.name}",
                 "groesse_kb": round(f.stat().st_size / 1024, 1),
-                "datum": f.stat().st_mtime
+                "datum": f.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
             })
+    files.sort(key=lambda x: x["datum"], reverse=True)
     return {"ordner": folder_name, "dateien": files}
 
 @app.get("/transcribe/download/{folder_or_file}/{filename}")

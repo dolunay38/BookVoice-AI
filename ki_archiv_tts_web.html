@@ -1877,6 +1877,7 @@ async function loadFilesFromServer(){
           <span class="file-icon">${f.name.endsWith('.mp3')?'🎵':f.name.endsWith('.m4b')?'📱':'🔊'}</span>
           <span class="file-name">${f.name}</span>
           <span class="file-size">${f.groesse_mb} MB</span>
+          <span style="font-size:10px;color:var(--text3);margin-left:auto">${f.datum_str || ''}</span>
           <button onclick="togglePlayer('player_${f.name.replace(/\./g,'_')}')" class="btn btn-secondary btn-sm" title="Abspielen">▶</button>
           <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
           <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
@@ -2627,6 +2628,9 @@ async function loadTranscriptionFiles(){
     const data = await resp.json();
     let html = '';
 
+    // Dateien nach Datum sortieren (neueste zuerst)
+    if(data.dateien) data.dateien.sort((a,b) => (b.datum||0) - (a.datum||0));
+
     // Ordner anzeigen
     if(data.ordner && data.ordner.length > 0){
       html += data.ordner.map(o => `
@@ -2655,7 +2659,7 @@ async function loadTranscriptionFiles(){
         <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
           <div>
             <div style="font-weight:500">${f.name}</div>
-            <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB</div>
+            <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB · ${f.datum_str || ''}</div>
           </div>
           <div style="display:flex;gap:.35rem">
             <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${f.name}')">
@@ -2672,6 +2676,18 @@ async function loadTranscriptionFiles(){
     list.innerHTML = html;
   } catch(e) {
     list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+async function deleteFolderFile(folder, filename){
+  if(!confirm(`"${filename}" löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files/${folder}/${filename}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error(await resp.text());
+    addLog(`[ORDNER] "${filename}" gelöscht`, 'ok');
+    openTranscriptionFolder(folder);
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
   }
 }
 
@@ -2694,11 +2710,14 @@ function openTranscriptionFolder(name){
           <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
             <div>
               <div style="font-weight:500">${f.name}</div>
-              <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB</div>
+              <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB · ${f.datum_str || ''}</div>
             </div>
             <div style="display:flex;gap:.35rem">
               <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${name}/${f.name}')">
                 <i class="ti ti-download"></i>
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="deleteFolderFile('${name}','${f.name}')">
+                <i class="ti ti-trash"></i>
               </button>
             </div>
           </div>`).join('');
