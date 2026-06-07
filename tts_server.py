@@ -24,6 +24,8 @@ EINGABE_DIR = Path("/app/EINGABE")
 EINGABE_DIR.mkdir(parents=True, exist_ok=True)
 ARCHIV_DIR = Path("/app/ARCHIV")
 ARCHIV_DIR.mkdir(parents=True, exist_ok=True)
+(ARCHIV_DIR / "hoerbuch").mkdir(exist_ok=True)
+(ARCHIV_DIR / "transkription").mkdir(exist_ok=True)
 # Dynamischer Modell-Pfad — funktioniert auf Docker und Colab
 _possible_model_dirs = [
     Path("/app/tts_models/tts_models--multilingual--multi-dataset--xtts_v2"),
@@ -1901,6 +1903,67 @@ def delete_transcription_folder(folder_name: str):
         raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
     shutil.rmtree(folder)
     return {"status": "ok", "geloescht": folder_name}
+
+# ════════════════════════════════════════════════════════════════
+# Archiv Endpoints
+# ════════════════════════════════════════════════════════════════
+
+@app.get("/archiv/folders")
+def list_archiv_folders():
+    import datetime
+    result = {}
+    for sub in ["hoerbuch", "transkription"]:
+        d = ARCHIV_DIR / sub
+        d.mkdir(exist_ok=True)
+        files = sorted(
+            [f for f in d.iterdir() if f.is_file() and not f.name.startswith("_")],
+            key=lambda f: f.stat().st_mtime, reverse=True
+        )
+        result[sub] = [{
+            "name": f.name,
+            "groesse_mb": round(f.stat().st_size / 1024 / 1024, 2),
+            "datum": f.stat().st_mtime,
+            "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+        } for f in files]
+    return {"ordner": result}
+
+@app.patch("/archiv/rename")
+async def rename_archiv_file(data: dict):
+    subfolder = data.get("subfolder", "")
+    old_name  = data.get("old_name", "").strip()
+    new_name  = re.sub(r'[^\w\-_.]', '_', data.get("new_name", "").strip())
+    if not old_name or not new_name or subfolder not in ["hoerbuch", "transkription"]:
+        raise HTTPException(status_code=400, detail="Ungültige Eingabe")
+    old_path = ARCHIV_DIR / subfolder / old_name
+    new_path = ARCHIV_DIR / subfolder / new_name
+    if not old_path.exists():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    if new_path.exists():
+        raise HTTPException(status_code=409, detail="Name bereits vergeben")
+    old_path.rename(new_path)
+    return {"status": "ok", "neu": new_name}
+
+@app.delete("/archiv/files/{subfolder}/{filename}")
+def delete_archiv_file(subfolder: str, filename: str):
+    if subfolder not in ["hoerbuch", "transkription"]:
+        raise HTTPException(status_code=400, detail="Ungültiger Ordner")
+    path = ARCHIV_DIR / subfolder / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    path.unlink()
+    return {"status": "ok", "geloescht": filename}
+
+@app.get("/archiv/stream/{subfolder}/{filename}")
+def stream_archiv_file(subfolder: str, filename: str):
+    if subfolder not in ["hoerbuch", "transkription"]:
+        raise HTTPException(status_code=400, detail="Ungültiger Ordner")
+    path = ARCHIV_DIR / subfolder / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    media_map = {".mp3": "audio/mpeg", ".m4b": "audio/mp4", ".wav": "audio/wav",
+                 ".ogg": "audio/ogg", ".flac": "audio/flac", ".m4a": "audio/mp4"}
+    media_type = media_map.get(Path(filename).suffix.lower(), "application/octet-stream")
+    return FileResponse(path, media_type=media_type, filename=filename)
 
 # ════════════════════════════════════════════════════════════════
 # Admin Logging

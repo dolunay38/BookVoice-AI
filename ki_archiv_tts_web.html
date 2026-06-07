@@ -169,6 +169,40 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem}
 .stat-value{font-size:22px;font-weight:600;color:var(--text);font-family:var(--mono);margin-bottom:2px}
 .stat-label{font-size:11px;color:var(--text3)}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:420px;transform:translateY(10px);transition:transform .2s}
+.modal-overlay.open .modal-box{transform:translateY(0)}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:.75rem;color:var(--text)}
+.modal-footer{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.25rem}
+
+/* ── Archiv Tabs ── */
+.tab-bar{display:flex;gap:.35rem;margin-bottom:1rem;border-bottom:1px solid var(--border);padding-bottom:.5rem}
+.tab-btn{padding:.35rem .85rem;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s;font-family:var(--sans)}
+.tab-btn.active{background:var(--green-dim);color:var(--green)}
+
+/* ── Search ── */
+.search-row{display:flex;gap:.5rem;margin-bottom:.75rem;align-items:center}
+.search-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;padding:.45rem .75rem;outline:none;font-family:var(--mono);transition:border-color .15s}
+.search-input:focus{border-color:var(--green)}
+.search-input::placeholder{color:var(--text3)}
+
+/* ── Storage Bar ── */
+.storage-bar-bg{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:.35rem 0;background:var(--border)}
+.storage-seg{height:100%;transition:width .4s ease}
+
+/* ── Bulk Toolbar ── */
+.bulk-toolbar{display:flex;align-items:center;gap:.5rem;padding:.45rem .65rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.65rem;font-size:11px;color:var(--text2)}
+.bulk-toolbar input[type=checkbox]{accent-color:var(--green);width:13px;height:13px;cursor:pointer}
+
+/* ── Archiv Row ── */
+.archiv-row{padding:.5rem 0;border-bottom:1px solid var(--border);transition:background .12s}
+.archiv-row:last-child{border-bottom:none}
+.archiv-row-head{display:flex;align-items:center;gap:.45rem}
+.archiv-row input[type=checkbox]{accent-color:var(--green);width:13px;height:13px;cursor:pointer;flex-shrink:0}
+.mini-player{width:100%;height:28px;margin-top:.35rem;accent-color:var(--green)}
 </style>
 </head>
 <body>
@@ -201,6 +235,10 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
   <div class="sb-item" onclick="showPanel('files')" id="nav-files">
     <i class="ti ti-folder"></i>
     <div class="sb-tooltip">Dateien</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('archiv')" id="nav-archiv">
+    <i class="ti ti-archive"></i>
+    <div class="sb-tooltip">Archiv</div>
   </div>
   <div class="sb-item" onclick="showPanel('transcribe')" id="nav-transcribe">
     <i class="ti ti-file-text"></i>
@@ -1109,6 +1147,72 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Archiv ══ -->
+    <div class="panel" id="panel-archiv">
+
+      <!-- Storage Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🗄️ Archiv</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadArchivFolders()"><i class="ti ti-refresh"></i></button>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:.25rem">
+            <span>Speicherbelegung</span>
+            <span id="archiv-storage-label" style="font-family:var(--mono)">— MB</span>
+          </div>
+          <div class="storage-bar-bg">
+            <div class="storage-seg" id="archiv-bar-hoerbuch" style="background:var(--green);width:0%"></div>
+            <div class="storage-seg" id="archiv-bar-transkription" style="background:var(--amber);width:0%"></div>
+          </div>
+          <div style="display:flex;gap:1.25rem;font-size:10px;color:var(--text3)">
+            <span><span style="color:var(--green)">■</span> Hörbuch: <span id="archiv-sz-hoerbuch">—</span> MB</span>
+            <span><span style="color:var(--amber)">■</span> Transkription: <span id="archiv-sz-transkription">—</span> MB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Card -->
+      <div class="card">
+        <!-- Tabs -->
+        <div class="tab-bar">
+          <button class="tab-btn active" id="archiv-tab-hoerbuch" onclick="switchArchivTab('hoerbuch')">🎵 Hörbuch</button>
+          <button class="tab-btn" id="archiv-tab-transkription" onclick="switchArchivTab('transkription')">📄 Transkription</button>
+        </div>
+
+        <!-- Suche -->
+        <div class="search-row">
+          <input class="search-input" id="archiv-search" placeholder="Datei suchen..." oninput="filterArchiv()">
+          <button class="btn btn-secondary btn-sm" onclick="filterArchiv()"><i class="ti ti-search"></i></button>
+        </div>
+
+        <!-- Massenauswahl-Toolbar -->
+        <div class="bulk-toolbar">
+          <input type="checkbox" id="archiv-select-all" onchange="toggleSelectAllArchiv(this.checked)">
+          <span id="archiv-sel-count" style="flex:1">Alle auswählen</span>
+          <button class="btn btn-danger btn-sm" id="archiv-bulk-delete" onclick="deleteSelectedArchiv()" disabled>
+            <i class="ti ti-trash"></i> Auswahl löschen
+          </button>
+        </div>
+
+        <!-- Dateiliste -->
+        <div id="archiv-file-list">
+          <div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div>
+        </div>
+
+        <!-- Fortschrittsbalken (Batch-Löschen) -->
+        <div id="archiv-progress-wrap" style="display:none;margin-top:.75rem">
+          <div class="progress-label">
+            <span>Löschen läuft...</span>
+            <span id="archiv-progress-pct" style="font-family:var(--mono)">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="archiv-progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ Einstellungen ══ -->
     <div class="panel" id="panel-settings">
       <div class="card">
@@ -1130,6 +1234,20 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
   </div><!-- content -->
 </div><!-- main -->
 </div><!-- app -->
+
+<!-- ── Rename Modal ── -->
+<div class="modal-overlay" id="rename-modal" onclick="if(event.target===this)closeRenameModal()">
+  <div class="modal-box">
+    <div class="modal-title">✏️ Umbenennen</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:.75rem;font-family:var(--mono)" id="rename-modal-path"></div>
+    <input type="text" id="rename-modal-input" style="width:100%;margin-bottom:.3rem" placeholder="Neuer Dateiname">
+    <div style="font-size:10px;color:var(--text3)">Sonderzeichen werden automatisch durch _ ersetzt</div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeRenameModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="confirmRename()"><i class="ti ti-check"></i> Umbenennen</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ── Config ──────────────────────────────────────
@@ -1181,9 +1299,10 @@ function showPanel(name){
   const nav = document.getElementById('nav-'+name);
   if(panel) panel.classList.add('active');
   if(nav) nav.classList.add('active');
-  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',transcribe:'🎙️ Transkription',settings:'Einstellungen',admin:'🔧 Admin Panel'};
+  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',archiv:'🗄️ Archiv',transcribe:'🎙️ Transkription',settings:'Einstellungen',admin:'🔧 Admin Panel'};
   document.getElementById('page-title').textContent = titles[name] || name;
   if(name==='files') { loadHoerbuchFolders(); updateHoerbuchFolderSelect(); }
+  if(name==='archiv') loadArchivFolders();
   if(name==='studio') updateHoerbuchFolderSelect();
   if(name==='voices') loadVoicesFromServer();
   if(name==='musik'){ loadMusikFromServer(); loadMusikList(); }
@@ -2944,6 +3063,204 @@ function showNewHoerbuchFolderDialog(){
   d.style.display = d.style.display === 'none' ? 'block' : 'none';
   if(d.style.display === 'block') document.getElementById('new-hoerbuch-folder-name').focus();
 }
+
+// ── Archiv ───────────────────────────────────────────────────
+
+let _archivData = {hoerbuch:[], transkription:[]};
+let _archivTab  = 'hoerbuch';
+let _renameCtx  = null;
+
+async function loadArchivFolders(){
+  const list = document.getElementById('archiv-file-list');
+  try {
+    const resp = await fetch(`${TTS_URL}/archiv/folders`);
+    const data = await resp.json();
+    _archivData = {
+      hoerbuch:      data.ordner.hoerbuch      || [],
+      transkription: data.ordner.transkription || []
+    };
+    updateArchivStorage();
+    renderArchivList();
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="color:var(--red);padding:.5rem">Fehler beim Laden</div>';
+  }
+}
+
+function updateArchivStorage(){
+  const sum = arr => arr.reduce((s,f) => s + f.groesse_mb, 0);
+  const hMB = sum(_archivData.hoerbuch);
+  const tMB = sum(_archivData.transkription);
+  const total = hMB + tMB;
+  const fmt = mb => mb >= 1024 ? (mb/1024).toFixed(2)+' GB' : mb.toFixed(1)+' MB';
+  document.getElementById('archiv-storage-label').textContent = fmt(total);
+  document.getElementById('archiv-sz-hoerbuch').textContent   = hMB.toFixed(1);
+  document.getElementById('archiv-sz-transkription').textContent = tMB.toFixed(1);
+  if(total > 0){
+    document.getElementById('archiv-bar-hoerbuch').style.width      = ((hMB/total)*100).toFixed(1)+'%';
+    document.getElementById('archiv-bar-transkription').style.width = ((tMB/total)*100).toFixed(1)+'%';
+  } else {
+    document.getElementById('archiv-bar-hoerbuch').style.width      = '0%';
+    document.getElementById('archiv-bar-transkription').style.width = '0%';
+  }
+}
+
+function switchArchivTab(tab){
+  _archivTab = tab;
+  document.querySelectorAll('.tab-btn[id^="archiv-tab-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('archiv-tab-'+tab).classList.add('active');
+  document.getElementById('archiv-search').value = '';
+  document.getElementById('archiv-select-all').checked = false;
+  renderArchivList();
+}
+
+function filterArchiv(){ renderArchivList(); }
+
+function renderArchivList(){
+  const q     = document.getElementById('archiv-search').value.toLowerCase().trim();
+  const files = (_archivData[_archivTab] || []).filter(f => !q || f.name.toLowerCase().includes(q));
+  const list  = document.getElementById('archiv-file-list');
+
+  if(!files.length){
+    list.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Keine Dateien vorhanden</div>';
+    _updateBulkToolbar();
+    return;
+  }
+
+  const isAudioFile = name => /\.(mp3|wav|m4b|ogg|flac|m4a|aac|opus)$/i.test(name);
+  const fileIcon    = name => name.endsWith('.mp3')||name.endsWith('.m4b') ? '🎵'
+                            : name.endsWith('.wav') ? '🔊'
+                            : name.endsWith('.txt') ? '📄'
+                            : name.endsWith('.srt') ? '📋' : '📁';
+
+  list.innerHTML = files.map((f, i) => {
+    const audio = isAudioFile(f.name);
+    const pid   = 'ap_' + i + '_' + f.name.replace(/[^a-z0-9]/gi,'_');
+    const src   = `${TTS_URL}/archiv/stream/${_archivTab}/${encodeURIComponent(f.name)}`;
+    return `<div class="archiv-row">
+      <div class="archiv-row-head">
+        <input type="checkbox" class="archiv-cb" data-name="${f.name}" onchange="_updateBulkToolbar()">
+        <span style="font-size:15px">${fileIcon(f.name)}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px">${f.name}</div>
+          <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB &middot; ${f.datum_str}</div>
+        </div>
+        ${audio ? `<button onclick="toggleArchivPlayer('${pid}')" class="btn btn-secondary btn-sm" title="Abspielen">▶</button>` : ''}
+        <button onclick="openRenameModal('${_archivTab}','${f.name}')" class="btn btn-secondary btn-sm" title="Umbenennen"><i class="ti ti-pencil"></i></button>
+        <button onclick="deleteSingleArchiv('${_archivTab}','${f.name}')" class="btn btn-danger btn-sm" title="Löschen"><i class="ti ti-trash"></i></button>
+      </div>
+      ${audio ? `<audio class="mini-player" id="${pid}" controls preload="none" style="display:none"><source src="${src}"></audio>` : ''}
+    </div>`;
+  }).join('');
+
+  _updateBulkToolbar();
+}
+
+function toggleArchivPlayer(pid){
+  const el = document.getElementById(pid);
+  if(!el) return;
+  const visible = el.style.display !== 'none';
+  document.querySelectorAll('.mini-player').forEach(a => { a.style.display='none'; a.pause(); });
+  if(!visible){ el.style.display='block'; el.play().catch(()=>{}); }
+}
+
+function toggleSelectAllArchiv(checked){
+  document.querySelectorAll('.archiv-cb').forEach(cb => cb.checked = checked);
+  _updateBulkToolbar();
+}
+
+function _updateBulkToolbar(){
+  const all     = document.querySelectorAll('.archiv-cb');
+  const checked = document.querySelectorAll('.archiv-cb:checked');
+  const n = checked.length;
+  const selEl = document.getElementById('archiv-sel-count');
+  const delBtn = document.getElementById('archiv-bulk-delete');
+  const allCb  = document.getElementById('archiv-select-all');
+  if(selEl)  selEl.textContent = n > 0 ? `${n} ausgewählt` : 'Alle auswählen';
+  if(delBtn) delBtn.disabled = n === 0;
+  if(allCb){
+    allCb.indeterminate = n > 0 && n < all.length;
+    allCb.checked       = all.length > 0 && n === all.length;
+  }
+}
+
+async function deleteSingleArchiv(subfolder, filename){
+  if(!confirm(`"${filename}" aus dem Archiv löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/archiv/files/${subfolder}/${encodeURIComponent(filename)}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error((await resp.json()).detail || 'Fehler');
+    addLog(`[ARCHIV] "${filename}" gelöscht`, 'ok');
+    await loadArchivFolders();
+  } catch(e) { addLog(`Fehler: ${e.message}`, 'err'); }
+}
+
+async function deleteSelectedArchiv(){
+  const cbs = [...document.querySelectorAll('.archiv-cb:checked')];
+  if(!cbs.length) return;
+  if(!confirm(`${cbs.length} Datei(en) endgültig aus dem Archiv löschen?`)) return;
+
+  const wrap = document.getElementById('archiv-progress-wrap');
+  const fill = document.getElementById('archiv-progress-fill');
+  const pct  = document.getElementById('archiv-progress-pct');
+  wrap.style.display = 'block';
+  fill.style.width   = '0%';
+
+  let done = 0;
+  for(const cb of cbs){
+    try { await fetch(`${TTS_URL}/archiv/files/${_archivTab}/${encodeURIComponent(cb.dataset.name)}`, {method:'DELETE'}); } catch(_){}
+    done++;
+    const p = Math.round((done/cbs.length)*100);
+    fill.style.width = p+'%';
+    pct.textContent  = p+'%';
+  }
+
+  addLog(`[ARCHIV] ${done} Datei(en) gelöscht`, 'ok');
+  setTimeout(() => { wrap.style.display='none'; fill.style.width='0%'; }, 1000);
+  await loadArchivFolders();
+}
+
+// ── Rename Modal ─────────────────────────────────────────────
+
+function openRenameModal(subfolder, filename){
+  _renameCtx = {subfolder, filename};
+  document.getElementById('rename-modal-path').textContent = subfolder + ' / ' + filename;
+  document.getElementById('rename-modal-input').value = filename;
+  document.getElementById('rename-modal').classList.add('open');
+  setTimeout(() => {
+    const inp = document.getElementById('rename-modal-input');
+    inp.focus();
+    // Dateiname ohne Extension selektieren
+    const dot = filename.lastIndexOf('.');
+    inp.setSelectionRange(0, dot > 0 ? dot : filename.length);
+  }, 150);
+}
+
+function closeRenameModal(){
+  document.getElementById('rename-modal').classList.remove('open');
+  _renameCtx = null;
+}
+
+async function confirmRename(){
+  if(!_renameCtx) return;
+  const newName = document.getElementById('rename-modal-input').value.trim();
+  if(!newName){ addLog('Bitte einen Namen eingeben!','err'); return; }
+  try {
+    const resp = await fetch(`${TTS_URL}/archiv/rename`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({subfolder: _renameCtx.subfolder, old_name: _renameCtx.filename, new_name: newName})
+    });
+    const data = await resp.json();
+    if(!resp.ok) throw new Error(data.detail || 'Fehler');
+    addLog(`[ARCHIV] Umbenannt → ${data.neu}`, 'ok');
+    closeRenameModal();
+    await loadArchivFolders();
+  } catch(e) { addLog(`Fehler: ${e.message}`, 'err'); }
+}
+
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('rename-modal').classList.contains('open')) return;
+  if(e.key === 'Escape') closeRenameModal();
+  if(e.key === 'Enter')  confirmRename();
+});
 
 // ── Admin Log ────────────────────────────────────────────────
 let _logRefreshTimer = null;
