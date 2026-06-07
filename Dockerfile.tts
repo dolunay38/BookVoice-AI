@@ -41,7 +41,9 @@ RUN pip install --no-cache-dir \
     python-docx \
     openpyxl \
     python-pptx \
-    xlrd
+    xlrd \
+    faster-whisper \
+    httpx
 
 COPY tts_server.py /app/tts_server.py
 

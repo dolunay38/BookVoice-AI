@@ -1,529 +1,315 @@
-# 📚 BookVoice-AI
+# KI-ARCHIV PRO
 
-**Open-Source KI-Hörbuch Studio** — Text zu Sprache mit Voice Cloning, Transkription und Hörbuch-Produktion.
+<div align="center">
 
-[![GitHub](https://img.shields.io/badge/GitHub-dolunay38-black)](https://github.com/dolunay38/BookVoice-AI)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)](https://fastapi.tiangolo.com)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com)
-[![Version](https://img.shields.io/badge/Version-1.3-orange)](https://github.com/dolunay38/BookVoice-AI)
+![KI-ARCHIV PRO](https://img.shields.io/badge/KI--ARCHIV%20PRO-v1.0-1E3A5F?style=for-the-badge&logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Offline](https://img.shields.io/badge/100%25-Offline-27AE60?style=for-the-badge&logo=shield&logoColor=white)
+![DSGVO](https://img.shields.io/badge/DSGVO-konform-27AE60?style=for-the-badge&logo=eu&logoColor=white)
+![Status](https://img.shields.io/badge/Status-In%20Betrieb-brightgreen?style=for-the-badge)
 
----
+**Lokales, datenschutzfreundliches KI-System zum Transkribieren, Übersetzen und Archivieren von Wissen.**
 
-## Inhaltsverzeichnis
+Alles läuft vollständig **offline** auf dem eigenen System — keine Cloud, keine Datenweitergabe.  
+Ideal für Schulen, Seminare, Behörden, Kanzleien und Unternehmen mit hohen Datenschutzanforderungen.
 
-1. [Projektübersicht](#1-projektübersicht)
-2. [Systemvoraussetzungen](#2-systemvoraussetzungen)
-3. [Installation Windows](#3-installation-windows)
-4. [Installation Server (Linux)](#4-installation-server-linux)
-5. [Konfiguration](#5-konfiguration)
-6. [Deployment & Updates](#6-deployment--updates)
-7. [Cloudflare Tunnel & Zugang](#7-cloudflare-tunnel--zugang)
-8. [Web-GUI Bedienung](#8-web-gui-bedienung)
-9. [Transkription](#9-transkription)
-10. [API-Referenz](#10-api-referenz)
-11. [Stimmen verwalten](#11-stimmen-verwalten)
-12. [Formate & Ausgabe](#12-formate--ausgabe)
-13. [Troubleshooting](#13-troubleshooting)
-14. [Roadmap](#14-roadmap)
+[📖 Dokumentation](#-dokumentation) · [🚀 Schnellstart](#-installation--schnellstart) · [🧱 Architektur](#-architektur) · [⚙️ Konfiguration](#-konfiguration)
+
+</div>
 
 ---
 
-## 1. Projektübersicht
+## ✨ Was kann KI-ARCHIV PRO?
 
-**BookVoice-AI** ist ein selbst-gehostetes KI-Hörbuch-Studio. Es konvertiert Text, eBooks (EPUB, PDF, MOBI) und Fotos von Buchseiten automatisch in hochwertige Hörbücher — mit geklonter Stimme, in Türkisch, Deutsch und Englisch.
-
-### Architektur
-
-```
-Browser (DE/TR/EN)
-    ↓
-ki_archiv_tts_web.html (Single-File Frontend)
-    ↓
-Nginx Reverse Proxy (Port 7502 → /api)
-    ↓
-tts_server.py (FastAPI, Port 7500)
-    ↓
-┌─────────────────────────────────┐
-│ XTTS-v2 (lokal, CPU/GPU)        │
-│ Edge TTS (Microsoft Cloud)      │
-│ GPU Colab (Cloudflare Tunnel)   │
-│ FastWhisper (Transkription)     │
-└─────────────────────────────────┘
-```
-
-### TTS Engines
-
-| Engine | Qualität | Speed | Voice Cloning | Sprachen |
-|--------|----------|-------|---------------|---------|
-| XTTS-v2 (CPU) | ⭐⭐⭐⭐⭐ | Langsam | ✅ | TR/DE/EN + |
-| Edge TTS | ⭐⭐⭐ | Sehr schnell | ❌ | 400+ Stimmen |
-| GPU Colab T4 | ⭐⭐⭐⭐⭐ | Schnell | ✅ | TR/DE/EN + |
-
-### Unterstützte Dateiformate
-
-| Kategorie | Formate |
-|-----------|---------|
-| Dokumente | TXT, MD, CSV, RTF |
-| Word | DOC, DOCX, ODT |
-| PDF | PyPDF2 + Calibre |
-| eBooks | EPUB, MOBI, AZW3, FB2 |
-| Präsentationen | PPTX, PPT |
-| Tabellen | XLSX, XLS |
-| Bilder (OCR) | JPG, PNG, WEBP, TIFF |
-| Audio (Stimme) | WAV, MP3, M4A, OGG |
-
-### Unterstützte Sprachen
-
-- 🇹🇷 Türkisch (tr)
-- 🇩🇪 Deutsch (de)
-- 🇬🇧 Englisch (en)
-- 🇸🇦 Arabisch (ar)
-
----
-
-## 2. Systemvoraussetzungen
-
-### Minimum
-
-| Komponente | Minimum |
-|---|---|
-| RAM | 8 GB |
-| CPU | 4 Kerne (Intel i3 9. Gen oder besser) |
-| Speicher | 20 GB frei |
-| OS | Ubuntu 22.04+ / Windows 10/11 mit WSL2 |
-| Docker | 24.x oder neuer |
-
-### Empfohlen
-
-| Komponente | Empfohlen |
-|---|---|
-| RAM | 16–32 GB |
-| GPU | NVIDIA GTX 1650+ (optional, 10x schneller) |
-| Speicher | 100 GB+ (für Hörbücher und Modelle) |
-
----
-
-## 3. Installation Windows
-
-### Ein-Klick Installation
-
-1. Repository herunterladen: [GitHub](https://github.com/dolunay38/BookVoice-AI)
-2. `install.bat` als Administrator ausführen
-3. Browser öffnet sich automatisch auf `http://localhost:7502`
-
-### Voraussetzungen (automatisch geprüft)
-- Docker Desktop
-- WSL2
-
-### Update
-
-```bat
-update.bat
-```
-
-Lädt automatisch neue Dateien von GitHub und baut Container neu.
-
-### Starten / Stoppen
-
-```bat
-start.bat    # BookVoice-AI starten
-stop.bat     # BookVoice-AI stoppen
-```
-
----
-
-## 4. Installation Server (Linux)
-
-### Schritt 1: Repository klonen
-
-```bash
-git clone https://github.com/dolunay38/BookVoice-AI.git
-cd BookVoice-AI
-```
-
-### Schritt 2: Verzeichnisse anlegen
-
-```bash
-sudo mkdir -p /mnt/data/docker-data/ki-archiv/{EINGABE,ARCHIV,ERGEBNISSE,HOERBUCH,TRANSKRIPTIONEN,tts_models,models,webui_storage}
-sudo chown -R $USER:$USER /mnt/data/docker-data/ki-archiv
-```
-
-### Schritt 3: Dateien kopieren
-
-```bash
-cp compose.server.yaml /mnt/data/docker-data/ki-archiv/
-cp Dockerfile.tts /mnt/data/docker-data/ki-archiv/
-cp tts_server.py /mnt/data/docker-data/ki-archiv/
-cp ki_archiv_tts_web.html /mnt/data/docker-data/ki-archiv/
-cp nginx-bookvoice.conf /mnt/data/docker-data/ki-archiv/
-```
-
-### Schritt 4: Container bauen und starten
-
-```bash
-cd /mnt/data/docker-data/ki-archiv
-docker compose -f compose.server.yaml up -d --build
-```
-
-> **Hinweis:** Beim ersten Start wird XTTS-v2 Modell heruntergeladen (~1.8 GB). Dauert 5–15 Min.
-
-### Schritt 5: Installation prüfen
-
-```bash
-curl http://localhost:7502/api/health
-# Erwartete Antwort: {"status":"ok","device":"cpu"}
-```
-
----
-
-## 5. Konfiguration
-
-### compose.server.yaml — Wichtige Einstellungen
-
-```yaml
-services:
-  ki-archiv-tts:
-    environment:
-      - TTS_OUTPUT=/app/HOERBUCH
-      - TTS_LANG=tr
-```
-
-### Ordnerstruktur (Server)
-
-```
-/app/
-├── HOERBUCH/          → Fertige Hörbücher (MP3/M4B/WAV)
-├── TRANSKRIPTIONEN/   → FastWhisper Texte (TXT/SRT)
-├── EINGABE/           → Rohdateien (temporär)
-├── ARCHIV/            → Verarbeitete Dateien
-├── tts_models/        → XTTS-v2 Modell + Stimmen
-├── covers/            → Buchcover
-└── musik/             → Hintergrundmusik
-```
-
-### Stimme-Parameter
-
-| Parameter | Wert | Beschreibung |
+| Funktion | Technologie | Beschreibung |
 |---|---|---|
-| temperature | 0.1–1.0 | Wärme/Emotion |
-| repetition_penalty | 2–15 | Natürlichkeit |
-| top_k | 10–100 | Kreativität |
-
-### Presets
-
-| Preset | Temperature | Rep. Penalty | Top-K | Speed |
-|--------|-------------|--------------|-------|-------|
-| 🎯 Original | 0.1 | 10.0 | 10 | 1.0 |
-| 🕌 Sufi | 0.65 | 4.0 | 25 | 0.85 |
-| 📖 Roman | 0.55 | 5.0 | 30 | 1.0 |
-| 📰 Sachtext | 0.4 | 6.0 | 20 | 1.05 |
-| 🎭 Dramatisch | 0.85 | 3.0 | 50 | 0.95 |
+| 🎙 Audio-Transkription | Whisper / FastWhisper | Mehrsprachig (DE/TR/EN), Zeitstempel, Reintext, optionale KI-Korrektur |
+| 📄 OCR & PDF | Tesseract + pdf2image | Scans & Bilder (JPG/PNG/TIFF), native PDFs, optionale Qwen-Korrektur |
+| 🌍 Übersetzung (NLLB) | NLLB-200 (Meta AI) | 8 Sprachen offline: DE, EN, TR, FR, ES, RU, AR — ohne Internet |
+| 🤖 Übersetzung (LLM) | Qwen via Ollama | Kontextbasierte Übersetzung mit lokalem Sprachmodell |
+| ✏️ KI-Korrektur | Qwen 2.5 (3B / 7B) | Rechtschreibung, Fachsprache, amtlicher Stil, religiöse Texte |
+| 💬 Lokaler KI-Chat | Ollama + Qwen | Chat in der GUI — Standard (3B) & Premium (7B), vollständig offline |
+| 📂 Auto-Archivierung | Python / os.walk | Datumsbasierte Struktur `ARCHIV/YYYY-MM-DD/` — vollautomatisch |
+| 📊 Dashboard & Monitoring | CustomTkinter | Docker-Status, Statistiken, Live-Transkript, Logs, Dateimanager |
 
 ---
 
-## 6. Deployment & Updates
+## 🧱 Architektur
 
-### Nach Code-Änderungen (nur .py oder .html)
+```
+┌─────────────────────────────────────────────────────────┐
+│                    WINDOWS HOST                         │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │           gui_zentrale_pro.py (CustomTkinter)   │    │
+│  │  Dashboard │ Dateimanager │ Live-Transkript      │    │
+│  │  System-Logs │ KI-Chat │ Konfiguration           │    │
+│  └──────────────────────┬──────────────────────────┘    │
+│                         │ localhost                      │
+│  ┌──────────────────────▼──────────────────────────┐    │
+│  │              DOCKER COMPOSE                      │    │
+│  │                                                  │    │
+│  │  ┌─────────────┐  ┌──────────────────────────┐  │    │
+│  │  │   ollama    │  │    ki-archiv-ingest       │  │    │
+│  │  │  Port 11434 │  │  ingest_winmaster.py      │  │    │
+│  │  │ Qwen 3B/7B  │  │  Whisper │ OCR │ NLLB     │  │    │
+│  │  └─────────────┘  └──────────────────────────┘  │    │
+│  │  ┌─────────────┐  ┌──────────────────────────┐  │    │
+│  │  │ open-webui  │  │   nllb-translator         │  │    │
+│  │  │  Port 3000  │  │   Port 5000               │  │    │
+│  │  │ Chat & RAG  │  │   FastAPI + NLLB-200       │  │    │
+│  │  └─────────────┘  └──────────────────────────┘  │    │
+│  └─────────────────────────────────────────────────┘    │
+│                                                         │
+│  E:\Archiv-KI\                                          │
+│  ├── EINGABE\        ← Dateien hier ablegen             │
+│  ├── ERGEBNISSE\     ← Verarbeitete Ergebnisse          │
+│  └── ARCHIV\         ← Originale (YYYY-MM-DD\)          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Datenfluss
+
+```
+Datei in EINGABE\ ablegen
+        ↓  (max. 10 Sekunden)
+Ingest-Worker erkennt Datei & Modus (anhand Ordnerpfad)
+        ↓
+Audio → Whisper Transkription
+PDF   → Tesseract OCR
+Text  → NLLB oder Qwen Übersetzung / Korrektur
+        ↓
+Ergebnis → ERGEBNISSE\...
+Original → ARCHIV\YYYY-MM-DD\...
+        ↓
+GUI zeigt Live-Status & Ergebnis in Echtzeit
+```
+
+---
+
+## 🔧 Tech Stack
+
+| Bereich | Technologie |
+|---|---|
+| Sprache | Python 3.10+ |
+| GUI-Framework | CustomTkinter |
+| Containerisierung | Docker + Docker Compose |
+| Transkription | faster-whisper (OpenAI Whisper) |
+| OCR | Tesseract-OCR (DE/EN/TR/AR) + pytesseract + pdf2image |
+| Offline-Übersetzung | NLLB-200-distilled-600M (Meta AI) via FastAPI |
+| LLM-Backend | Ollama (Qwen 2.5 3B / 7B) |
+| LLM-Chat-UI | Open-WebUI (optional, RAG-fähig) |
+| Logging | Python logging mit FlushHandler (Echtzeit-GUI) |
+
+---
+
+## 📊 Projektstatus
+
+| Metrik | Wert |
+|---|---|
+| Verarbeitete Audio-Dateien | **453** |
+| Verarbeitete Textdateien | **14** |
+| Unterstützte Sprachen (NLLB) | **8** (DE, EN, TR, FR, ES, RU, AR) |
+| Unterstützte Audio-Formate | `.wav .mp3 .m4a .ogg .flac .opus` |
+| Unterstützte Dokument-Formate | `.pdf .jpg .jpeg .png .tiff .tif` |
+| Plattform | Windows 10/11 (Docker-Backend plattformunabhängig) |
+
+---
+
+## ⚙️ Systemvoraussetzungen
+
+### Mindestanforderungen (CPU-Betrieb)
+
+| Komponente | Minimum | Empfohlen |
+|---|---|---|
+| Betriebssystem | Windows 10 64-bit | Windows 11 64-bit |
+| CPU | 4 Kerne | 8+ Kerne |
+| RAM | 16 GB | 32 GB |
+| Speicherplatz | ~30 GB | 100+ GB |
+| Python | 3.10+ | 3.11 |
+| Docker | Docker Desktop | Docker Desktop (aktuell) |
+
+### Optional: GPU-Beschleunigung
+
+- NVIDIA GPU mit CUDA-Unterstützung
+- Aktuelle NVIDIA-Treiber (CUDA 11.x / 12.x)
+- Docker Desktop mit WSL2-Backend
+- Vorteil: Whisper-Transkription **5–10× schneller**
+
+---
+
+## 🚀 Installation & Schnellstart
+
+### 1. Voraussetzungen installieren
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- [Python 3.11](https://www.python.org/) — **mit `py`-Launcher installieren!**
+- [Git](https://git-scm.com/downloads) (optional)
+
+### 2. Projekt klonen
 
 ```bash
-scp tts_server.py aksadmin@SERVER_IP:/pfad/ki-archiv/
-docker restart ki-archiv-tts
+git clone https://github.com/dolunay38/KI-ARCHIV-PRO.git
+cd KI-ARCHIV-PRO
 ```
 
-### Nach Dockerfile-Änderungen (Rebuild nötig!)
+### 3. Datenordner anlegen (außerhalb des Repos)
+
+```
+E:\Archiv-KI\
+  EINGABE\
+  ERGEBNISSE\
+  ARCHIV\
+  models\whisper_models\
+  nllb_models\
+  ollama_storage\
+```
+
+### 4. `.env` anpassen
+
+```env
+ARCHIV_PFAD=E:/Archiv-KI/ERGEBNISSE
+MODELS_DIR=E:/Archiv-KI/ollama_storage
+NLLB_MODEL_PATH=E:/Archiv-KI/nllb_models
+WHISPER_MODEL_PATH=E:/Archiv-KI/models/whisper_models
+STORAGE_PATH=E:/Archiv-KI/webui_storage
+```
+
+> Pfade in `compose.yaml` und `config.ini` ggf. ebenfalls anpassen.
+
+### 5. Docker-Container starten & Modelle laden
 
 ```bash
-scp Dockerfile.tts aksadmin@SERVER_IP:/pfad/ki-archiv/
-cd /mnt/data/docker-data/ki-archiv
-docker compose -f compose.server.yaml build --no-cache ki-archiv-tts
-docker compose -f compose.server.yaml up -d ki-archiv-tts
+# Container bauen und starten
+docker compose up -d --build
+
+# Qwen-Modelle laden (einmalig, dauert einige Minuten)
+docker exec -it ollama ollama pull qwen2.5:3b
+docker exec -it ollama ollama pull qwen2.5:7b
+
+# Status prüfen
+docker compose ps
 ```
 
-> ⚠️ **Wichtig:** Immer `--no-cache` beim Rebuild verwenden, sonst werden neue Dateien ignoriert!
-
-### Logs anzeigen
+### 6. GUI starten
 
 ```bash
-docker logs ki-archiv-tts -f
-docker logs ki-archiv-proxy -f
+# Schnellstart (installiert Python-Dependencies automatisch)
+GUI_STARTEN.bat
+
+# Oder: Diagnose-Start (mit Docker-Check)
+KI-ARCHIV-DIAGNOSE_START.bat
+```
+
+### 7. Erste Datei verarbeiten
+
+1. Audio-Datei (`.mp3`, `.wav`) in `E:\Archiv-KI\EINGABE\` kopieren
+2. Kurz warten (max. 10 Sekunden)
+3. GUI → Tab **📝 Live-Transkript** → Transkription erscheint in Echtzeit
+4. Ergebnis in `E:\Archiv-KI\ERGEBNISSE\EINGABE\` prüfen
+
+---
+
+## 🗂️ Pipelines — Modus-Erkennung über Ordner
+
+Der Ingest-Worker erkennt den Verarbeitungsmodus **vollautomatisch** anhand des Ordners:
+
+| Ordner | Was passiert |
+|---|---|
+| `EINGABE\` | Audio → Transkription · PDF/Bild → OCR · Text → ablegen |
+| `UEBERSETZEN\NACH_DEUTSCH\` | NLLB-Übersetzung → Deutsch |
+| `UEBERSETZEN\NACH_TUERKISCH\` | NLLB-Übersetzung → Türkisch |
+| `UEBERSETZEN\NACH_ENGLISCH\` | NLLB-Übersetzung → Englisch |
+| `UEBERSETZEN_QWEN\QWEN_DEUTSCH\` | Qwen-Übersetzung → Deutsch |
+| `KORREKTUR\` | Qwen-Korrektur (Rechtschreibung / Fachsprache / Stil) |
+
+---
+
+## 📁 Ausgabedateien
+
+| Eingabe | Erzeugte Dateien |
+|---|---|
+| Audio | `*_whisper_transkript.txt` (mit Zeitstempeln) |
+| Audio | `*_whisper_transkript_reintext.txt` (Fließtext) |
+| Audio + KI aktiv | `*_whisper_transkript_korrigiert.txt` |
+| PDF / Bild | `*_ocr.txt` |
+| PDF / Bild + KI | `*_ocr_korrigiert.txt` |
+| Text (NLLB) | `*_uebersetzung_nllb.txt` |
+| Text (Qwen) | `*_uebersetzung_qwen.txt` |
+| Text (Korrektur) | `*_korrigiert.txt` |
+
+---
+
+## ⚙️ Konfiguration
+
+Alle Einstellungen in `config.ini`:
+
+```ini
+[AUDIO]
+whisper_size = small        # tiny / base / small / medium / large
+
+[SYSTEM]
+scan_interval = 10          # Sekunden zwischen Ordner-Scans
+
+[KI_SETTINGS]
+enabled = false             # Qwen-Korrektur aktivieren
+model = qwen2.5:7b          # Standard-Modell
+premium_model = qwen2.5:7b  # Premium-Modell
+current_mode = Fach_Korrektur_Rechtschreibung
+
+[NLLB_SETTINGS]
+default_tgt_lang_name = NACH_DEUTSCH
 ```
 
 ---
 
-## 7. Cloudflare Tunnel & Zugang
+## 🛡️ Datenschutz & DSGVO
 
-### Tunnel einrichten
+- ✅ **Alle Daten bleiben lokal** — kein Cloud-Upload durch KI-ARCHIV PRO
+- ✅ **Keine externen API-Aufrufe** — alle KI-Modelle laufen auf dem eigenen System
+- ✅ **Keine Telemetrie** — das System kommuniziert nicht nach außen
+- ✅ **Geeignet für** Schulen, Behörden, Kanzleien, Unternehmen mit DSGVO-Anforderungen
 
-1. Cloudflare Dashboard → **Zero Trust** → **Tunnels**
-2. Tunnel auswählen → **Public Hostname** → **Add**
-3. Eintrag:
-   - Subdomain: `hoerbuch`
-   - Domain: `deine-domain.de`
-   - Type: `HTTP`
-   - URL: `SERVER-IP:7502`
-
-### Zugangs-Policy (E-Mail-Authentifizierung)
-
-1. **Zero Trust** → **Access** → **Applications** → **Add**
-2. **Self-hosted** auswählen
-3. Policy: Allow → Emails → Erlaubte Adressen eintragen
-
-> User erhalten Magic-Link per E-Mail — kein Passwort nötig.
+> ⚠️ Hinweis: Bei Nutzung externer Tools oder eigener Skripte kann dies abweichen.
 
 ---
 
-## 8. Web-GUI Bedienung
+## 📖 Dokumentation
 
-### Zugang
-
-- **Intern:** `http://SERVER-IP:7502`
-- **Extern:** `https://hoerbuch.deine-domain.de`
-
-### Hörbuch erstellen
-
-1. **Engine** wählen (XTTS-v2 / Edge TTS / GPU Colab)
-2. **Sprache** auswählen (TR/DE/EN)
-3. **Text eingeben** oder **Datei hochladen**
-4. **Referenzstimme** auswählen
-5. **Preset** wählen oder manuell einstellen
-6. **Projekt-Name** eingeben
-7. **HÖRBUCH GENERIEREN** klicken
-8. Fortschritt im **Log** verfolgen
-9. Fertige Datei in **Dateien** herunterladen
-
-### Emotion Tags
-
-```
-[dramatic] [whispers] [sighs] [laughs] [sad] [happy] [pause]
-```
-
-Auto-Erkennung aktivierbar per Checkbox.
-
-### GPU Colab verbinden
-
-1. Colab Notebook öffnen: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dolunay38/BookVoice-AI/blob/main/BookVoice_AI_Colab.ipynb)
-2. Alle Zellen ausführen
-3. Tunnel-URL kopieren
-4. In GUI → GPU Colab → URL eingeben → Verbinden
-
-### Performance
-
-| | CPU (i3-9th) | Edge TTS | GPU Colab T4 |
-|--|--|--|--|
-| 1 Kapitel (~1.700 Z.) | ~16 Min | 9 Sek | ~2 Min |
-| 6 Kapitel (~11.000 Z.) | ~108 Min | 72 Sek | ~9 Min |
+| Dokument | Inhalt |
+|---|---|
+| [`docs/TECHNIK.md`](docs/TECHNIK.md) | Technische Detaildokumentation (Funktionen, Klassen, Pipelines) |
+| [`KI-ARCHIV-PRO_Dokumentation_V1.pdf`](docs/KI-ARCHIV-PRO_Dokumentation_V1.pdf) | Vollständige Projektdokumentation (13 Kapitel) |
 
 ---
 
-## 9. Transkription
+## 🗺️ Roadmap
 
-### FastWhisper Modelle
-
-| Modell | Qualität | Speed | Empfohlen für |
-|--------|----------|-------|---------------|
-| Small | ⭐⭐⭐ | Schnell | CPU, kurze Dateien |
-| Medium | ⭐⭐⭐⭐ | Mittel | Standard |
-| Large-v3 | ⭐⭐⭐⭐⭐ | Langsam | Beste Qualität |
-
-### Unterstützte Formate
-
-MP3, WAV, M4A, OGG, MP4, MKV, WebM
-
-### Workflow
-
-1. **Transkription Tab** öffnen
-2. **Modus** wählen (Audio/Video oder Bild/OCR)
-3. **Projektname** eingeben
-4. **Zielordner** wählen (optional)
-5. **Datei hochladen**
-6. **Sprache** und **Modell** wählen
-7. **TRANSKRIBIEREN** klicken
-8. Ergebnis: Links SRT mit Zeitstempel, Rechts Text
-9. **→ Hörbuch** Button überträgt Text direkt ins Studio
-
-### Export
-
-- **TXT** — Reiner Text
-- **SRT** — Mit Zeitstempel (für Untertitel)
+- [ ] Speaker Diarization — Sprecher automatisch erkennen und markieren
+- [ ] RAG-Integration — ERGEBNISSE als Wissensbasis für kontextbasierte Fragen
+- [ ] N8n Workflow-Automation — automatische Einsortierung & Reports
+- [ ] GPU-Support (Docker) — nvidia-container-toolkit für schnellere Transkription
+- [ ] Weitere NLLB-Sprachpaare (200+ verfügbar)
 
 ---
 
-## 10. API-Referenz
+## 👤 Entwickler
 
-### Base URL
+**Ismail Aksoy**
 
-```
-http://SERVER-IP:7500
-# oder über Proxy:
-http://SERVER-IP:7502/api
-```
+Angehender Fachinformatiker für Systemintegration (FISI) mit Fokus IT-Security & Infrastruktur.
 
-### Endpoints
+KI-ARCHIV PRO ist ein Eigenprojekt, das aus dem konkreten Bedarf an einem datenschutzfreundlichen, offline-fähigen Transkriptions- und Archivierungswerkzeug entstanden ist — entwickelt parallel zur Umschulung und zum [Aksoy-Net Home Lab](https://github.com/dolunay38/aksoy-net-homelab).
 
-```
-GET  /health                      → Server Status
-POST /tts/generate                → Text zu Audio
-POST /tts/book                    → Hörbuch generieren
-GET  /tts/book/status/{job_id}    → Job Status
-POST /tts/cancel/{job_id}         → Job abbrechen
-GET  /tts/files                   → Dateien auflisten
-GET  /tts/download/{filename}     → Datei herunterladen
-DELETE /tts/files/{filename}      → Datei löschen
-POST /tts/upload-voice            → Stimme hochladen
-GET  /tts/voices                  → Stimmen auflisten
-DELETE /tts/voices/{filename}     → Stimme löschen
-GET  /edge/voices                 → Edge TTS Stimmen
-POST /edge/book                   → Edge TTS Hörbuch
-POST /transcribe/async            → Transkription starten
-GET  /transcribe/status/{job_id}  → Transkriptions-Status
-GET  /transcribe/files            → Transkriptionen auflisten
-POST /transcribe/folder           → Ordner erstellen
-DELETE /transcribe/folder/{name}  → Ordner löschen
-POST /admin/colab-url             → GPU URL setzen
-GET  /admin/logs                  → Server Logs
-```
+- 🔗 GitHub: [github.com/dolunay38](https://github.com/dolunay38)
+- 💼 LinkedIn: [Ismail Aksoy](https://linkedin.com/in/ismail-aksoy)
+- 🌐 Homelab: [aksoy-net.de](https://aksoy-net.de)
 
 ---
 
-## 11. Stimmen verwalten
+<div align="center">
 
-### Empfehlungen
+*KI-ARCHIV PRO — Wissen archivieren. Lokal. Sicher. Ohne Cloud.*
 
-- Länge: **8–60 Sekunden** (min. 8s für Voice Cloning)
-- Format: WAV oder MP3
-- Umgebung: Ruhiger Raum, kein Hintergrundgeräusch
-- Inhalt: In der Zielsprache sprechen
-
-### Stimme aus YouTube extrahieren
-
-```bash
-yt-dlp -x --audio-format mp3 "https://youtube.com/watch?v=..."
-ffmpeg -i video.mp3 -ss 00:02:00 -t 00:01:00 -acodec pcm_s16le -ar 22050 -ac 1 stimme.wav
-```
-
-### Parameter für verschiedene Textstile
-
-| Textstil | Temperature | Rep. Penalty | Top-K |
-|---|---|---|---|
-| Sachtext | 0.35 | 7.0 | 15 |
-| Roman | 0.55 | 5.0 | 30 |
-| Sufi/Spirituell | 0.65 | 4.0 | 25 |
-| Lyrik/Poesie | 0.85 | 2.5 | 55 |
-
----
-
-## 12. Formate & Ausgabe
-
-### MP3
-- Standard für alle Geräte
-- Kleinste Dateigröße
-- Ideal für WhatsApp, E-Mail
-
-### M4B
-- Offizielles Hörbuch-Format (Apple/iPhone)
-- Kapitel-Navigation + Lesezeichen
-- Metadaten + Cover eingebettet
-
-### WAV
-- Verlustfreie Qualität
-- Für Nachbearbeitung geeignet
-
-### Ausgabestruktur
-
-```
-HOERBUCH/
-└── mein_buch/
-    ├── kapitel_001.mp3
-    ├── kapitel_002.mp3
-    └── mein_buch_komplett.mp3  ← Finale Datei
-```
-
----
-
-## 13. Troubleshooting
-
-### Container startet nicht
-
-```bash
-docker logs ki-archiv-tts --tail 30
-docker restart ki-archiv-tts
-```
-
-### OFFLINE in Web-GUI
-
-```bash
-curl http://localhost:7502/api/health
-docker logs ki-archiv-proxy --tail 10
-```
-
-### Stimme klingt verzerrt
-
-- Referenzstimme zu kurz → längere Aufnahme (min. 8s)
-- Temperature zu hoch → auf 0.3–0.5 reduzieren
-- Hintergrundgeräusche → sauberere Aufnahme
-
-### Cloudflare 524 Timeout
-
-Passiert bei langen Transkriptionen (Medium/Large). Ab v1.3 automatisch durch Background Job System gelöst — kein Timeout mehr.
-
-### Rebuild ignoriert neue Dateien
-
-```bash
-# Immer --no-cache verwenden!
-docker compose -f compose.server.yaml build --no-cache ki-archiv-tts
-```
-
-### Speicher voll
-
-```bash
-rm -rf /mnt/data/docker-data/ki-archiv/HOERBUCH/*
-df -h /mnt/data
-```
-
----
-
-## 14. Roadmap
-
-### v1.3 (Aktuell) ✅
-- [x] FastWhisper Transkriptions-Tab
-- [x] Background Job System (kein Cloudflare Timeout)
-- [x] Ordner-Verwaltung für Transkriptionen
-- [x] Admin Log-Fenster (live, Auto-Refresh)
-- [x] 2-spaltig SRT + Text Ansicht
-- [x] Modell-Wahl (Small/Medium/Large-v3)
-- [x] install.bat / update.bat / start.bat / stop.bat
-
-### v2.0
-- [ ] Auto-Workflow (Buch → Kapitel → Tagging → Hörbuch)
-- [ ] Live-Transkription (Satz für Satz)
-- [ ] Speaker Diarization (pyannote.audio)
-- [ ] User Login (Keycloak)
-- [ ] RunPod.io Integration
-- [ ] RAG Chat direkt in GUI
-- [ ] Qwen-7B Emotion Tags
-
-### v3.0
-- [ ] CosyVoice (wenn Türkisch stabil)
-- [ ] Mobile App
-- [ ] Stripe/PayPal
-- [ ] NLLB Übersetzung
-
----
-
-## 👤 Autor
-
-**Ismail Aksoy (Dolunay)**
-- GitHub: [@dolunay38](https://github.com/dolunay38)
-- LinkedIn: [ismail-aksoy](https://www.linkedin.com/in/ismail-aksoy-4a3a58369/)
-- Homelab: Aksoy-Net (Dell OptiPlex 7060, i3-9th Gen, 32GB RAM)
-
----
-
-## 📄 Lizenz
-
-MIT License — Open Source, kostenlos nutzbar.
-
----
-
-*BookVoice-AI — Open Source AI Audiobook Studio*  
-*Powered by XTTS-v2, FastWhisper, FastAPI, Docker & Cloudflare*
+</div>
