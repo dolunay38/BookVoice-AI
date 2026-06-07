@@ -695,6 +695,64 @@ def delete_file(filename: str):
         return {"status": "ok", "geloescht": filename}
     raise HTTPException(status_code=404, detail="Datei nicht gefunden")
 
+@app.get("/tts/hoerbuch/folders")
+def list_hoerbuch_folders():
+    import datetime
+    ordner = []
+    for d in sorted(OUTPUT_DIR.iterdir()):
+        if not d.is_dir():
+            continue
+        dateien = [f for ext in ["*.wav", "*.mp3", "*.m4b"] for f in d.glob(ext) if not f.name.startswith("_")]
+        groesse = sum(f.stat().st_size for f in dateien)
+        mtime = max((f.stat().st_mtime for f in dateien), default=d.stat().st_mtime)
+        ordner.append({
+            "name": d.name,
+            "dateien_anzahl": len(dateien),
+            "groesse_mb": round(groesse / 1024 / 1024, 2),
+            "datum": mtime,
+            "datum_str": datetime.datetime.fromtimestamp(mtime).strftime("%d.%m.%Y %H:%M")
+        })
+    ordner.sort(key=lambda x: x["datum"], reverse=True)
+    return {"ordner": ordner, "anzahl": len(ordner)}
+
+@app.get("/tts/hoerbuch/folder/{folder_name}")
+def get_hoerbuch_folder(folder_name: str):
+    import datetime
+    folder = OUTPUT_DIR / folder_name
+    if not folder.exists() or not folder.is_dir():
+        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    dateien = []
+    for ext in ["*.wav", "*.mp3", "*.m4b"]:
+        for f in folder.glob(ext):
+            if not f.name.startswith("_"):
+                dateien.append({
+                    "name": f.name,
+                    "pfad": f"{folder_name}/{f.name}",
+                    "groesse_mb": round(f.stat().st_size / 1024 / 1024, 2),
+                    "datum": f.stat().st_mtime,
+                    "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+                })
+    dateien.sort(key=lambda x: x["name"])
+    return {"ordner": folder_name, "dateien": dateien}
+
+@app.post("/tts/hoerbuch/folder")
+async def create_hoerbuch_folder(data: dict):
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Kein Ordnername angegeben")
+    name = re.sub(r'[^\w\-_]', '_', name)
+    folder = OUTPUT_DIR / name
+    folder.mkdir(parents=True, exist_ok=True)
+    return {"status": "ok", "ordner": name}
+
+@app.delete("/tts/hoerbuch/folder/{folder_name}")
+def delete_hoerbuch_folder(folder_name: str):
+    folder = OUTPUT_DIR / folder_name
+    if not folder.exists() or not folder.is_dir():
+        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    shutil.rmtree(folder)
+    return {"status": "ok", "geloescht": folder_name}
+
 @app.post("/tts/upload-cover")
 async def upload_cover(file: UploadFile = File(...), book_name: str = "hoerbuch"):
     """Buchcover hochladen"""

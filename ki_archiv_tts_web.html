@@ -488,12 +488,18 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
               <span class="card-title">Projekt</span>
               <span class="char-count" id="char-count">0 Zeichen</span>
             </div>
-            <div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;margin-bottom:.75rem">
+            <div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;margin-bottom:.5rem">
               <input type="text" id="project-name" placeholder="projekt-name" value="hoerbuch">
               <select id="output-format" style="width:auto">
                 <option value="mp3">MP3</option>
                 <option value="m4b">M4B</option>
                 <option value="wav">WAV</option>
+              </select>
+            </div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Vorhandenes Buch</div>
+              <select id="hoerbuch-folder-select" style="width:100%" onchange="if(this.value) document.getElementById('project-name').value=this.value">
+                <option value="">— Neues Buch anlegen —</option>
               </select>
             </div>
             <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
@@ -775,11 +781,24 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       <div class="card">
         <div class="card-header">
           <span class="card-title">📚 Fertige Hörbücher</span>
-          <button class="btn btn-secondary btn-sm" onclick="loadFilesFromServer()">
-            <i class="ti ti-refresh"></i> Aktualisieren
-          </button>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="showNewHoerbuchFolderDialog()" title="Neuer Ordner">
+              <i class="ti ti-folder-plus"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="loadHoerbuchFolders()">
+              <i class="ti ti-refresh"></i>
+            </button>
+          </div>
         </div>
-        <div id="file-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Dateien</div></div>
+        <div id="new-hoerbuch-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" id="new-hoerbuch-folder-name" placeholder="z.B. roman_2026" style="flex:1">
+            <button class="btn btn-primary btn-sm" onclick="createHoerbuchFolder()">Erstellen</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('new-hoerbuch-folder-dialog').style.display='none'">✕</button>
+          </div>
+        </div>
+        <div id="hoerbuch-folder-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div></div>
       </div>
 
       <!-- Transkriptionen im Dateien-Tab -->
@@ -1164,7 +1183,8 @@ function showPanel(name){
   if(nav) nav.classList.add('active');
   const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',transcribe:'🎙️ Transkription',settings:'Einstellungen',admin:'🔧 Admin Panel'};
   document.getElementById('page-title').textContent = titles[name] || name;
-  if(name==='files') loadFilesFromServer();
+  if(name==='files') { loadHoerbuchFolders(); updateHoerbuchFolderSelect(); }
+  if(name==='studio') updateHoerbuchFolderSelect();
   if(name==='voices') loadVoicesFromServer();
   if(name==='musik'){ loadMusikFromServer(); loadMusikList(); }
   if(name==='covers'){ loadCoversFromServer(); loadCoverAudioSelect(); }
@@ -2789,6 +2809,141 @@ async function createTranscriptionFolder(){
 }
 
 
+
+// ── Hörbuch Ordner ───────────────────────────────────────────
+
+async function loadHoerbuchFolders(){
+  const list = document.getElementById('hoerbuch-folder-list');
+  if(!list) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folders`);
+    const data = await resp.json();
+    let html = '';
+    if(data.ordner && data.ordner.length > 0){
+      html += data.ordner.map(o => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <i class="ti ti-folder" style="color:var(--amber)"></i>
+            <div>
+              <div style="font-weight:500">${o.name}</div>
+              <div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien · ${o.groesse_mb} MB · ${o.datum_str}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="openHoerbuchFolder('${o.name}')">
+              <i class="ti ti-folder-open"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteHoerbuchFolder('${o.name}')">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>`).join('');
+    }
+    if(!html) html = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Hörbücher vorhanden</div>';
+    const total = (data.ordner||[]).reduce((s,o) => s + o.dateien_anzahl, 0);
+    const statEl = document.getElementById('stat-files');
+    if(statEl) statEl.textContent = total;
+    list.innerHTML = html;
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+function openHoerbuchFolder(name){
+  const list = document.getElementById('hoerbuch-folder-list');
+  list.innerHTML = '<div style="color:var(--text3);padding:.5rem">⏳ Lade...</div>';
+  fetch(`${TTS_URL}/tts/hoerbuch/folder/${name}`)
+    .then(r => r.json())
+    .then(data => {
+      let html = `<div style="padding:.35rem 0;margin-bottom:.35rem;border-bottom:1px solid var(--border)">
+        <button class="btn btn-secondary btn-sm" onclick="loadHoerbuchFolders()">
+          <i class="ti ti-arrow-left"></i> Zurück
+        </button>
+        <span style="margin-left:.5rem;font-size:11px;color:var(--text2)">📁 ${name}</span>
+      </div>`;
+      if(!data.dateien || data.dateien.length === 0){
+        html += '<div style="color:var(--text3);padding:.5rem">Ordner ist leer</div>';
+      } else {
+        html += data.dateien.map(f => {
+          const icon = f.name.endsWith('.mp3') ? '🎵' : f.name.endsWith('.m4b') ? '📱' : '🔊';
+          const pid = `hbplayer_${f.name.replace(/[^a-z0-9]/gi,'_')}`;
+          return `
+          <div style="padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <span>${icon}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+                <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB · ${f.datum_str}</div>
+              </div>
+              <button onclick="togglePlayer('${pid}')" class="btn btn-secondary btn-sm">▶</button>
+              <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+              <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+            </div>
+            <audio id="${pid}" controls style="display:none;width:100%;margin-top:.35rem;height:32px">
+              <source src="${TTS_URL}/tts/download/${f.name}">
+            </audio>
+          </div>`;
+        }).join('');
+      }
+      list.innerHTML = html;
+    }).catch(() => { list.innerHTML = '<div style="color:var(--red)">Fehler</div>'; });
+}
+
+async function updateHoerbuchFolderSelect(){
+  const sel = document.getElementById('hoerbuch-folder-select');
+  if(!sel) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folders`);
+    const data = await resp.json();
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Neues Buch anlegen —</option>';
+    (data.ordner || []).forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.name;
+      opt.textContent = `📁 ${o.name} (${o.dateien_anzahl} Dateien)`;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  } catch(e) {}
+}
+
+async function createHoerbuchFolder(){
+  const name = document.getElementById('new-hoerbuch-folder-name').value.trim();
+  if(!name){ addLog('Bitte Ordnername eingeben!','err'); return; }
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folder`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+    document.getElementById('new-hoerbuch-folder-name').value = '';
+    document.getElementById('new-hoerbuch-folder-dialog').style.display = 'none';
+    addLog(`[ORDNER] "${name}" erstellt ✅`, 'ok');
+    loadHoerbuchFolders();
+    updateHoerbuchFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+async function deleteHoerbuchFolder(name){
+  if(!confirm(`Ordner "${name}" und alle Dateien darin löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folder/${name}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error(await resp.text());
+    addLog(`[ORDNER] "${name}" gelöscht`, 'ok');
+    loadHoerbuchFolders();
+    updateHoerbuchFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+function showNewHoerbuchFolderDialog(){
+  const d = document.getElementById('new-hoerbuch-folder-dialog');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  if(d.style.display === 'block') document.getElementById('new-hoerbuch-folder-name').focus();
+}
 
 // ── Admin Log ────────────────────────────────────────────────
 let _logRefreshTimer = null;
