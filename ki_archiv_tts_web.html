@@ -203,6 +203,10 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 .archiv-row-head{display:flex;align-items:center;gap:.45rem}
 .archiv-row input[type=checkbox]{accent-color:var(--green);width:13px;height:13px;cursor:pointer;flex-shrink:0}
 .mini-player{width:100%;height:28px;margin-top:.35rem;accent-color:var(--green)}
+
+.card.file-section.collapsed > *:not(.card-header) { display: none !important; }
+.file-section .card-title { cursor: pointer; user-select: none; }
+
 </style>
 </head>
 <body>
@@ -818,7 +822,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
     <div class="panel" id="panel-files">
       <div class="card">
         <div class="card-header">
-          <span class="card-title">📚 Fertige Hörbücher</span>
+          <span class="card-title" onclick="toggleFileSection(this)">📚 Fertige Hörbücher<span class="section-arrow"> ▶</span></span>
           <div style="display:flex;gap:.35rem">
             <button class="btn btn-secondary btn-sm" onclick="showNewHoerbuchFolderDialog()" title="Neuer Ordner">
               <i class="ti ti-folder-plus"></i>
@@ -842,7 +846,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       <!-- Transkriptionen im Dateien-Tab -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title">📄 Transkriptionen</span>
+          <span class="card-title" onclick="toggleFileSection(this)">📄 Transkriptionen<span class="section-arrow"> ▶</span></span>
           <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFilesIntoElement('files-transcription-list')">
             <i class="ti ti-refresh"></i>
           </button>
@@ -1621,6 +1625,19 @@ function disconnectGPU(){
   document.getElementById('gpu-disconnect-btn').style.display = 'none';
   addLog('[GPU] Verbindung getrennt', 'warn');
 }
+
+
+function toggleFileSection(el) {
+    const card = el.closest('.card');
+    const isCollapsed = card.classList.toggle('collapsed');
+    const arrow = el.querySelector('.section-arrow');
+    if (arrow) arrow.textContent = isCollapsed ? '▶' : '▼';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('#panel-files .card').forEach(function(card) {
+        card.classList.add('file-section', 'collapsed');
+    });
+});
 
 function togglePresets(){
   const grid = document.getElementById('preset-grid');
