@@ -24,8 +24,6 @@ EINGABE_DIR = Path("/app/EINGABE")
 EINGABE_DIR.mkdir(parents=True, exist_ok=True)
 ARCHIV_DIR = Path("/app/ARCHIV")
 ARCHIV_DIR.mkdir(parents=True, exist_ok=True)
-(ARCHIV_DIR / "hoerbuch").mkdir(exist_ok=True)
-(ARCHIV_DIR / "transkription").mkdir(exist_ok=True)
 # Dynamischer Modell-Pfad — funktioniert auf Docker und Colab
 _possible_model_dirs = [
     Path("/app/tts_models/tts_models--multilingual--multi-dataset--xtts_v2"),
@@ -696,64 +694,6 @@ def delete_file(filename: str):
         f.unlink()
         return {"status": "ok", "geloescht": filename}
     raise HTTPException(status_code=404, detail="Datei nicht gefunden")
-
-@app.get("/tts/hoerbuch/folders")
-def list_hoerbuch_folders():
-    import datetime
-    ordner = []
-    for d in sorted(OUTPUT_DIR.iterdir()):
-        if not d.is_dir():
-            continue
-        dateien = [f for ext in ["*.wav", "*.mp3", "*.m4b"] for f in d.glob(ext) if not f.name.startswith("_")]
-        groesse = sum(f.stat().st_size for f in dateien)
-        mtime = max((f.stat().st_mtime for f in dateien), default=d.stat().st_mtime)
-        ordner.append({
-            "name": d.name,
-            "dateien_anzahl": len(dateien),
-            "groesse_mb": round(groesse / 1024 / 1024, 2),
-            "datum": mtime,
-            "datum_str": datetime.datetime.fromtimestamp(mtime).strftime("%d.%m.%Y %H:%M")
-        })
-    ordner.sort(key=lambda x: x["datum"], reverse=True)
-    return {"ordner": ordner, "anzahl": len(ordner)}
-
-@app.get("/tts/hoerbuch/folder/{folder_name}")
-def get_hoerbuch_folder(folder_name: str):
-    import datetime
-    folder = OUTPUT_DIR / folder_name
-    if not folder.exists() or not folder.is_dir():
-        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
-    dateien = []
-    for ext in ["*.wav", "*.mp3", "*.m4b"]:
-        for f in folder.glob(ext):
-            if not f.name.startswith("_"):
-                dateien.append({
-                    "name": f.name,
-                    "pfad": f"{folder_name}/{f.name}",
-                    "groesse_mb": round(f.stat().st_size / 1024 / 1024, 2),
-                    "datum": f.stat().st_mtime,
-                    "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
-                })
-    dateien.sort(key=lambda x: x["name"])
-    return {"ordner": folder_name, "dateien": dateien}
-
-@app.post("/tts/hoerbuch/folder")
-async def create_hoerbuch_folder(data: dict):
-    name = data.get("name", "").strip()
-    if not name:
-        raise HTTPException(status_code=400, detail="Kein Ordnername angegeben")
-    name = re.sub(r'[^\w\-_]', '_', name)
-    folder = OUTPUT_DIR / name
-    folder.mkdir(parents=True, exist_ok=True)
-    return {"status": "ok", "ordner": name}
-
-@app.delete("/tts/hoerbuch/folder/{folder_name}")
-def delete_hoerbuch_folder(folder_name: str):
-    folder = OUTPUT_DIR / folder_name
-    if not folder.exists() or not folder.is_dir():
-        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
-    shutil.rmtree(folder)
-    return {"status": "ok", "geloescht": folder_name}
 
 @app.post("/tts/upload-cover")
 async def upload_cover(file: UploadFile = File(...), book_name: str = "hoerbuch"):
@@ -1905,8 +1845,81 @@ def delete_transcription_folder(folder_name: str):
     return {"status": "ok", "geloescht": folder_name}
 
 # ════════════════════════════════════════════════════════════════
-# Archiv Endpoints
+
 # ════════════════════════════════════════════════════════════════
+
+# ════════════════════════════════════════════════════════════════
+# Hörbuch Ordner-Struktur
+# ════════════════════════════════════════════════════════════════
+@app.get("/tts/hoerbuch/folders")
+def list_hoerbuch_folders():
+    import datetime
+    folders = []
+    files_root = []
+    for item in OUTPUT_DIR.iterdir():
+        if item.is_dir():
+            audio_files = []
+            for ext in ["*.mp3", "*.wav", "*.m4b"]:
+                audio_files.extend(item.glob(ext))
+            audio_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+            folders.append({
+                "name": item.name,
+                "dateien_anzahl": len(audio_files),
+                "datum": item.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(item.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+            })
+        elif item.suffix in [".mp3", ".wav", ".m4b"] and not item.name.startswith("_"):
+            files_root.append({
+                "name": item.name,
+                "groesse_mb": round(item.stat().st_size / 1024 / 1024, 2),
+                "datum": item.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(item.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+            })
+    folders.sort(key=lambda x: x["datum"], reverse=True)
+    files_root.sort(key=lambda x: x["datum"], reverse=True)
+    return {"ordner": folders, "dateien": files_root}
+
+@app.get("/tts/hoerbuch/folder/{folder_name}")
+def get_hoerbuch_folder(folder_name: str):
+    import datetime
+    folder = OUTPUT_DIR / folder_name
+    if not folder.exists() or not folder.is_dir():
+        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    files = []
+    for ext in ["*.mp3", "*.wav", "*.m4b"]:
+        for f in folder.glob(ext):
+            files.append({
+                "name": f.name,
+                "pfad": f"{folder_name}/{f.name}",
+                "groesse_mb": round(f.stat().st_size / 1024 / 1024, 2),
+                "datum": f.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+            })
+    files.sort(key=lambda x: x["datum"], reverse=True)
+    return {"ordner": folder_name, "dateien": files}
+
+@app.post("/tts/hoerbuch/folder")
+async def create_hoerbuch_folder(data: dict):
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Kein Ordnername")
+    name = re.sub(r'[^\w\-_]', '_', name)
+    folder = OUTPUT_DIR / name
+    folder.mkdir(parents=True, exist_ok=True)
+    return {"status": "ok", "ordner": name}
+
+@app.delete("/tts/hoerbuch/folder/{folder_name}")
+def delete_hoerbuch_folder(folder_name: str):
+    folder = OUTPUT_DIR / folder_name
+    if not folder.exists() or not folder.is_dir():
+        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    shutil.rmtree(folder)
+    return {"status": "ok", "geloescht": folder_name}
+
+# Archiv Endpoints (Gemini)
+# ════════════════════════════════════════════════════════════════
+(ARCHIV_DIR / "hoerbuch").mkdir(exist_ok=True)
+(ARCHIV_DIR / "transkription").mkdir(exist_ok=True)
 
 @app.get("/archiv/folders")
 def list_archiv_folders():
@@ -1927,22 +1940,6 @@ def list_archiv_folders():
         } for f in files]
     return {"ordner": result}
 
-@app.patch("/archiv/rename")
-async def rename_archiv_file(data: dict):
-    subfolder = data.get("subfolder", "")
-    old_name  = data.get("old_name", "").strip()
-    new_name  = re.sub(r'[^\w\-_.]', '_', data.get("new_name", "").strip())
-    if not old_name or not new_name or subfolder not in ["hoerbuch", "transkription"]:
-        raise HTTPException(status_code=400, detail="Ungültige Eingabe")
-    old_path = ARCHIV_DIR / subfolder / old_name
-    new_path = ARCHIV_DIR / subfolder / new_name
-    if not old_path.exists():
-        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
-    if new_path.exists():
-        raise HTTPException(status_code=409, detail="Name bereits vergeben")
-    old_path.rename(new_path)
-    return {"status": "ok", "neu": new_name}
-
 @app.delete("/archiv/files/{subfolder}/{filename}")
 def delete_archiv_file(subfolder: str, filename: str):
     if subfolder not in ["hoerbuch", "transkription"]:
@@ -1951,21 +1948,29 @@ def delete_archiv_file(subfolder: str, filename: str):
     if not path.exists():
         raise HTTPException(status_code=404, detail="Datei nicht gefunden")
     path.unlink()
-    return {"status": "ok", "geloescht": filename}
+    return {"status": "ok"}
+
+@app.patch("/archiv/rename")
+async def rename_archiv_file(data: dict):
+    subfolder = data.get("subfolder", "")
+    old_name  = data.get("old_name", "").strip()
+    new_name  = re.sub(r'[^\w\-_.]', '_', data.get("new_name", "").strip())
+    old_path = ARCHIV_DIR / subfolder / old_name
+    new_path = ARCHIV_DIR / subfolder / new_name
+    if not old_path.exists():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    old_path.rename(new_path)
+    return {"status": "ok", "neu": new_name}
 
 @app.get("/archiv/stream/{subfolder}/{filename}")
 def stream_archiv_file(subfolder: str, filename: str):
-    if subfolder not in ["hoerbuch", "transkription"]:
-        raise HTTPException(status_code=400, detail="Ungültiger Ordner")
     path = ARCHIV_DIR / subfolder / filename
     if not path.exists():
         raise HTTPException(status_code=404, detail="Datei nicht gefunden")
-    media_map = {".mp3": "audio/mpeg", ".m4b": "audio/mp4", ".wav": "audio/wav",
-                 ".ogg": "audio/ogg", ".flac": "audio/flac", ".m4a": "audio/mp4"}
+    media_map = {".mp3": "audio/mpeg", ".wav": "audio/wav", ".m4a": "audio/mp4"}
     media_type = media_map.get(Path(filename).suffix.lower(), "application/octet-stream")
     return FileResponse(path, media_type=media_type, filename=filename)
 
-# ════════════════════════════════════════════════════════════════
 # Admin Logging
 # ════════════════════════════════════════════════════════════════
 import logging as _logging
