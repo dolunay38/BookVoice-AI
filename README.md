@@ -495,7 +495,7 @@ df -h /mnt/data
 
 ### v2.0
 - [ ] Auto-Workflow (Buch → Kapitel → Tagging → Hörbuch)
-- [ ] Live-Transkription (Satz für Satz)
+- [x] Live-Transkription (Satz für Satz)
 - [ ] Speaker Diarization (pyannote.audio)
 - [ ] User Login (Keycloak)
 - [ ] RunPod.io Integration
