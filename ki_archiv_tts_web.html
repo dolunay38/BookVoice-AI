@@ -203,11 +203,29 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 .archiv-row-head{display:flex;align-items:center;gap:.45rem}
 .archiv-row input[type=checkbox]{accent-color:var(--green);width:13px;height:13px;cursor:pointer;flex-shrink:0}
 .mini-player{width:100%;height:28px;margin-top:.35rem;accent-color:var(--green)}
+.archiv-group{margin-bottom:.5rem}
+.archiv-group-head{display:flex;align-items:center;gap:.4rem;padding:.4rem .5rem;background:var(--surface2);border-radius:var(--radius);cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);user-select:none;transition:background .12s}
+.archiv-group-head:hover{background:var(--border)}
+.archiv-group-count{background:var(--green-dim);color:var(--green);font-size:10px;padding:.1rem .45rem;border-radius:99px;font-weight:600}
+.archiv-group-body{padding:0 .25rem}
+.archiv-detail{margin:.25rem 0 .5rem 1.9rem;padding:.5rem .65rem;background:var(--surface2);border-radius:var(--radius);font-size:11px;border-left:2px solid var(--green)}
+.archiv-detail-row{display:flex;justify-content:space-between;gap:1rem;padding:.12rem 0;color:var(--text3)}
+.archiv-detail-row code{color:var(--text2);font-family:var(--mono);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.archiv-sort-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.6rem;flex-wrap:wrap}
+.archiv-sort-btn{padding:.25rem .6rem;border-radius:var(--radius);font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3);transition:all .12s;font-family:var(--sans)}
+.archiv-sort-btn:hover{color:var(--text2);border-color:var(--text3)}
+.archiv-sort-btn.active{background:var(--green-dim);color:var(--green);border-color:var(--green)}
+.sort-arrow{font-size:10px}
+.files-folder{margin-bottom:.3rem}
+.files-folder-head{display:flex;align-items:center;gap:.45rem;padding:.45rem .5rem;background:var(--surface2);border-radius:var(--radius);cursor:pointer;user-select:none;transition:background .12s}
+.files-folder-head:hover{background:var(--border)}
+.files-folder-body{padding:0 .25rem}
 </style>
 </head>
 <body>
 <div class="app">
 
+<!-- ── Sidebar ── -->
 <div class="sidebar">
   <div class="sb-logo">B</div>
 
@@ -264,6 +282,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
   </div>
 </div>
 
+<!-- ── Main ── -->
 <div class="main">
   <div class="topbar">
     <div class="page-title" id="page-title">Dashboard</div>
@@ -284,8 +303,10 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
   <div class="content">
 
+    <!-- ══ Dashboard ══ -->
     <div class="panel active" id="panel-dashboard">
 
+      <!-- Hero Banner -->
       <div style="background:linear-gradient(135deg,rgba(34,197,94,.08) 0%,rgba(59,130,246,.06) 100%);border:1px solid rgba(34,197,94,.15);border-radius:var(--radius-lg);padding:1.5rem 2rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
@@ -307,6 +328,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <div style="font-size:64px;opacity:.15">🎙️</div>
       </div>
 
+      <!-- Stats -->
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-value" id="stat-files">—</div>
@@ -326,6 +348,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         </div>
       </div>
 
+      <!-- Quick Actions -->
       <div class="action-banner">
         <div class="action-card" onclick="showPanel('studio')">
           <div class="action-icon" style="background:rgba(34,197,94,.1)">🎙️</div>
@@ -357,6 +380,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         </div>
       </div>
 
+      <!-- Features -->
       <div class="card">
         <div class="card-header"><span class="card-title">Features</span></div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;font-size:12px">
@@ -372,6 +396,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         </div>
       </div>
 
+      <!-- Log -->
       <div class="card">
         <div class="card-header">
           <span class="card-title">System Log</span>
@@ -383,10 +408,13 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Studio ══ -->
     <div class="panel" id="panel-studio">
       <div class="two-col">
 
+        <!-- LEFT -->
         <div>
+          <!-- Engine Auswahl -->
           <div class="card">
             <div class="card-header"><span class="card-title">Engine</span></div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem">
@@ -405,6 +433,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
           </div>
 
+          <!-- GPU Colab Panel -->
           <div class="card" id="gpu-card" style="display:none">
             <div class="card-header">
               <div style="display:flex;align-items:center;gap:.5rem">
@@ -418,6 +447,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
               <br>~10x schneller als CPU!
             </div>
 
+            <!-- URL + Verbinden -->
             <div style="margin-bottom:.5rem">
               <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Colab API URL</div>
               <div style="display:flex;gap:.5rem">
@@ -427,14 +457,17 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
               </div>
             </div>
 
+            <!-- Community GPU -->
             <div id="community-gpu-btn" style="display:none;margin-bottom:.5rem">
               <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center" onclick="connectCommunityGPU()">
                 ☁️ Community GPU verbinden (colab.aksoy-net.de)
               </button>
             </div>
 
+            <!-- Status -->
             <div id="gpu-status" style="font-size:11px;color:var(--text3);margin-bottom:.5rem"></div>
 
+            <!-- GPU Stats Grid -->
             <div id="gpu-stats" style="display:none;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.75rem">
               <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem;text-align:center">
                 <div style="font-size:16px;font-weight:600;color:var(--green)" id="gpu-util">—</div>
@@ -457,6 +490,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             <div id="polling-status" style="font-size:10px;color:var(--text3);text-align:center;margin-top:.35rem"></div>
           </div>
 
+          <!-- Edge TTS Stimmen (nur wenn Edge aktiv) -->
           <div class="card" id="edge-voices-card" style="display:none">
             <div class="card-header">
               <span class="card-title">Edge TTS Stimme</span>
@@ -503,6 +537,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
           </div>
 
+          <!-- Projekt -->
           <div class="card">
             <div class="card-header">
               <span class="card-title">Projekt</span>
@@ -531,6 +566,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
               </select>
             </div>
 
+            <!-- Cover Upload -->
             <div style="display:flex;align-items:center;gap:.75rem">
               <div id="cover-preview" style="width:60px;height:60px;background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;cursor:pointer;overflow:hidden" onclick="document.getElementById('cover-input').click()">
                 📖
@@ -546,6 +582,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
           </div>
 
+          <!-- Text -->
           <div class="card">
             <div class="card-header">
               <span class="card-title">Text eingeben</span>
@@ -553,6 +590,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             <textarea id="test-text" placeholder="Text hier eingeben oder Datei hochladen..." oninput="updateCharCount()"></textarea>
           </div>
 
+          <!-- Upload -->
           <div class="card">
             <div class="card-header"><span class="card-title">Datei hochladen</span></div>
             <div class="upload-zone" id="drop-zone">
@@ -563,6 +601,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
           </div>
 
+          <!-- Aktive Stimme -->
           <div class="card">
             <div class="card-header">
               <span class="card-title">Aktive Stimme</span>
@@ -578,7 +617,9 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           </div>
         </div>
 
+        <!-- RIGHT -->
         <div>
+          <!-- Einstellungen -->
           <div class="card">
             <div class="card-header">
               <span class="card-title">Stimme Einstellungen</span>
@@ -632,6 +673,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
           </div>
 
+          <!-- Test + Generate -->
           <div class="card">
             <div class="card-header"><span class="card-title">Ausgabe</span></div>
             <button class="btn btn-secondary btn-block" id="test-btn" onclick="generatePreview()" style="margin-bottom:.5rem">
@@ -655,6 +697,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </button>
           </div>
 
+          <!-- Log -->
           <div class="card">
             <div class="card-header">
               <span class="card-title">Log</span>
@@ -666,6 +709,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Stimmen ══ -->
     <div class="panel" id="panel-voices">
       <div class="two-col">
         <div>
@@ -701,6 +745,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Musik ══ -->
     <div class="panel" id="panel-musik">
       <div class="two-col">
         <div>
@@ -743,6 +788,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Cover ══ -->
     <div class="panel" id="panel-covers">
       <div class="two-col">
         <div>
@@ -785,6 +831,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Dateien ══ -->
     <div class="panel" id="panel-files">
       <div class="card">
         <div class="card-header">
@@ -809,6 +856,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <div id="hoerbuch-folder-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div></div>
       </div>
 
+      <!-- Transkriptionen im Dateien-Tab -->
       <div class="card">
         <div class="card-header">
           <span class="card-title">📄 Transkriptionen</span>
@@ -822,7 +870,9 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Admin ══ -->
     <div class="panel" id="panel-admin">
+      <!-- Header -->
       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem">
         <div style="width:36px;height:36px;background:rgba(239,68,68,.15);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--red)"><i class="ti ti-shield"></i></div>
         <div>
@@ -832,6 +882,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="lockAdmin()">🔒 Sperren</button>
       </div>
 
+      <!-- Server Status -->
       <div class="card">
         <div class="card-header"><span class="card-title">Server Status</span></div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
@@ -850,6 +901,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         </div>
       </div>
 
+      <!-- Cloudflare Tunnel -->
       <div class="card">
         <div class="card-header"><span class="card-title">Community GPU</span></div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;line-height:1.6">
@@ -874,6 +926,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <div id="community-gpu-status" style="font-size:11px;color:var(--text3)"></div>
       </div>
 
+      <!-- GPU Verwaltung -->
       <div class="card">
         <div class="card-header"><span class="card-title">GPU Verwaltung</span><span class="badge badge-amber">v3.0</span></div>
         <div style="font-size:12px;color:var(--text3);line-height:1.8">
@@ -885,6 +938,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         </div>
       </div>
 
+      <!-- API Key -->
       <div class="card">
         <div class="card-header"><span class="card-title">API Sicherheit</span></div>
         <div style="margin-bottom:.75rem">
@@ -897,6 +951,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         </div>
       </div>
 
+      <!-- Passwort ändern -->
       <div class="card">
         <div class="card-header"><span class="card-title">Admin Passwort ändern</span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
@@ -906,6 +961,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <button class="btn btn-danger btn-sm" onclick="changeAdminPassword()">Passwort ändern</button>
       </div>
 
+      <!-- Server Log -->
       <div class="card">
         <div class="card-header">
           <span class="card-title">📋 Server Log</span>
@@ -932,6 +988,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Transkription ══ -->
     <div class="panel" id="panel-transcribe">
       <div class="card">
         <div class="card-header">
@@ -939,6 +996,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <span class="badge badge-green">FastWhisper</span>
         </div>
 
+        <!-- Modus Tabs -->
         <div style="display:flex;gap:.5rem;margin-bottom:1rem">
           <button class="btn btn-primary btn-sm" id="tab-audio-btn" onclick="setTranscribeMode('audio')" style="flex:1;justify-content:center">
             🎙️ Audio / Video
@@ -948,7 +1006,9 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           </button>
         </div>
 
+        <!-- Audio Mode -->
         <div id="transcribe-audio-mode">
+          <!-- Projektname -->
           <div style="margin-bottom:.75rem">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
               <div>
@@ -964,6 +1024,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
           </div>
 
+          <!-- Upload -->
           <div style="margin-bottom:.75rem">
             <div class="drop-zone" id="transcribe-drop" onclick="document.getElementById('transcribe-file').click()"
                  ondragover="event.preventDefault()" ondrop="handleTranscribeDrop(event)"
@@ -975,6 +1036,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
                    style="display:none" onchange="handleTranscribeUpload(this)">
           </div>
 
+          <!-- Optionen -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
             <div>
               <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Sprache</div>
@@ -996,6 +1058,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
           </div>
 
+          <!-- Diarization (GPU Vorbereitung) -->
           <div id="diarization-option" style="display:none;margin-bottom:.5rem;padding:.5rem;background:var(--surface2);border-radius:6px;font-size:11px">
             <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
               <input type="checkbox" id="transcribe-diarize">
@@ -1005,7 +1068,9 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           </div>
         </div>
 
+        <!-- OCR Mode -->
         <div id="transcribe-ocr-mode" style="display:none">
+          <!-- Projektname OCR -->
           <div style="margin-bottom:.75rem">
             <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projektname</div>
             <input type="text" id="transcribe-ocr-project" placeholder="z.B. scan_buch" style="width:100%">
@@ -1030,6 +1095,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           </div>
         </div>
 
+        <!-- Buttons -->
         <div style="display:flex;gap:.5rem;margin-bottom:.75rem;margin-top:.75rem">
           <button class="btn btn-primary" id="transcribe-btn" onclick="startTranscribe()" style="flex:1;justify-content:center">
             <i class="ti ti-wand"></i> TRANSKRIBIEREN
@@ -1039,8 +1105,10 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           </button>
         </div>
 
+        <!-- Status -->
         <div id="transcribe-status" style="font-size:11px;color:var(--text3);margin-bottom:.5rem"></div>
 
+        <!-- Ergebnis 2-spaltig -->
         <div id="transcribe-result" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
             <div style="font-size:11px;color:var(--text2)" id="transcribe-info"></div>
@@ -1056,6 +1124,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
               </button>
             </div>
           </div>
+          <!-- 2-spaltig: Zeitstempel | Text -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
             <div>
               <div style="font-size:10px;color:var(--text3);margin-bottom:.25rem">⏱ Mit Zeitstempel (SRT)</div>
@@ -1069,6 +1138,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         </div>
       </div>
 
+      <!-- Gespeicherte Transkriptionen -->
       <div class="card">
         <div class="card-header">
           <span class="card-title">📄 Gespeicherte Transkriptionen</span>
@@ -1081,6 +1151,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </button>
           </div>
         </div>
+        <!-- Neuer Ordner Dialog -->
         <div id="new-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
           <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
           <div style="display:flex;gap:.5rem">
@@ -1093,14 +1164,19 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Archiv ══ -->
     <div class="panel" id="panel-archiv">
 
+      <!-- Storage Card -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="cursor:pointer" onclick="toggleStorageCard()">
           <span class="card-title">🗄️ Archiv</span>
-          <button class="btn btn-secondary btn-sm" onclick="loadArchivFolders()"><i class="ti ti-refresh"></i></button>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();loadArchivFolders()"><i class="ti ti-refresh"></i></button>
+            <i class="ti ti-chevron-down" id="archiv-storage-chevron"></i>
+          </div>
         </div>
-        <div>
+        <div id="archiv-storage-body">
           <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:.25rem">
             <span>Speicherbelegung</span>
             <span id="archiv-storage-label" style="font-family:var(--mono)">— MB</span>
@@ -1110,23 +1186,35 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             <div class="storage-seg" id="archiv-bar-transkription" style="background:var(--amber);width:0%"></div>
           </div>
           <div style="display:flex;gap:1.25rem;font-size:10px;color:var(--text3)">
-            <span><span style="color:var(--green)">■</span> Hörbuch: <span id="archiv-sz-hoerbuch">—</span> MB</span>
-            <span><span style="color:var(--amber)">■</span> Transkription: <span id="archiv-sz-transkription">—</span> MB</span>
+            <span><span style="color:var(--green)">■</span> Audio/Video: <span id="archiv-sz-hoerbuch">—</span> MB</span>
+            <span><span style="color:var(--amber)">■</span> Dokumente: <span id="archiv-sz-transkription">—</span> MB</span>
           </div>
         </div>
       </div>
 
+      <!-- Content Card -->
       <div class="card">
+        <!-- Tabs -->
         <div class="tab-bar">
-          <button class="tab-btn active" id="archiv-tab-hoerbuch" onclick="switchArchivTab('hoerbuch')">🎵 Hörbuch</button>
-          <button class="tab-btn" id="archiv-tab-transkription" onclick="switchArchivTab('transkription')">📄 Transkription</button>
+          <button class="tab-btn active" id="archiv-tab-hoerbuch" onclick="switchArchivTab('hoerbuch')">🎵 Audio/Video</button>
+          <button class="tab-btn" id="archiv-tab-transkription" onclick="switchArchivTab('transkription')">📄 Dokumente</button>
         </div>
 
+        <!-- Suche -->
         <div class="search-row">
           <input class="search-input" id="archiv-search" placeholder="Datei suchen..." oninput="filterArchiv()">
           <button class="btn btn-secondary btn-sm" onclick="filterArchiv()"><i class="ti ti-search"></i></button>
         </div>
 
+        <!-- Sortierung -->
+        <div class="archiv-sort-row">
+          <span style="font-size:10px;color:var(--text3)">Sortieren:</span>
+          <button class="archiv-sort-btn active" id="archiv-sort-datum" onclick="setArchivSort('datum')">Datum <span class="sort-arrow">↓</span></button>
+          <button class="archiv-sort-btn" id="archiv-sort-name" onclick="setArchivSort('name')">Name <span class="sort-arrow"></span></button>
+          <button class="archiv-sort-btn" id="archiv-sort-groesse" onclick="setArchivSort('groesse')">Größe <span class="sort-arrow"></span></button>
+        </div>
+
+        <!-- Massenauswahl-Toolbar -->
         <div class="bulk-toolbar">
           <input type="checkbox" id="archiv-select-all" onchange="toggleSelectAllArchiv(this.checked)">
           <span id="archiv-sel-count" style="flex:1">Alle auswählen</span>
@@ -1135,10 +1223,12 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           </button>
         </div>
 
+        <!-- Dateiliste -->
         <div id="archiv-file-list">
           <div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div>
         </div>
 
+        <!-- Fortschrittsbalken (Batch-Löschen) -->
         <div id="archiv-progress-wrap" style="display:none;margin-top:.75rem">
           <div class="progress-label">
             <span>Löschen läuft...</span>
@@ -1151,6 +1241,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
+    <!-- ══ Einstellungen ══ -->
     <div class="panel" id="panel-settings">
       <div class="card">
         <div class="card-header"><span class="card-title">Server</span></div>
@@ -1168,7 +1259,12 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       </div>
     </div>
 
-  </div></div></div><div class="modal-overlay" id="rename-modal" onclick="if(event.target===this)closeRenameModal()">
+  </div><!-- content -->
+</div><!-- main -->
+</div><!-- app -->
+
+<!-- ── Rename Modal ── -->
+<div class="modal-overlay" id="rename-modal" onclick="if(event.target===this)closeRenameModal()">
   <div class="modal-box">
     <div class="modal-title">✏️ Umbenennen</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:.75rem;font-family:var(--mono)" id="rename-modal-path"></div>
@@ -2466,4 +2562,1040 @@ function setTranscribeMode(mode){
   document.getElementById('tab-ocr-btn').className = mode === 'ocr' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
   document.getElementById('tab-audio-btn').style.cssText += ';flex:1;justify-content:center';
   document.getElementById('tab-ocr-btn').style.cssText += ';flex:1;justify-content:center';
-  document.getElementById
+  document.getElementById('transcribe-result').style.display = 'none';
+}
+
+function handleTranscribeDrop(e){
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if(file) uploadTranscribeFile(file);
+}
+function handleTranscribeUpload(input){ if(input.files[0]) uploadTranscribeFile(input.files[0]); }
+function handleOCRDrop(e){ e.preventDefault(); const file = e.dataTransfer.files[0]; if(file) uploadOCRFile(file); }
+function handleOCRUpload(input){ if(input.files[0]) uploadOCRFile(input.files[0]); }
+
+function uploadTranscribeFile(file){
+  document.getElementById('transcribe-drop').innerHTML = `<i class="ti ti-file-music" style="font-size:1.75rem;color:var(--green)"></i><div style="font-size:12px;margin-top:.35rem">${file.name}</div>`;
+  document.getElementById('transcribe-btn')._file = file;
+  const proj = document.getElementById('transcribe-project');
+  if(!proj.value) proj.value = file.name.replace(/\.[^.]+$/, '');
+}
+
+function uploadOCRFile(file){
+  document.getElementById('transcribe-ocr-drop').innerHTML = `<i class="ti ti-photo" style="font-size:1.75rem;color:var(--green)"></i><div style="font-size:12px;margin-top:.35rem">${file.name}</div>`;
+  document.getElementById('transcribe-btn')._ocrFile = file;
+  const proj = document.getElementById('transcribe-ocr-project');
+  if(!proj.value) proj.value = file.name.replace(/\.[^.]+$/, '');
+}
+
+function abortTranscribe(){
+  if(_transcribeAbortCtrl){ _transcribeAbortCtrl.abort(); _transcribeAbortCtrl = null; }
+  const btn = document.getElementById('transcribe-btn');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
+  document.getElementById('transcribe-abort-btn').style.display = 'none';
+  document.getElementById('transcribe-status').textContent = '⛔ Abgebrochen';
+  document.getElementById('transcribe-status').style.color = 'var(--red)';
+  addLog('[TRANSKRIPT] Abgebrochen', 'err');
+}
+
+async function startTranscribe(){
+  const btn = document.getElementById('transcribe-btn');
+  const abortBtn = document.getElementById('transcribe-abort-btn');
+  const status = document.getElementById('transcribe-status');
+
+  if(_transcribeMode === 'ocr'){ await startOCR(); return; }
+
+  const file = btn._file;
+  if(!file){ addLog('Bitte zuerst eine Datei hochladen!','err'); return; }
+
+  const lang = document.getElementById('transcribe-lang').value;
+  const model = document.getElementById('transcribe-model').value;
+  const project = document.getElementById('transcribe-project').value.trim() || file.name.replace(/\.[^.]+$/, '');
+  const folder = document.getElementById('transcribe-folder-select')?.value || '';
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Transkribiere...';
+  abortBtn.style.display = 'flex';
+  status.textContent = '⏳ Job wird gestartet...';
+  status.style.color = 'var(--amber)';
+  document.getElementById('transcribe-result').style.display = 'none';
+  document.getElementById('transcribe-srt').value = '';
+  document.getElementById('transcribe-text').value = '';
+  _transcribeAbortCtrl = new AbortController();
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('language', lang);
+    fd.append('model_size', model);
+    fd.append('project_name', project);
+    fd.append('folder', folder);
+
+    // Live-Transkription via SSE
+    const resp = await fetch(`${TTS_URL}/transcribe/stream`, {
+      method:'POST', body:fd, signal:_transcribeAbortCtrl.signal
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let srtLines = [];
+    let textLines = [];
+    let segCount = 0;
+
+    document.getElementById('transcribe-result').style.display = 'block';
+
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for(const line of lines){
+        if(!line.startsWith('data: ')) continue;
+        try {
+          const data = JSON.parse(line.slice(6));
+
+          if(data.typ === 'info'){
+            status.textContent = `⏳ Transkribiere... · ${data.sprache?.toUpperCase()} · ${data.modell}`;
+            addLog(`[LIVE] Sprache: ${data.sprache?.toUpperCase()} · Modell: ${data.modell}`, 'ok');
+
+          } else if(data.typ === 'segment'){
+            segCount++;
+            textLines.push(data.text);
+            srtLines.push(data.srt);
+
+            // Panel beim ersten Segment einblenden
+            if(segCount === 1){
+              document.getElementById('transcribe-result').style.display = 'block';
+            }
+
+            // Live SRT links anzeigen
+            document.getElementById('transcribe-srt').value = srtLines.join('\n\n');
+            // Live Text rechts anzeigen
+            document.getElementById('transcribe-text').value = textLines.join('\n');
+            // Auto-scroll
+            const srtEl = document.getElementById('transcribe-srt');
+            srtEl.scrollTop = srtEl.scrollHeight;
+            status.textContent = `⏳ ${segCount} Sätze transkribiert...`;
+
+          } else if(data.typ === 'fertig'){
+            _lastTranscribeBase = data.txt_datei?.replace('.txt','') || project;
+            document.getElementById('transcribe-info').textContent =
+              `🌐 ${lang === 'auto' ? 'Auto' : lang.toUpperCase()} · ${data.woerter} Wörter · Modell: ${model}`;
+            status.textContent = '✅ Fertig!';
+            status.style.color = 'var(--green)';
+            addLog(`[TRANSKRIPT] ${data.woerter} Wörter · ${segCount} Sätze · Modell: ${model}`, 'ok');
+            loadTranscriptionFiles();
+            updateFolderSelect();
+
+          } else if(data.typ === 'fehler'){
+            throw new Error(data.nachricht);
+          }
+        } catch(parseErr) {
+          // Ungültige JSON Zeile ignorieren
+        }
+      }
+    }
+  } catch(e) {
+    if(e.name === 'AbortError') return;
+    status.textContent = `❌ Fehler: ${e.message}`;
+    status.style.color = 'var(--red)';
+    addLog(`Transkription Fehler: ${e.message}`, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
+    abortBtn.style.display = 'none';
+    _transcribeAbortCtrl = null;
+  }
+}
+
+async function startOCR(){
+  const btn = document.getElementById('transcribe-btn');
+  const status = document.getElementById('transcribe-status');
+  const file = btn._ocrFile;
+  if(!file){ addLog('Bitte zuerst eine Datei hochladen!','err'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> OCR läuft...';
+  status.textContent = '⏳ Text wird erkannt...';
+  status.style.color = 'var(--amber)';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const resp = await fetch(`${TTS_URL}/tts/convert-to-text`, {method:'POST', body:fd});
+    if(!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    const text = data.text || data.content || '';
+    document.getElementById('transcribe-text').value = text;
+    document.getElementById('transcribe-srt').value = '';
+    document.getElementById('transcribe-info').textContent = `📸 OCR · ${text.split(' ').length} Wörter`;
+    document.getElementById('transcribe-result').style.display = 'block';
+    _lastTranscribeBase = document.getElementById('transcribe-ocr-project').value || 'ocr_ergebnis';
+    status.textContent = '✅ Fertig!';
+    status.style.color = 'var(--green)';
+    addLog(`[OCR] ${text.split(' ').length} Wörter erkannt`, 'ok');
+  } catch(e) {
+    status.textContent = `❌ Fehler: ${e.message}`;
+    status.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
+  }
+}
+
+function downloadTranscription(ext){
+  if(!_lastTranscribeBase){ addLog('Keine Transkription vorhanden','err'); return; }
+  window.open(`${TTS_URL}/transcribe/download/${_lastTranscribeBase}.${ext}`);
+}
+
+function sendToStudio(){
+  const text = document.getElementById('transcribe-text').value;
+  if(!text){ addLog('Kein Text vorhanden','err'); return; }
+  document.getElementById('test-text').value = text;
+  updateCharCount();
+  showPanel('studio');
+  addLog('[TRANSKRIPT] Text ins Studio übertragen ✅', 'ok');
+}
+
+// ══════════════════════════════════════════════════════
+// Geteiltes Sortier- + Klapp-System (Transkription & Dateien)
+// ══════════════════════════════════════════════════════
+let _listSort = {
+  trans:   {by:'datum', dir:'desc'},
+  filesHb: {by:'datum', dir:'desc'},
+  filesTr: {by:'datum', dir:'desc'}
+};
+let _listData    = {trans:null, filesHb:null, filesTr:null};
+let _folderOpen  = {};   // listKey/name -> true wenn aufgeklappt
+let _folderCache = {};   // listKey/name -> {dateien:[...]}
+
+function _itemSize(x){
+  return x.groesse_mb != null ? x.groesse_mb : (x.groesse_kb != null ? x.groesse_kb/1024 : 0);
+}
+function _sortItems(items, sort){
+  const {by, dir} = sort;
+  const m = dir === 'asc' ? 1 : -1;
+  return [...items].sort((a,b) => {
+    if(by === 'name'){ const av=a.name.toLowerCase(), bv=b.name.toLowerCase(); return av<bv?-m:av>bv?m:0; }
+    if(by === 'groesse') return (_itemSize(a) - _itemSize(b)) * m;
+    return ((a.datum||0) - (b.datum||0)) * m;
+  });
+}
+function _sortBar(k){
+  const s = _listSort[k];
+  const b = (by,l) => {
+    const a = s.by === by;
+    return `<button class="archiv-sort-btn${a?' active':''}" onclick="setListSort('${k}','${by}')">${l} <span class="sort-arrow">${a?(s.dir==='asc'?'↑':'↓'):''}</span></button>`;
+  };
+  return `<div class="archiv-sort-row"><span style="font-size:10px;color:var(--text3)">Sortieren:</span>${b('datum','Datum')}${b('name','Name')}${b('groesse','Größe')}</div>`;
+}
+function setListSort(k, by){
+  const s = _listSort[k];
+  if(s.by === by) s.dir = s.dir === 'asc' ? 'desc' : 'asc';
+  else { s.by = by; s.dir = by === 'name' ? 'asc' : 'desc'; }
+  if(k === 'trans') renderTransList();
+  else if(k === 'filesHb') renderFilesHb();
+  else if(k === 'filesTr') renderFilesTr();
+}
+
+// Klappbarer Ordner-Block (für Dateien-Tab)
+function _folderBlock(listKey, o, type){
+  const key  = listKey + '/' + o.name;
+  const open = !!_folderOpen[key];
+  const size = o.groesse_mb != null ? o.groesse_mb+' MB' : (o.groesse_kb != null ? o.groesse_kb+' KB' : '');
+  const meta = `${o.dateien_anzahl} Dateien${size?' · '+size:''}${o.datum_str?' · '+o.datum_str:''}`;
+  const delFn = type === 'hoerbuch' ? 'deleteHoerbuchFolder' : 'deleteTranscriptionFolder';
+  let body = '';
+  if(open){
+    const cached = _folderCache[key];
+    body = cached ? _renderFolderFiles(cached, o.name, type)
+                  : '<div style="color:var(--text3);padding:.5rem;font-size:11px">⏳ Lade...</div>';
+  }
+  return `<div class="files-folder">
+    <div class="files-folder-head" onclick="toggleListFolder('${listKey}','${o.name}','${type}')">
+      <i class="ti ti-chevron-${open?'down':'right'}" style="font-size:14px"></i>
+      <i class="ti ti-folder" style="color:var(--amber)"></i>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:500;font-size:12px">${o.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${meta}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();${delFn}('${o.name}')"><i class="ti ti-trash"></i></button>
+    </div>
+    <div class="files-folder-body" style="display:${open?'block':'none'}">${body}</div>
+  </div>`;
+}
+
+function _renderFolderFiles(data, folderName, type){
+  const files = data.dateien || [];
+  if(!files.length) return '<div style="color:var(--text3);padding:.5rem;font-size:11px">Ordner ist leer</div>';
+  return files.map(f => {
+    const size = f.groesse_mb != null ? f.groesse_mb+' MB' : (f.groesse_kb != null ? f.groesse_kb+' KB' : '');
+    if(type === 'hoerbuch'){
+      const pid = 'fp_' + (folderName+f.name).replace(/[^a-z0-9]/gi,'_');
+      const icon = f.name.endsWith('.mp3')?'🎵':f.name.endsWith('.m4b')?'📱':'🔊';
+      return `<div style="padding:.35rem .5rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:.4rem">
+          <span>${icon}</span>
+          <div style="flex:1;min-width:0"><div style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+          <div style="font-size:10px;color:var(--text3)">${size}${f.datum_str?' · '+f.datum_str:''}</div></div>
+          <button onclick="togglePlayer('${pid}')" class="btn btn-secondary btn-sm">▶</button>
+          <a href="${TTS_URL}/tts/download/${encodeURIComponent(f.name)}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+          <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+        </div>
+        <audio id="${pid}" controls style="display:none;width:100%;margin-top:.35rem;height:30px"><source src="${TTS_URL}/tts/download/${encodeURIComponent(f.name)}"></audio>
+      </div>`;
+    } else {
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-bottom:1px solid var(--border);font-size:11px">
+        <div style="min-width:0;flex:1"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${size}${f.datum_str?' · '+f.datum_str:''}</div></div>
+        <div style="display:flex;gap:.3rem">
+          <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${encodeURIComponent(folderName)}/${encodeURIComponent(f.name)}')"><i class="ti ti-download"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deleteFolderFile('${folderName}','${f.name}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+    }
+  }).join('');
+}
+
+async function toggleListFolder(listKey, name, type){
+  const key = listKey + '/' + name;
+  _folderOpen[key] = !_folderOpen[key];
+  if(_folderOpen[key] && !_folderCache[key]){
+    const ep = type === 'hoerbuch'
+      ? `/tts/hoerbuch/folder/${encodeURIComponent(name)}`
+      : `/transcribe/folder/${encodeURIComponent(name)}`;
+    try { const r = await fetch(`${TTS_URL}${ep}`); _folderCache[key] = await r.json(); }
+    catch(e){ _folderCache[key] = {dateien:[]}; }
+  }
+  if(listKey === 'filesHb') renderFilesHb();
+  else if(listKey === 'filesTr') renderFilesTr();
+  else if(listKey === 'trans') renderTransList();
+}
+
+function _clearListCache(listKey){
+  Object.keys(_folderCache).forEach(k => { if(k.startsWith(listKey+'/')) delete _folderCache[k]; });
+}
+
+// Offene Ordner ohne Cache nachladen und neu rendern
+function _hydrateOpenFolders(listKey, type){
+  Object.keys(_folderOpen).forEach(key => {
+    if(_folderOpen[key] && key.startsWith(listKey+'/') && !_folderCache[key]){
+      const name = key.slice((listKey+'/').length);
+      const ep = type === 'hoerbuch'
+        ? `/tts/hoerbuch/folder/${encodeURIComponent(name)}`
+        : `/transcribe/folder/${encodeURIComponent(name)}`;
+      fetch(`${TTS_URL}${ep}`).then(r => r.json()).then(d => {
+        _folderCache[key] = d || {dateien:[]};
+        if(listKey === 'filesHb') renderFilesHb();
+        else if(listKey === 'filesTr') renderFilesTr();
+      }).catch(() => { _folderCache[key] = {dateien:[]}; });
+    }
+  });
+}
+
+// ── Bild 3: Transkriptionen im Dateien-Tab ──────────────────
+async function loadTranscriptionFilesIntoElement(elementId){
+  const list = document.getElementById(elementId);
+  if(!list) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files`);
+    _listData.filesTr = await resp.json();
+    _clearListCache('filesTr');
+    renderFilesTr();
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+function renderFilesTr(){
+  const list = document.getElementById('files-transcription-list');
+  if(!list) return;
+  const data    = _listData.filesTr || {};
+  const folders = _sortItems(data.ordner||[],  _listSort.filesTr);
+  const files   = _sortItems(data.dateien||[], _listSort.filesTr);
+  let html = _sortBar('filesTr');
+  folders.forEach(o => { html += _folderBlock('filesTr', o, 'transkription'); });
+  files.forEach(f => {
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem .25rem;border-bottom:1px solid var(--border)">
+      <div style="min-width:0;flex:1"><div style="font-weight:500;font-size:12px">${f.name}</div>
+      <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB${f.datum_str?' · '+f.datum_str:''}</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${encodeURIComponent(f.name)}')"><i class="ti ti-download"></i></button>
+    </div>`;
+  });
+  if(!folders.length && !files.length) html += '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
+  list.innerHTML = html;
+  _hydrateOpenFolders('filesTr','transkription');
+}
+
+async function loadTranscriptionFiles(){
+  const list = document.getElementById('transcription-list');
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files`);
+    _listData.trans = await resp.json();
+    renderTransList();
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+function renderTransList(){
+  const list = document.getElementById('transcription-list');
+  if(!list) return;
+  const data    = _listData.trans || {};
+  const folders = _sortItems(data.ordner||[],  _listSort.trans);
+  const files   = _sortItems(data.dateien||[], _listSort.trans);
+  let html = _sortBar('trans');
+
+  folders.forEach(o => {
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-folder" style="color:var(--amber)"></i>
+        <div>
+          <div style="font-weight:500">${o.name}</div>
+          <div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien${o.groesse_kb!=null?' · '+o.groesse_kb+' KB':''}${o.datum_str?' · '+o.datum_str:''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.35rem">
+        <button class="btn btn-secondary btn-sm" onclick="openTranscriptionFolder('${o.name}')"><i class="ti ti-folder-open"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTranscriptionFolder('${o.name}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  });
+
+  files.forEach(f => {
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-weight:500">${f.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB · ${f.datum_str || ''}</div>
+      </div>
+      <div style="display:flex;gap:.35rem">
+        <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${encodeURIComponent(f.name)}')"><i class="ti ti-download"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTranscription('${f.name}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  });
+
+  if(!folders.length && !files.length) html += '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
+  list.innerHTML = html;
+}
+
+async function deleteFolderFile(folder, filename){
+  if(!confirm(`"${filename}" löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files/${folder}/${filename}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error(await resp.text());
+    addLog(`[ORDNER] "${filename}" gelöscht`, 'ok');
+    delete _folderCache['filesTr/'+folder];
+    delete _folderCache['trans/'+folder];
+    // Bild 3 (Dateien-Tab) aktualisieren
+    if(document.getElementById('files-transcription-list')) loadTranscriptionFilesIntoElement('files-transcription-list');
+    // Bild 1 — falls Drill-in offen, neu laden, sonst Liste
+    const tl = document.getElementById('transcription-list');
+    if(tl){ if(tl.innerHTML.includes('Zurück')) openTranscriptionFolder(folder); else loadTranscriptionFiles(); }
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+function openTranscriptionFolder(name){
+  const list = document.getElementById('transcription-list');
+  list.innerHTML = '<div style="color:var(--text3);padding:.5rem">⏳ Lade Ordner-Inhalt...</div>';
+  fetch(`${TTS_URL}/transcribe/folder/${name}`)
+    .then(r => r.json())
+    .then(data => {
+      let html = `<div style="padding:.35rem 0;margin-bottom:.35rem;border-bottom:1px solid var(--border)">
+        <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFiles()">
+          <i class="ti ti-arrow-left"></i> Zurück
+        </button>
+        <span style="margin-left:.5rem;font-size:11px;color:var(--text2)">📁 ${name}</span>
+      </div>`;
+      if(data.dateien.length === 0){
+        html += '<div style="color:var(--text3);padding:.5rem">Ordner ist leer</div>';
+      } else {
+        html += data.dateien.map(f => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-weight:500">${f.name}</div>
+              <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB · ${f.datum_str || ''}</div>
+            </div>
+            <div style="display:flex;gap:.35rem">
+              <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${name}/${f.name}')">
+                <i class="ti ti-download"></i>
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="deleteFolderFile('${name}','${f.name}')">
+                <i class="ti ti-trash"></i>
+              </button>
+            </div>
+          </div>`).join('');
+      }
+      list.innerHTML = html;
+    }).catch(() => { list.innerHTML = '<div style="color:var(--red)">Fehler</div>'; });
+}
+
+async function updateFolderSelect(){
+  const sel = document.getElementById('transcribe-folder-select');
+  if(!sel) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files`);
+    const data = await resp.json();
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Root (kein Ordner) —</option>';
+    (data.ordner || []).forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.name;
+      opt.textContent = `📁 ${o.name}`;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  } catch(e) {}
+}
+
+async function deleteTranscriptionFolder(name){
+  if(!confirm(`Ordner "${name}" und alle Dateien darin löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/folder/${name}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error(await resp.text());
+    addLog(`[ORDNER] "${name}" gelöscht`, 'ok');
+    loadTranscriptionFiles();
+    updateFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+async function deleteTranscription(filename){
+  if(!confirm(`"${filename}" löschen?`)) return;
+  await fetch(`${TTS_URL}/transcribe/files/${filename}`, {method:'DELETE'});
+  loadTranscriptionFiles();
+}
+
+function showNewFolderDialog(){
+  const d = document.getElementById('new-folder-dialog');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  if(d.style.display === 'block') document.getElementById('new-folder-name').focus();
+}
+
+async function createTranscriptionFolder(){
+  const name = document.getElementById('new-folder-name').value.trim();
+  if(!name){ addLog('Bitte Ordnername eingeben!','err'); return; }
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/folder`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+    document.getElementById('new-folder-name').value = '';
+    document.getElementById('new-folder-dialog').style.display = 'none';
+    addLog(`[ORDNER] "${name}" erstellt ✅`, 'ok');
+    loadTranscriptionFiles();
+    updateFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+
+
+// ── Hörbuch Ordner ───────────────────────────────────────────
+
+async function loadHoerbuchFolders(){
+  const list = document.getElementById('hoerbuch-folder-list');
+  if(!list) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folders`);
+    _listData.filesHb = await resp.json();
+    _clearListCache('filesHb');
+    renderFilesHb();
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+function renderFilesHb(){
+  const list = document.getElementById('hoerbuch-folder-list');
+  if(!list) return;
+  const data    = _listData.filesHb || {};
+  const folders = _sortItems(data.ordner||[],  _listSort.filesHb);
+  const files   = _sortItems(data.dateien||[], _listSort.filesHb);
+  let html = _sortBar('filesHb');
+
+  folders.forEach(o => { html += _folderBlock('filesHb', o, 'hoerbuch'); });
+
+  files.forEach(f => {
+    const pid  = 'hbr_' + f.name.replace(/[^a-z0-9]/gi,'_');
+    const icon = f.name.endsWith('.mp3')?'🎵':f.name.endsWith('.m4b')?'📱':'🔊';
+    html += `<div style="padding:.4rem .25rem;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <span>${icon}</span>
+        <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB${f.datum_str?' · '+f.datum_str:''}</div></div>
+        <button onclick="togglePlayer('${pid}')" class="btn btn-secondary btn-sm">▶</button>
+        <a href="${TTS_URL}/tts/download/${encodeURIComponent(f.name)}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+        <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+      </div>
+      <audio id="${pid}" controls style="display:none;width:100%;margin-top:.35rem;height:30px"><source src="${TTS_URL}/tts/download/${encodeURIComponent(f.name)}"></audio>
+    </div>`;
+  });
+
+  if(!folders.length && !files.length) html += '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Hörbücher vorhanden</div>';
+  const total = (data.ordner||[]).reduce((s,o) => s + o.dateien_anzahl, 0) + files.length;
+  const statEl = document.getElementById('stat-files');
+  if(statEl) statEl.textContent = total;
+  list.innerHTML = html;
+  _hydrateOpenFolders('filesHb','hoerbuch');
+}
+
+function openHoerbuchFolder(name){
+  const list = document.getElementById('hoerbuch-folder-list');
+  list.innerHTML = '<div style="color:var(--text3);padding:.5rem">⏳ Lade...</div>';
+  fetch(`${TTS_URL}/tts/hoerbuch/folder/${name}`)
+    .then(r => r.json())
+    .then(data => {
+      let html = `<div style="padding:.35rem 0;margin-bottom:.35rem;border-bottom:1px solid var(--border)">
+        <button class="btn btn-secondary btn-sm" onclick="loadHoerbuchFolders()">
+          <i class="ti ti-arrow-left"></i> Zurück
+        </button>
+        <span style="margin-left:.5rem;font-size:11px;color:var(--text2)">📁 ${name}</span>
+      </div>`;
+      if(!data.dateien || data.dateien.length === 0){
+        html += '<div style="color:var(--text3);padding:.5rem">Ordner ist leer</div>';
+      } else {
+        html += data.dateien.map(f => {
+          const icon = f.name.endsWith('.mp3') ? '🎵' : f.name.endsWith('.m4b') ? '📱' : '🔊';
+          const pid = `hbplayer_${f.name.replace(/[^a-z0-9]/gi,'_')}`;
+          return `
+          <div style="padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <span>${icon}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+                <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB · ${f.datum_str}</div>
+              </div>
+              <button onclick="togglePlayer('${pid}')" class="btn btn-secondary btn-sm">▶</button>
+              <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+              <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+            </div>
+            <audio id="${pid}" controls style="display:none;width:100%;margin-top:.35rem;height:32px">
+              <source src="${TTS_URL}/tts/download/${f.name}">
+            </audio>
+          </div>`;
+        }).join('');
+      }
+      list.innerHTML = html;
+    }).catch(() => { list.innerHTML = '<div style="color:var(--red)">Fehler</div>'; });
+}
+
+async function updateHoerbuchFolderSelect(){
+  const sel = document.getElementById('hoerbuch-folder-select');
+  if(!sel) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folders`);
+    const data = await resp.json();
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Neues Buch anlegen —</option>';
+    (data.ordner || []).forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.name;
+      opt.textContent = `📁 ${o.name} (${o.dateien_anzahl} Dateien)`;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  } catch(e) {}
+}
+
+async function createHoerbuchFolder(){
+  const name = document.getElementById('new-hoerbuch-folder-name').value.trim();
+  if(!name){ addLog('Bitte Ordnername eingeben!','err'); return; }
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folder`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+    document.getElementById('new-hoerbuch-folder-name').value = '';
+    document.getElementById('new-hoerbuch-folder-dialog').style.display = 'none';
+    addLog(`[ORDNER] "${name}" erstellt ✅`, 'ok');
+    loadHoerbuchFolders();
+    updateHoerbuchFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+async function deleteHoerbuchFolder(name){
+  if(!confirm(`Ordner "${name}" und alle Dateien darin löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folder/${name}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error(await resp.text());
+    addLog(`[ORDNER] "${name}" gelöscht`, 'ok');
+    loadHoerbuchFolders();
+    updateHoerbuchFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+function showNewHoerbuchFolderDialog(){
+  const d = document.getElementById('new-hoerbuch-folder-dialog');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  if(d.style.display === 'block') document.getElementById('new-hoerbuch-folder-name').focus();
+}
+
+// ── Archiv ───────────────────────────────────────────────────
+
+let _archivData = {hoerbuch:[], transkription:[]};
+let _archivTab  = 'hoerbuch';
+let _renameCtx  = null;
+let _archivSort = {by:'datum', dir:'desc'};
+let _archivCollapsed = {};
+
+async function loadArchivFolders(){
+  const list = document.getElementById('archiv-file-list');
+  try {
+    const resp = await fetch(`${TTS_URL}/archiv/folders`);
+    const data = await resp.json();
+    _archivData = {
+      hoerbuch:      data.ordner.hoerbuch      || [],
+      transkription: data.ordner.transkription || []
+    };
+    updateArchivStorage();
+    renderArchivList();
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="color:var(--red);padding:.5rem">Fehler beim Laden</div>';
+  }
+}
+
+function updateArchivStorage(){
+  const sum = arr => arr.reduce((s,f) => s + f.groesse_mb, 0);
+  const hMB = sum(_archivData.hoerbuch);
+  const tMB = sum(_archivData.transkription);
+  const total = hMB + tMB;
+  const fmt = mb => mb >= 1024 ? (mb/1024).toFixed(2)+' GB' : mb.toFixed(1)+' MB';
+  document.getElementById('archiv-storage-label').textContent = fmt(total);
+  document.getElementById('archiv-sz-hoerbuch').textContent   = hMB.toFixed(1);
+  document.getElementById('archiv-sz-transkription').textContent = tMB.toFixed(1);
+  if(total > 0){
+    document.getElementById('archiv-bar-hoerbuch').style.width      = ((hMB/total)*100).toFixed(1)+'%';
+    document.getElementById('archiv-bar-transkription').style.width = ((tMB/total)*100).toFixed(1)+'%';
+  } else {
+    document.getElementById('archiv-bar-hoerbuch').style.width      = '0%';
+    document.getElementById('archiv-bar-transkription').style.width = '0%';
+  }
+}
+
+function switchArchivTab(tab){
+  _archivTab = tab;
+  document.querySelectorAll('.tab-btn[id^="archiv-tab-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('archiv-tab-'+tab).classList.add('active');
+  document.getElementById('archiv-search').value = '';
+  document.getElementById('archiv-select-all').checked = false;
+  renderArchivList();
+}
+
+function filterArchiv(){ renderArchivList(); }
+
+// ── Sortierung ───────────────────────────────────────────────
+function setArchivSort(by){
+  if(_archivSort.by === by){
+    _archivSort.dir = _archivSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    _archivSort.by = by;
+    _archivSort.dir = by === 'name' ? 'asc' : 'desc';
+  }
+  // Button-States aktualisieren
+  document.querySelectorAll('.archiv-sort-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('archiv-sort-' + by);
+  if(btn){
+    btn.classList.add('active');
+    const arrow = _archivSort.dir === 'asc' ? '↑' : '↓';
+    document.querySelectorAll('.archiv-sort-btn .sort-arrow').forEach(a => a.textContent = '');
+    const ar = btn.querySelector('.sort-arrow');
+    if(ar) ar.textContent = arrow;
+  }
+  renderArchivList();
+}
+
+function _sortArchivFiles(files){
+  const {by, dir} = _archivSort;
+  const mult = dir === 'asc' ? 1 : -1;
+  return [...files].sort((a,b) => {
+    if(by === 'name'){
+      const av = a.name.toLowerCase(), bv = b.name.toLowerCase();
+      return av < bv ? -mult : av > bv ? mult : 0;
+    }
+    if(by === 'groesse') return (a.groesse_mb - b.groesse_mb) * mult;
+    return (a.datum - b.datum) * mult; // datum (default)
+  });
+}
+
+// ── Datums-Gruppierung ───────────────────────────────────────
+function _getDateGroup(timestamp){
+  const now = new Date();
+  const dayMs = 86400000;
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const weekStart  = todayStart - 6 * dayMs;
+  const ts = timestamp * 1000;
+  if(ts >= todayStart) return 'Heute';
+  if(ts >= weekStart)  return 'Diese Woche';
+  return 'Älter';
+}
+
+function _fileIcon(name){
+  return name.endsWith('.mp3')||name.endsWith('.m4b') ? '🎵'
+       : name.endsWith('.wav') ? '🔊'
+       : name.endsWith('.txt') ? '📄'
+       : name.endsWith('.srt') ? '📋'
+       : /\.(pdf)$/i.test(name) ? '📕'
+       : /\.(epub|mobi)$/i.test(name) ? '📚'
+       : /\.(docx?|odt)$/i.test(name) ? '📝'
+       : /\.(jpg|jpeg|png|webp|tiff?|bmp)$/i.test(name) ? '🖼️'
+       : '📁';
+}
+
+function renderArchivList(){
+  const q     = document.getElementById('archiv-search').value.toLowerCase().trim();
+  let   files = (_archivData[_archivTab] || []).filter(f => !q || f.name.toLowerCase().includes(q));
+  const list  = document.getElementById('archiv-file-list');
+
+  if(!files.length){
+    list.innerHTML = `<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">
+      <i class="ti ti-folder-off" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.5"></i>
+      ${q ? 'Keine Treffer für "'+q+'"' : 'Keine Dateien vorhanden'}</div>`;
+    _updateBulkToolbar();
+    return;
+  }
+
+  files = _sortArchivFiles(files);
+
+  // In Datums-Gruppen einteilen
+  const groups = {'Heute':[], 'Diese Woche':[], 'Älter':[]};
+  files.forEach(f => groups[_getDateGroup(f.datum)].push(f));
+
+  let html = '';
+  let gidx = 0;
+  for(const groupName of ['Heute','Diese Woche','Älter']){
+    const gf = groups[groupName];
+    if(!gf.length) continue;
+    const collapsed = !!_archivCollapsed[groupName];
+    html += `<div class="archiv-group">
+      <div class="archiv-group-head" onclick="toggleArchivGroup('${groupName}')">
+        <i class="ti ti-chevron-${collapsed ? 'right' : 'down'}" style="font-size:14px"></i>
+        <span style="flex:1">${groupName}</span>
+        <span class="archiv-group-count">${gf.length}</span>
+      </div>
+      <div class="archiv-group-body" style="display:${collapsed ? 'none' : 'block'}">`;
+    gf.forEach(f => { html += renderArchivRow(f, gidx++); });
+    html += `</div></div>`;
+  }
+
+  list.innerHTML = html;
+  _updateBulkToolbar();
+}
+
+function renderArchivRow(f, i){
+  const audio = /\.(mp3|wav|m4b|ogg|flac|m4a|aac|opus)$/i.test(f.name);
+  const pid   = 'ap_' + i + '_' + f.name.replace(/[^a-z0-9]/gi,'_');
+  const did   = 'ad_' + i;
+  const src   = `${TTS_URL}/archiv/stream/${_archivTab}/${encodeURIComponent(f.name)}`;
+  return `<div class="archiv-row">
+    <div class="archiv-row-head">
+      <input type="checkbox" class="archiv-cb" data-name="${f.name}" onchange="_updateBulkToolbar()">
+      <span style="font-size:15px">${_fileIcon(f.name)}</span>
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleArchivDetail('${did}')" title="Details anzeigen">
+        <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px">${f.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB &middot; ${f.datum_str}</div>
+      </div>
+      ${audio ? `<button onclick="toggleArchivPlayer('${pid}')" class="btn btn-secondary btn-sm" title="Abspielen">▶</button>` : ''}
+      <button onclick="openRenameModal('${_archivTab}','${f.name}')" class="btn btn-secondary btn-sm" title="Umbenennen"><i class="ti ti-pencil"></i></button>
+      <button onclick="deleteSingleArchiv('${_archivTab}','${f.name}')" class="btn btn-danger btn-sm" title="Löschen"><i class="ti ti-trash"></i></button>
+    </div>
+    <div class="archiv-detail" id="${did}" style="display:none">
+      <div class="archiv-detail-row"><span>Pfad</span><code>ARCHIV/${_archivTab}/${f.name}</code></div>
+      <div class="archiv-detail-row"><span>Größe</span><code>${f.groesse_mb} MB</code></div>
+      <div class="archiv-detail-row"><span>Datum</span><code>${f.datum_str}</code></div>
+      <div class="archiv-detail-row"><span>Typ</span><code>${(f.name.split('.').pop()||'').toUpperCase()}</code></div>
+      <a href="${src}" download="${f.name}" class="btn btn-secondary btn-sm" style="margin-top:.4rem"><i class="ti ti-download"></i> Herunterladen</a>
+    </div>
+    ${audio ? `<audio class="mini-player" id="${pid}" controls preload="none" style="display:none"><source src="${src}"></audio>` : ''}
+  </div>`;
+}
+
+function toggleArchivGroup(name){
+  _archivCollapsed[name] = !_archivCollapsed[name];
+  renderArchivList();
+}
+
+function toggleArchivDetail(did){
+  const el = document.getElementById(did);
+  if(!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleArchivPlayer(pid){
+  const el = document.getElementById(pid);
+  if(!el) return;
+  const visible = el.style.display !== 'none';
+  document.querySelectorAll('.mini-player').forEach(a => { a.style.display='none'; a.pause(); });
+  if(!visible){ el.style.display='block'; el.play().catch(()=>{}); }
+}
+
+function toggleStorageCard(){
+  const body = document.getElementById('archiv-storage-body');
+  const chev = document.getElementById('archiv-storage-chevron');
+  if(!body) return;
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? 'block' : 'none';
+  if(chev) chev.className = 'ti ti-chevron-' + (hidden ? 'down' : 'right');
+}
+
+function toggleSelectAllArchiv(checked){
+  document.querySelectorAll('.archiv-cb').forEach(cb => cb.checked = checked);
+  _updateBulkToolbar();
+}
+
+function _updateBulkToolbar(){
+  const all     = document.querySelectorAll('.archiv-cb');
+  const checked = document.querySelectorAll('.archiv-cb:checked');
+  const n = checked.length;
+  const selEl = document.getElementById('archiv-sel-count');
+  const delBtn = document.getElementById('archiv-bulk-delete');
+  const allCb  = document.getElementById('archiv-select-all');
+  if(selEl)  selEl.textContent = n > 0 ? `${n} ausgewählt` : 'Alle auswählen';
+  if(delBtn) delBtn.disabled = n === 0;
+  if(allCb){
+    allCb.indeterminate = n > 0 && n < all.length;
+    allCb.checked       = all.length > 0 && n === all.length;
+  }
+}
+
+async function deleteSingleArchiv(subfolder, filename){
+  if(!confirm(`"${filename}" aus dem Archiv löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/archiv/files/${subfolder}/${encodeURIComponent(filename)}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error((await resp.json()).detail || 'Fehler');
+    addLog(`[ARCHIV] "${filename}" gelöscht`, 'ok');
+    await loadArchivFolders();
+  } catch(e) { addLog(`Fehler: ${e.message}`, 'err'); }
+}
+
+async function deleteSelectedArchiv(){
+  const cbs = [...document.querySelectorAll('.archiv-cb:checked')];
+  if(!cbs.length) return;
+  if(!confirm(`${cbs.length} Datei(en) endgültig aus dem Archiv löschen?`)) return;
+
+  const wrap = document.getElementById('archiv-progress-wrap');
+  const fill = document.getElementById('archiv-progress-fill');
+  const pct  = document.getElementById('archiv-progress-pct');
+  wrap.style.display = 'block';
+  fill.style.width   = '0%';
+
+  let done = 0;
+  for(const cb of cbs){
+    try { await fetch(`${TTS_URL}/archiv/files/${_archivTab}/${encodeURIComponent(cb.dataset.name)}`, {method:'DELETE'}); } catch(_){}
+    done++;
+    const p = Math.round((done/cbs.length)*100);
+    fill.style.width = p+'%';
+    pct.textContent  = p+'%';
+  }
+
+  addLog(`[ARCHIV] ${done} Datei(en) gelöscht`, 'ok');
+  setTimeout(() => { wrap.style.display='none'; fill.style.width='0%'; }, 1000);
+  await loadArchivFolders();
+}
+
+// ── Rename Modal ─────────────────────────────────────────────
+
+function openRenameModal(subfolder, filename){
+  _renameCtx = {subfolder, filename};
+  document.getElementById('rename-modal-path').textContent = subfolder + ' / ' + filename;
+  document.getElementById('rename-modal-input').value = filename;
+  document.getElementById('rename-modal').classList.add('open');
+  setTimeout(() => {
+    const inp = document.getElementById('rename-modal-input');
+    inp.focus();
+    // Dateiname ohne Extension selektieren
+    const dot = filename.lastIndexOf('.');
+    inp.setSelectionRange(0, dot > 0 ? dot : filename.length);
+  }, 150);
+}
+
+function closeRenameModal(){
+  document.getElementById('rename-modal').classList.remove('open');
+  _renameCtx = null;
+}
+
+async function confirmRename(){
+  if(!_renameCtx) return;
+  const newName = document.getElementById('rename-modal-input').value.trim();
+  if(!newName){ addLog('Bitte einen Namen eingeben!','err'); return; }
+  try {
+    const resp = await fetch(`${TTS_URL}/archiv/rename`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({subfolder: _renameCtx.subfolder, old_name: _renameCtx.filename, new_name: newName})
+    });
+    const data = await resp.json();
+    if(!resp.ok) throw new Error(data.detail || 'Fehler');
+    addLog(`[ARCHIV] Umbenannt → ${data.neu}`, 'ok');
+    closeRenameModal();
+    await loadArchivFolders();
+  } catch(e) { addLog(`Fehler: ${e.message}`, 'err'); }
+}
+
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('rename-modal').classList.contains('open')) return;
+  if(e.key === 'Escape') closeRenameModal();
+  if(e.key === 'Enter')  confirmRename();
+});
+
+// ── Admin Log ────────────────────────────────────────────────
+let _logRefreshTimer = null;
+
+async function loadAdminLogs(){
+  const win = document.getElementById('admin-log-window');
+  if(!win) return;
+  const filter = document.getElementById('log-level-filter')?.value || '';
+  try {
+    const resp = await fetch(`${TTS_URL}/admin/logs?n=200`);
+    const data = await resp.json();
+    let logs = data.logs;
+    if(filter) logs = logs.filter(l => l.level === filter || 
+      (filter === 'WARNING' && ['WARNING','ERROR'].includes(l.level)) ||
+      (filter === 'INFO' && ['INFO','WARNING','ERROR'].includes(l.level)));
+    
+    const levelColor = {ERROR:'var(--red)', WARNING:'var(--amber)', INFO:'var(--text2)', DEBUG:'var(--text3)'};
+    win.innerHTML = logs.map(l => 
+      `<div style="color:${levelColor[l.level]||'var(--text2)'}">
+        <span style="color:var(--text3)">[${l.zeit}]</span>
+        <span style="color:${levelColor[l.level]||'var(--text2)'}">[${l.level}]</span>
+        ${l.nachricht}
+      </div>`
+    ).join('') || '<div style="color:var(--text3)">Keine Logs vorhanden</div>';
+    win.scrollTop = win.scrollHeight;
+  } catch(e) {
+    win.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+async function clearAdminLogs(){
+  if(!confirm('Alle Logs löschen?')) return;
+  await fetch(`${TTS_URL}/admin/logs`, {method:'DELETE'});
+  loadAdminLogs();
+}
+
+function toggleLogAutoRefresh(){
+  const cb = document.getElementById('log-auto-refresh');
+  if(cb.checked){
+    _logRefreshTimer = setInterval(loadAdminLogs, 5000);
+  } else {
+    clearInterval(_logRefreshTimer);
+    _logRefreshTimer = null;
+  }
+}
+
+</script>
+</body>
+</html>

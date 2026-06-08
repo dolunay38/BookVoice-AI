@@ -24,6 +24,25 @@ EINGABE_DIR = Path("/app/EINGABE")
 EINGABE_DIR.mkdir(parents=True, exist_ok=True)
 ARCHIV_DIR = Path("/app/ARCHIV")
 ARCHIV_DIR.mkdir(parents=True, exist_ok=True)
+
+# Archiv-Routing nach Dateityp
+AUDIO_VIDEO_EXT = {
+    ".mp3", ".wav", ".ogg", ".m4a", ".aac", ".opus", ".flac", ".wma",
+    ".mp4", ".mkv", ".webm", ".mov", ".avi", ".m4b"
+}
+
+def archiv_subfolder_for(filename: str) -> str:
+    """Audio/Video -> hoerbuch, alles andere (Text/PDF/Bild/Doc) -> transkription"""
+    ext = Path(filename).suffix.lower()
+    return "hoerbuch" if ext in AUDIO_VIDEO_EXT else "transkription"
+
+def archiviere_quelle(src_path: Path, filename: str):
+    """Original-Datei in den passenden Archiv-Unterordner kopieren"""
+    sub = archiv_subfolder_for(filename)
+    ziel_dir = ARCHIV_DIR / sub
+    ziel_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src_path, ziel_dir / filename)
+
 # Dynamischer Modell-Pfad — funktioniert auf Docker und Colab
 _possible_model_dirs = [
     Path("/app/tts_models/tts_models--multilingual--multi-dataset--xtts_v2"),
@@ -45,7 +64,7 @@ DEFAULT_SPEAKER_WAV = str(next((p for p in _possible_stimme if p.exists()), _pos
 
 # CPU/GPU Auto-Detect
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"🖥️ Device: {DEVICE.upper()}")
+print(f"[INFO] Device: {DEVICE.upper()}")
 
 AUDIO_FORMATS = {".wav", ".mp3", ".m4a", ".ogg", ".flac", ".aac", ".weba", ".opus"}
 VIDEO_FORMATS = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".webm"}
@@ -62,23 +81,23 @@ _cached_latents = {}
 def ensure_model():
     """Stellt sicher dass XTTS-v2 Modell vorhanden ist"""
     if not MODEL_DIR.exists() or not (MODEL_DIR / "config.json").exists():
-        print("🔄 XTTS-v2 Modell wird heruntergeladen (~1.8 GB)...")
-        print("   Bitte warten — dies dauert beim ersten Start einige Minuten!")
+        print("XTTS-v2 Modell wird heruntergeladen (~1.8 GB)...")
+        print("   Bitte warten - dies dauert beim ersten Start einige Minuten!")
         try:
             from TTS.api import TTS as TTSDownloader
             TTSDownloader("tts_models/multilingual/multi-dataset/xtts_v2")
-            print("✅ Modell erfolgreich heruntergeladen!")
+            print("[OK] Modell erfolgreich heruntergeladen!")
         except Exception as e:
-            print(f"❌ Modell-Download fehlgeschlagen: {e}")
+            print(f"[FEHLER] Modell-Download fehlgeschlagen: {e}")
     else:
-        print("✅ XTTS-v2 Modell bereits vorhanden!")
+        print("[OK] XTTS-v2 Modell bereits vorhanden!")
 
 # ── Standard-Stimme erstellen falls keine vorhanden ───────────
 def ensure_default_voice():
     """Erstellt eine Standard-Stimme falls keine vorhanden"""
     voice_path = Path(DEFAULT_SPEAKER_WAV)
     if not voice_path.exists():
-        print("🎙️ Erstelle Standard-Stimme...")
+        print("[INFO] Erstelle Standard-Stimme...")
         try:
             import numpy as np
             sample_rate = 22050
@@ -88,12 +107,12 @@ def ensure_default_voice():
             audio = np.sin(2 * np.pi * 200 * t) * 0.3
             audio_tensor = torch.tensor(audio, dtype=torch.float32).unsqueeze(0)
             torchaudio.save(str(voice_path), audio_tensor, sample_rate)
-            print("✅ Standard-Stimme erstellt!")
-            print("⚠️  Bitte eigene Stimme hochladen für beste Qualität!")
+            print("[OK] Standard-Stimme erstellt!")
+            print("[WARNUNG] Bitte eigene Stimme hochladen für beste Qualität!")
         except Exception as e:
-            print(f"⚠️  Standard-Stimme konnte nicht erstellt werden: {e}")
+            print(f"[WARNUNG] Standard-Stimme konnte nicht erstellt werden: {e}")
     else:
-        print("✅ Stimme vorhanden!")
+        print("[OK] Stimme vorhanden!")
 
 # Beim Start ausführen
 ensure_model()
@@ -103,7 +122,7 @@ def load_model():
     global tts_engine
     if tts_engine is not None:
         return
-    print("🔊 Lade XTTS-v2 Modell...")
+    print("Lade XTTS-v2 Modell...")
     from TTS.tts.configs.xtts_config import XttsConfig
     from TTS.tts.models.xtts import Xtts
     config = XttsConfig()
@@ -112,7 +131,7 @@ def load_model():
     tts_engine.load_checkpoint(config, checkpoint_dir=str(MODEL_DIR), eval=True)
     if DEVICE == "cuda":
         tts_engine = tts_engine.cuda()
-    print(f"✅ XTTS-v2 bereit! [{DEVICE.upper()}]")
+    print(f"[OK] XTTS-v2 bereit! [{DEVICE.upper()}]")
 
 app = FastAPI(title="BookVoice-AI Server", version="1.0")
 app.add_middleware(
@@ -603,6 +622,10 @@ async def process_ebook(
         shutil.copyfileobj(file.file, f)
 
     chapters = extract_text_from_ebook(tmp_path)
+
+    # Original-Datei archivieren bevor sie geloescht wird
+    archiviere_quelle(tmp_path, file.filename)
+
     tmp_path.unlink(missing_ok=True)
 
     req = ChapterRequest(
@@ -1502,6 +1525,7 @@ def _run_transcribe_job(job_id, content, suffix, filename, language, model_size,
         full_text = "\n".join(text_parts)
         srt_text = "\n".join(srt_parts)
 
+        base_name = project_name.strip() if project_name.strip() else Path(filename).stem
         base_name = re.sub(r'[^\w\-_]', '_', base_name)
         if folder.strip():
             folder_clean = re.sub(r'[^\w\-_]', '_', folder.strip())
@@ -1514,7 +1538,7 @@ def _run_transcribe_job(job_id, content, suffix, filename, language, model_size,
         (save_dir / f"{base_name}.srt").write_text(srt_text, encoding="utf-8")
 
         if archive:
-            shutil.copy2(tmp_path, ARCHIV_DIR / tmp_path.name)
+            archiviere_quelle(tmp_path, filename)
 
         with _transcribe_jobs_lock:
             _transcribe_jobs[job_id].update({
@@ -1633,6 +1657,12 @@ async def transcribe_stream(
             (save_dir / f"{base_name}.txt").write_text(full_text, encoding="utf-8")
             (save_dir / f"{base_name}.srt").write_text(srt_text, encoding="utf-8")
 
+            # Original-Quelldatei archivieren
+            try:
+                archiviere_quelle(tmp_path, filename)
+            except Exception:
+                pass
+
             yield f"data: {json.dumps({'typ': 'fertig', 'woerter': len(full_text.split()), 'txt_datei': f'{base_name}.txt', 'srt_datei': f'{base_name}.srt', 'text': full_text, 'srt': srt_text})}\n\n"
 
         except Exception as e:
@@ -1733,8 +1763,7 @@ async def transcribe_audio(
 
         # Archivieren
         if archive:
-            archiv_path = ARCHIV_DIR / tmp_path.name
-            shutil.copy2(tmp_path, archiv_path)
+            archiviere_quelle(tmp_path, file.filename)
 
         return {
             "status": "ok",
@@ -1765,10 +1794,15 @@ def list_transcriptions():
     ordner = []
     for f in TRANSCRIPTION_DIR.iterdir():
         if f.is_dir():
+            inner = [x for x in f.glob("*") if x.suffix in [".txt", ".srt"]]
+            groesse = sum(x.stat().st_size for x in inner)
             ordner.append({
                 "name": f.name,
                 "typ": "ordner",
-                "dateien_anzahl": len(list(f.glob("*.txt"))) + len(list(f.glob("*.srt")))
+                "dateien_anzahl": len(inner),
+                "groesse_kb": round(groesse / 1024, 1),
+                "datum": f.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
             })
         elif f.suffix in [".txt", ".srt"]:
             files.append({
@@ -1865,6 +1899,7 @@ def list_hoerbuch_folders():
             folders.append({
                 "name": item.name,
                 "dateien_anzahl": len(audio_files),
+                "groesse_mb": round(sum(f.stat().st_size for f in audio_files) / 1024 / 1024, 2),
                 "datum": item.stat().st_mtime,
                 "datum_str": datetime.datetime.fromtimestamp(item.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
             })

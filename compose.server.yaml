@@ -1,62 +1,13 @@
+# ============================================================
+# BookVoice-AI — Server Compose
+# Nur BookVoice-AI Container!
+# KI-ARCHIV PRO laeuft in compose.yaml (separat)
+# ============================================================
+
 services:
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - /mnt/data/docker-data/ki-archiv/models/ollama_storage:/root/.ollama
-    restart: unless-stopped
-
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: open-webui
-    ports:
-      - "3000:8080"
-    volumes:
-      - /mnt/data/docker-data/ki-archiv/webui_storage:/app/backend/data
-      - /mnt/data/docker-data/ki-archiv/ERGEBNISSE:/app/backend/data/docs/ERGEBNISSE
-      - /mnt/data/docker-data/ki-archiv/ARCHIV:/app/backend/data/docs/ARCHIV
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - WEBUI_AUTH=false
-      - DOCS_DIR=/app/backend/data/docs
-      - DOCS_SCAN_INTERVAL=30
-      - DOCS_RECURSIVE=true
-    restart: always
-
-  nllb-translator:
-    container_name: nllb-translator
-    build:
-      context: ./nllb-services
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
-    volumes:
-      - /mnt/data/docker-data/ki-archiv/nllb_models/nllb-200-distilled-600M:/models/nllb-200-distilled-600M:ro
-    environment:
-      - MODEL_PATH=/models/nllb-200-distilled-600M
-    restart: unless-stopped
-
-  ki-archiv-ingest:
-    build: .
-    container_name: ki-archiv-ingest
-    tty: true
-    stdin_open: true
-    command: sh -c "python3 ingest_winmaster.py || tail -f /dev/null"
-    volumes:
-      - .:/app
-      - /mnt/data/docker-data/ki-archiv/EINGABE:/app/EINGABE
-      - /mnt/data/docker-data/ki-archiv/ARCHIV:/app/ARCHIV
-      - /mnt/data/docker-data/ki-archiv/ERGEBNISSE:/app/ERGEBNISSE
-    depends_on:
-      - nllb-translator
-      - ollama
-    restart: always
-
   # ============================================================
-  # TTS - Hörbuch Modul (Coqui XTTS-v2)
+  # Backend: FastAPI + FastWhisper + XTTS-v2
   # ============================================================
   ki-archiv-tts:
     build:
@@ -69,11 +20,38 @@ services:
       - /mnt/data/docker-data/ki-archiv/tts_models:/root/.local/share/tts
       - /mnt/data/docker-data/ki-archiv/tts_models:/app/tts_models
       - /mnt/data/docker-data/ki-archiv/tts_server.py:/app/tts_server.py
-      - /mnt/data/docker-data/ki-archiv/ERGEBNISSE:/app/ERGEBNISSE
       - /mnt/data/docker-data/ki-archiv/HOERBUCH:/app/HOERBUCH
       - /mnt/data/docker-data/ki-archiv/TRANSKRIPTIONEN:/app/TRANSKRIPTIONEN
       - /mnt/data/docker-data/ki-archiv/ARCHIV:/app/ARCHIV
     environment:
       - TTS_OUTPUT=/app/HOERBUCH
       - TTS_LANG=tr
+    restart: unless-stopped
+
+  # ============================================================
+  # Frontend: HTML via nginx
+  # ============================================================
+  ki-archiv-web:
+    image: nginx:alpine
+    container_name: ki-archiv-web
+    ports:
+      - "7501:80"
+    volumes:
+      - /mnt/data/docker-data/ki-archiv/ki_archiv_tts_web.html:/usr/share/nginx/html/index.html:ro
+    restart: unless-stopped
+
+  # ============================================================
+  # Proxy: Nginx Reverse Proxy (Port 7502 -> Domain)
+  # ============================================================
+  ki-archiv-proxy:
+    image: nginx:alpine
+    container_name: ki-archiv-proxy
+    ports:
+      - "7502:80"
+    volumes:
+      - /mnt/data/docker-data/ki-archiv/nginx-bookvoice.conf:/etc/nginx/conf.d/default.conf:ro
+      - /mnt/data/docker-data/ki-archiv/ki_archiv_tts_web.html:/usr/share/nginx/html/index.html:ro
+    depends_on:
+      - ki-archiv-tts
+      - ki-archiv-web
     restart: unless-stopped
