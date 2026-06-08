@@ -1,0 +1,2995 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookVoice-AI</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;
+  --surface:#161616;
+  --surface2:#1c1c1c;
+  --border:#242424;
+  --border2:#2a2a2a;
+  --text:#e8e8e8;
+  --text2:#888;
+  --text3:#555;
+  --green:#22c55e;
+  --green-dim:rgba(34,197,94,0.12);
+  --green-glow:rgba(34,197,94,0.25);
+  --amber:#f59e0b;
+  --red:#ef4444;
+  --blue:#3b82f6;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Inter',sans-serif;
+  --radius:8px;
+  --radius-lg:12px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px}
+
+/* ── Layout ── */
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:52px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:.75rem 0;gap:2px;flex-shrink:0;z-index:10}
+.sb-logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#000;font-weight:700;font-size:14px;margin-bottom:.75rem;flex-shrink:0}
+.sb-item{width:38px;height:38px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;transition:all .15s;position:relative}
+.sb-item:hover{background:var(--surface2);color:var(--text2)}
+.sb-item.active{background:var(--green-dim);color:var(--green)}
+.sb-item i{font-size:18px}
+.sb-tooltip{position:absolute;left:48px;background:#1e1e1e;border:1px solid var(--border2);color:var(--text);font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100}
+.sb-item:hover .sb-tooltip{opacity:1}
+.sb-divider{width:24px;height:1px;background:var(--border);margin:.25rem 0}
+.sb-bottom{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:2px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text3)}
+.status-dot.online{background:var(--green);box-shadow:0 0 6px var(--green-glow)}
+.status-dot.offline{background:var(--red)}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:.65rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);flex-shrink:0}
+.page-title{font-size:15px;font-weight:600;color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:.5rem}
+.server-info{font-size:11px;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:5px}
+
+/* ── Content ── */
+.content{flex:1;overflow-y:auto;padding:1.25rem}
+.panel{display:none}
+.panel.active{display:block}
+
+/* ── Two Col ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.card:last-child{margin-bottom:0}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.card-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+
+/* ── Form Elements ── */
+textarea,input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:.6rem .85rem;outline:none;transition:border-color .15s}
+textarea{resize:vertical;min-height:160px;line-height:1.6}
+textarea:focus,input[type=text]:focus{border-color:var(--green)}
+textarea::placeholder,input::placeholder{color:var(--text3)}
+select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;padding:.5rem .75rem;outline:none;cursor:pointer}
+select:focus{border-color:var(--green)}
+input[type=range]{width:100%;accent-color:var(--green);cursor:pointer}
+
+/* ── Buttons ── */
+.btn{padding:.45rem 1rem;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:5px;font-family:var(--sans)}
+.btn-primary{background:var(--green);color:#000}
+.btn-primary:hover{background:#16a34a}
+.btn-primary:disabled{background:#1a3a1a;color:var(--text3);cursor:not-allowed}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--border);color:var(--text)}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.btn-danger:hover{background:rgba(239,68,68,.1)}
+.btn-sm{padding:.3rem .65rem;font-size:11px}
+.btn-block{width:100%;justify-content:center;padding:.65rem}
+
+/* ── Upload Zone ── */
+.upload-zone{border:1px dashed var(--border2);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--surface2)}
+.upload-zone:hover{border-color:var(--green);background:var(--green-dim)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-icon{font-size:24px;color:var(--text3);margin-bottom:.5rem}
+.upload-text{font-size:12px;color:var(--text2)}
+.upload-text strong{color:var(--green)}
+.upload-formats{font-size:10px;color:var(--text3);margin-top:.25rem}
+
+/* ── Slider Row ── */
+.slider-row{margin-bottom:.85rem}
+.slider-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:.35rem}
+.slider-label span:last-child{color:var(--green);font-family:var(--mono)}
+.slider-hint{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:.2rem}
+
+/* ── Presets ── */
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.85rem}
+.preset-btn{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.4rem .5rem;font-size:11px;color:var(--text2);cursor:pointer;text-align:left;transition:all .15s;font-family:var(--sans)}
+.preset-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.preset-desc{font-size:10px;color:var(--text3);margin-bottom:.85rem;padding:.4rem .6rem;background:var(--surface2);border-radius:var(--radius);border-left:2px solid var(--green)}
+
+/* ── Voice Cards ── */
+.voice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.65rem}
+.voice-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem;cursor:pointer;transition:all .15s}
+.voice-card:hover{border-color:var(--border2)}
+.voice-card.active{border-color:var(--green);background:var(--green-dim)}
+.vc-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-bottom:.5rem}
+.vc-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.vc-meta{font-size:10px;color:var(--text3)}
+.vc-actions{display:flex;gap:.3rem;margin-top:.5rem}
+.vc-add{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;color:var(--text3);min-height:100px}
+.vc-add:hover{color:var(--green)}
+
+/* ── File Cards ── */
+.file-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;transition:border-color .15s}
+.file-card:hover{border-color:var(--border2)}
+.file-icon{font-size:20px;flex-shrink:0}
+.file-name{flex:1;font-size:12px;color:var(--text);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-size{font-size:11px;color:var(--text3);white-space:nowrap}
+
+/* ── Progress ── */
+.progress-wrap{margin-top:.75rem}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:.35rem;font-family:var(--mono)}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .4s ease}
+
+/* ── Log ── */
+.log-box{background:#0a0a0a;border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;height:150px;overflow-y:auto;font-family:var(--mono);font-size:11px;line-height:1.7}
+.log-ok{color:var(--green)}
+.log-err{color:var(--red)}
+.log-warn{color:var(--amber)}
+.log-info{color:var(--text3)}
+
+/* ── Badge ── */
+.badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+.badge-green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.badge-amber{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.badge-blue{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+
+/* ── Audio Player ── */
+audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:none}
+
+/* ── Char count ── */
+.char-count{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+/* ── Action Banner ── */
+.action-banner{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem}
+.action-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;display:flex;align-items:flex-start;gap:.75rem;cursor:pointer;transition:border-color .15s}
+.action-card:hover{border-color:var(--border2)}
+.action-icon{width:36px;height:36px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.action-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.action-sub{font-size:11px;color:var(--text3);line-height:1.4}
+
+/* ── Dashboard Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem}
+.stat-value{font-size:22px;font-weight:600;color:var(--text);font-family:var(--mono);margin-bottom:2px}
+.stat-label{font-size:11px;color:var(--text3)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── Sidebar ── -->
+<div class="sidebar">
+  <div class="sb-logo">B</div>
+
+  <div class="sb-item active" onclick="showPanel('dashboard')" id="nav-dashboard">
+    <i class="ti ti-home"></i>
+    <div class="sb-tooltip">Dashboard</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('studio')" id="nav-studio">
+    <i class="ti ti-microphone"></i>
+    <div class="sb-tooltip">Studio</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('voices')" id="nav-voices">
+    <i class="ti ti-player-play"></i>
+    <div class="sb-tooltip">Stimmen</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('musik')" id="nav-musik">
+    <i class="ti ti-music"></i>
+    <div class="sb-tooltip">Musik</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('covers')" id="nav-covers">
+    <i class="ti ti-photo"></i>
+    <div class="sb-tooltip">Cover</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('files')" id="nav-files">
+    <i class="ti ti-folder"></i>
+    <div class="sb-tooltip">Dateien</div>
+  </div>
+  <div class="sb-item" onclick="showPanel('transcribe')" id="nav-transcribe">
+    <i class="ti ti-file-text"></i>
+    <div class="sb-tooltip" data-i18n="nav_transcribe">Transkription</div>
+  </div>
+
+  <div class="sb-divider"></div>
+  <div class="sb-item" onclick="showPanel('settings')" id="nav-settings">
+    <i class="ti ti-settings"></i>
+    <div class="sb-tooltip">Einstellungen</div>
+  </div>
+
+  <div class="sb-divider"></div>
+
+  <div class="sb-item" onclick="showAdminLogin()" id="nav-admin">
+    <i class="ti ti-shield"></i>
+    <div class="sb-tooltip">Admin</div>
+  </div>
+
+  <div class="sb-bottom">
+    <div class="sb-item" id="server-status-btn" title="Server Status">
+      <div class="status-dot" id="status-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">Dashboard</div>
+    <div class="topbar-right">
+      <div style="display:flex;gap:3px;margin-right:8px">
+        <button onclick="setLang('de')" id="lang-de" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇩🇪</button>
+        <button onclick="setLang('tr')" id="lang-tr" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇹🇷</button>
+        <button onclick="setLang('en')" id="lang-en" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇬🇧</button>
+      </div>
+      <div class="server-info">
+        <span id="server-status-text">Verbinde…</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="showPanel('studio')">
+        <i class="ti ti-plus"></i> Neues Hörbuch
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ Dashboard ══ -->
+    <div class="panel active" id="panel-dashboard">
+
+      <!-- Hero Banner -->
+      <div style="background:linear-gradient(135deg,rgba(34,197,94,.08) 0%,rgba(59,130,246,.06) 100%);border:1px solid rgba(34,197,94,.15);border-radius:var(--radius-lg);padding:1.5rem 2rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+            <div style="width:40px;height:40px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#000;font-weight:700">B</div>
+            <div>
+              <div style="font-size:20px;font-weight:600;color:var(--text)">BookVoice-AI</div>
+              <div style="font-size:11px;color:var(--text3)">v1.1 · Aksoy-Net · XTTS-v2</div>
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--text2);max-width:500px;line-height:1.6">
+            Dein selbst-gehostetes KI-Hörbuch-Studio. Wandle Texte, eBooks und Fotos in hochwertige Hörbücher um — mit eigener Stimme, in Türkisch, Deutsch und Englisch.
+          </div>
+          <div style="display:flex;gap:.5rem;margin-top:1rem">
+            <button class="btn btn-primary" onclick="showPanel('studio')"><i class="ti ti-wand"></i> Neues Hörbuch</button>
+            <button class="btn btn-secondary" onclick="showPanel('voices')"><i class="ti ti-microphone"></i> Stimmen</button>
+            <button class="btn btn-secondary" onclick="showPanel('files')"><i class="ti ti-folder"></i> Bibliothek</button>
+          </div>
+        </div>
+        <div style="font-size:64px;opacity:.15">🎙️</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-files">—</div>
+          <div class="stat-label">Fertige Dateien</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-voices">—</div>
+          <div class="stat-label">Stimmen</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-musik">—</div>
+          <div class="stat-label">Musik-Tracks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-device">—</div>
+          <div class="stat-label">Device</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="action-banner">
+        <div class="action-card" onclick="showPanel('studio')">
+          <div class="action-icon" style="background:rgba(34,197,94,.1)">🎙️</div>
+          <div>
+            <div class="action-title">Hörbuch erstellen</div>
+            <div class="action-sub">Text, EPUB, PDF oder Foto hochladen und in Audio umwandeln</div>
+          </div>
+        </div>
+        <div class="action-card" onclick="showPanel('voices')">
+          <div class="action-icon" style="background:rgba(168,85,247,.1)">🎵</div>
+          <div>
+            <div class="action-title">Stimmen verwalten</div>
+            <div class="action-sub">11 Standard-Stimmen · Eigene Stimme hochladen · Vorschau anhören</div>
+          </div>
+        </div>
+        <div class="action-card" onclick="showPanel('musik')">
+          <div class="action-icon" style="background:rgba(245,158,11,.1)">🎼</div>
+          <div>
+            <div class="action-title">Hintergrundmusik</div>
+            <div class="action-sub">Musik hochladen und mit Hörbuch mischen</div>
+          </div>
+        </div>
+        <div class="action-card" onclick="showPanel('files')">
+          <div class="action-icon" style="background:rgba(59,130,246,.1)">📂</div>
+          <div>
+            <div class="action-title">Bibliothek</div>
+            <div class="action-sub">Fertige Hörbücher herunterladen, anhören oder löschen</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Features</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;font-size:12px">
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> XTTS-v2 Voice Cloning</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> EPUB / PDF / MOBI</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> OCR Foto-Upload</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> MP3 / M4B / WAV Export</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Hintergrundmusik</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Buchcover in M4B</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> TR / DE / EN / AR</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Stil-Presets</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> CPU / GPU Auto</div>
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">System Log</span>
+          <button class="btn btn-secondary btn-sm" onclick="clearLog()">Leeren</button>
+        </div>
+        <div class="log-box" id="log-box">
+          <div class="log-info">[SYSTEM] BookVoice-AI gestartet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Studio ══ -->
+    <div class="panel" id="panel-studio">
+      <div class="two-col">
+
+        <!-- LEFT -->
+        <div>
+          <!-- Engine Auswahl -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Engine</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+              <button class="btn btn-primary" id="engine-xtts" onclick="setEngine('xtts')" style="justify-content:center;font-size:11px">
+                🧠 XTTS-v2
+              </button>
+              <button class="btn btn-secondary" id="engine-edge" onclick="setEngine('edge')" style="justify-content:center;font-size:11px">
+                ⚡ Edge TTS 🌐
+              </button>
+              <button class="btn btn-secondary" id="engine-gpu" onclick="setEngine('gpu')" style="justify-content:center;font-size:11px">
+                ☁️ GPU Colab
+              </button>
+            </div>
+            <div id="engine-hint" style="font-size:10px;color:var(--text3);padding:.4rem .6rem;background:var(--surface2);border-radius:var(--radius)">
+              🧠 XTTS-v2: Lokal · Voice Cloning · Eigene Stimme
+            </div>
+          </div>
+
+          <!-- GPU Colab Panel -->
+          <div class="card" id="gpu-card" style="display:none">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:.5rem">
+                <span class="card-title">☁️ GPU Colab</span>
+                <div id="gpu-live-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3)"></div>
+              </div>
+              <span class="badge badge-amber">Beta</span>
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;line-height:1.6">
+              Nutze Google Colab T4 GPU kostenlos für schnelle Hörbuch-Generierung.
+              <br>~10x schneller als CPU!
+            </div>
+
+            <!-- URL + Verbinden -->
+            <div style="margin-bottom:.5rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Colab API URL</div>
+              <div style="display:flex;gap:.5rem">
+                <input type="text" id="gpu-url" placeholder="https://xxxx.trycloudflare.com" style="flex:1">
+                <button class="btn btn-secondary btn-sm" id="gpu-connect-btn" onclick="connectGPU()">Verbinden</button>
+                <button class="btn btn-danger btn-sm" id="gpu-disconnect-btn" onclick="disconnectGPU()" style="display:none">Trennen</button>
+              </div>
+            </div>
+
+            <!-- Community GPU -->
+            <div id="community-gpu-btn" style="display:none;margin-bottom:.5rem">
+              <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center" onclick="connectCommunityGPU()">
+                ☁️ Community GPU verbinden (colab.aksoy-net.de)
+              </button>
+            </div>
+
+            <!-- Status -->
+            <div id="gpu-status" style="font-size:11px;color:var(--text3);margin-bottom:.5rem"></div>
+
+            <!-- GPU Stats Grid -->
+            <div id="gpu-stats" style="display:none;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.75rem">
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem;text-align:center">
+                <div style="font-size:16px;font-weight:600;color:var(--green)" id="gpu-util">—</div>
+                <div style="font-size:9px;color:var(--text3)">GPU %</div>
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem;text-align:center">
+                <div style="font-size:16px;font-weight:600;color:var(--blue)" id="gpu-mem">—</div>
+                <div style="font-size:9px;color:var(--text3)">VRAM</div>
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem;text-align:center">
+                <div style="font-size:16px;font-weight:600;color:var(--amber)" id="gpu-timer">—</div>
+                <div style="font-size:9px;color:var(--text3)">Session</div>
+              </div>
+            </div>
+
+            <a href="https://colab.research.google.com/github/dolunay38/BookVoice-AI/blob/main/BookVoice_AI_Colab.ipynb" 
+               target="_blank" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;text-decoration:none" onclick="startUrlPolling()">
+              📓 Google Colab öffnen & warten
+            </a>
+            <div id="polling-status" style="font-size:10px;color:var(--text3);text-align:center;margin-top:.35rem"></div>
+          </div>
+
+          <!-- Edge TTS Stimmen (nur wenn Edge aktiv) -->
+          <div class="card" id="edge-voices-card" style="display:none">
+            <div class="card-header">
+              <span class="card-title">Edge TTS Stimme</span>
+              <span class="char-count" id="edge-voice-count">Lädt...</span>
+            </div>
+            <div style="display:flex;gap:.5rem;margin-bottom:.5rem">
+              <select id="edge-lang-filter" style="flex:none;width:auto" onchange="filterEdgeVoices()">
+                <option value="">Alle</option>
+                <option value="tr" selected>🇹🇷 TR</option>
+                <option value="de">🇩🇪 DE</option>
+                <option value="en">🇬🇧 EN</option>
+                <option value="ar">🇸🇦 AR</option>
+              </select>
+              <select id="edge-gender-filter" style="flex:none;width:auto" onchange="filterEdgeVoices()">
+                <option value="">Alle</option>
+                <option value="Female">♀ Weiblich</option>
+                <option value="Male">♂ Männlich</option>
+              </select>
+            </div>
+            <select id="edge-voice-select" style="width:100%;margin-bottom:.5rem">
+              <option value="">Lädt Stimmen...</option>
+            </select>
+            <div style="display:flex;gap:.5rem">
+              <div style="flex:1">
+                <div style="font-size:10px;color:var(--text2);margin-bottom:.25rem">Tempo</div>
+                <select id="edge-rate" style="width:100%;font-size:11px">
+                  <option value="-20%">-20% Langsam</option>
+                  <option value="-10%">-10%</option>
+                  <option value="+0%" selected>Normal</option>
+                  <option value="+10%">+10%</option>
+                  <option value="+20%">+20% Schnell</option>
+                </select>
+              </div>
+              <div style="flex:1">
+                <div style="font-size:10px;color:var(--text2);margin-bottom:.25rem">Tonhöhe</div>
+                <select id="edge-pitch" style="width:100%;font-size:11px">
+                  <option value="-20Hz">-20Hz Tiefer</option>
+                  <option value="-10Hz">-10Hz</option>
+                  <option value="+0Hz" selected>Normal</option>
+                  <option value="+10Hz">+10Hz</option>
+                  <option value="+20Hz">+20Hz Höher</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Projekt -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Projekt</span>
+              <span class="char-count" id="char-count">0 Zeichen</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;margin-bottom:.5rem">
+              <input type="text" id="project-name" placeholder="projekt-name" value="hoerbuch">
+              <select id="output-format" style="width:auto">
+                <option value="mp3">MP3</option>
+                <option value="m4b">M4B</option>
+                <option value="wav">WAV</option>
+              </select>
+            </div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Vorhandenes Buch</div>
+              <select id="hoerbuch-folder-select" style="width:100%" onchange="if(this.value) document.getElementById('project-name').value=this.value">
+                <option value="">— Neues Buch anlegen —</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+              <select id="tts-lang" style="flex:1">
+                <option value="tr">🇹🇷 Türkisch</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="en">🇬🇧 Englisch</option>
+                <option value="ar">🇸🇦 Arabisch</option>
+              </select>
+            </div>
+
+            <!-- Cover Upload -->
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div id="cover-preview" style="width:60px;height:60px;background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;cursor:pointer;overflow:hidden" onclick="document.getElementById('cover-input').click()">
+                📖
+              </div>
+              <div style="flex:1">
+                <div style="font-size:11px;color:var(--text2);margin-bottom:.25rem">Buchcover (optional)</div>
+                <div style="font-size:10px;color:var(--text3)">JPG/PNG · Wird in M4B eingebettet</div>
+                <input type="file" id="cover-input" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="handleCoverUpload(this)">
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cover-input').click()">
+                <i class="ti ti-upload"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Text -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Text eingeben</span>
+            </div>
+            <textarea id="test-text" placeholder="Text hier eingeben oder Datei hochladen..." oninput="updateCharCount()"></textarea>
+          </div>
+
+          <!-- Upload -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Datei hochladen</span></div>
+            <div class="upload-zone" id="drop-zone">
+              <input type="file" accept=".txt,.md,.csv,.pdf,.doc,.docx,.odt,.rtf,.pptx,.ppt,.xlsx,.xls,.epub,.mobi,.azw3,.fb2,.html,.jpg,.jpeg,.png,.webp,.tiff,.bmp" onchange="handleFileUpload(this)">
+              <div class="upload-icon"><i class="ti ti-upload"></i></div>
+              <div class="upload-text">Drag & Drop oder <strong>klicken</strong></div>
+              <div class="upload-formats">TXT · PDF · WORD · EPUB · MOBI · PPTX · XLSX · HTML · Foto (JPG/PNG/WEBP)</div>
+            </div>
+          </div>
+
+          <!-- Aktive Stimme -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Aktive Stimme</span>
+              <button class="btn btn-secondary btn-sm" onclick="showPanel('voices')">Wechseln</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div class="vc-avatar" id="active-avatar" style="background:rgba(34,197,94,.15);color:var(--green);width:36px;height:36px;font-size:12px;font-weight:600;border-radius:50%;display:flex;align-items:center;justify-content:center">SM</div>
+              <div>
+                <div style="font-size:12px;font-weight:500;color:var(--text)" id="active-voice-name">stimme.wav</div>
+                <div style="font-size:11px;color:var(--text3)" id="active-voice-meta">TR · XTTS-v2</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div>
+          <!-- Einstellungen -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Stimme Einstellungen</span>
+              <button class="btn btn-secondary btn-sm" onclick="resetSettings()">Reset</button>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text2)">
+                <input type="checkbox" id="auto-tag-cb" style="accent-color:var(--green)">
+                🎭 <span data-i18n="auto_tag_label">Emotionen automatisch erkennen</span>
+              </label>
+            </div>
+            <button onclick="togglePresets()" id="preset-toggle-btn" style="width:100%;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius);padding:.4rem .75rem;font-size:11px;color:var(--green);cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;font-family:var(--sans);transition:all .2s">
+              <span>🎛️ <span data-i18n="preset_desc">Preset auswählen oder manuell einstellen</span></span>
+              <span id="preset-arrow" style="font-size:10px;transition:transform 0.2s">▼</span>
+            </button>
+            <div class="preset-grid" id="preset-grid" style="display:none">
+              <button class="preset-btn" onclick="applyPreset('original')" style="border-color:var(--green);color:var(--green)">🎯 <span data-i18n="preset_original">Original</span></button>
+              <button class="preset-btn" onclick="applyPreset('sufi')">🕌 <span data-i18n="preset_sufi">Sufi</span></button>
+              <button class="preset-btn" onclick="applyPreset('roman')">📖 <span data-i18n="preset_roman">Roman</span></button>
+              <button class="preset-btn" onclick="applyPreset('sachtext')">📰 <span data-i18n="preset_sachtext">Sachtext</span></button>
+              <button class="preset-btn" onclick="applyPreset('dramatisch')">🎭 <span data-i18n="preset_dramatisch">Dramatisch</span></button>
+              <button class="preset-btn" onclick="applyPreset('schnell')">⚡ <span data-i18n="preset_schnell">Schnell</span></button>
+              <button class="preset-btn" onclick="applyPreset('kinder')">👶 <span data-i18n="preset_kinder">Kinder</span></button>
+              <button class="preset-btn" onclick="applyPreset('traurig')">😢 <span data-i18n="preset_traurig">Traurig</span></button>
+              <button class="preset-btn" onclick="applyPreset('frohlich')">😄 <span data-i18n="preset_frohlich">Fröhlich</span></button>
+              <button class="preset-btn" onclick="applyPreset('geheimnisvoll')">🤫 <span data-i18n="preset_geheimnisvoll">Geheimnisvoll</span></button>
+              <button class="preset-btn" onclick="applyPreset('nachricht')">📢 <span data-i18n="preset_nachricht">Nachricht</span></button>
+              <button class="preset-btn" onclick="applyPreset('siir')">📜 <span data-i18n="preset_siir">Şiir/Gedicht</span></button>
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label"><span>🌡️ Wärme</span><span id="temp-val">0.50</span></div>
+              <input type="range" id="temperature" min="0.1" max="1.0" step="0.05" value="0.5" oninput="document.getElementById('temp-val').textContent=parseFloat(this.value).toFixed(2)">
+              <div class="slider-hint"><span>Stabil</span><span>Emotional</span></div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>🎵 Natürlichkeit</span><span id="rep-val">5.0</span></div>
+              <input type="range" id="rep-penalty" min="2" max="15" step="0.5" value="5" oninput="document.getElementById('rep-val').textContent=parseFloat(this.value).toFixed(1)">
+              <div class="slider-hint"><span>Natürlich</span><span>Strukturiert</span></div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>🎨 Kreativität</span><span id="topk-val">30</span></div>
+              <input type="range" id="top-k" min="10" max="100" step="5" value="30" oninput="document.getElementById('topk-val').textContent=this.value">
+              <div class="slider-hint"><span>Weich</span><span>Variabel</span></div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>⚡ Geschwindigkeit</span><span id="speed-val">1.00x</span></div>
+              <input type="range" id="speed" min="0.5" max="2.0" step="0.05" value="1.0" oninput="document.getElementById('speed-val').textContent=parseFloat(this.value).toFixed(2)+'x'">
+              <div class="slider-hint"><span>0.5x</span><span>2.0x</span></div>
+            </div>
+          </div>
+
+          <!-- Test + Generate -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Ausgabe</span></div>
+            <button class="btn btn-secondary btn-block" id="test-btn" onclick="generatePreview()" style="margin-bottom:.5rem">
+              <i class="ti ti-player-play"></i> Test-Audio generieren
+            </button>
+            <audio id="preview-player" controls></audio>
+
+            <div class="progress-wrap" id="progress-wrap" style="display:none">
+              <div class="progress-label">
+                <span id="progress-text">Kapitel 0 / 0</span>
+                <span id="batch-pct">0%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" id="batch-bar" style="width:0%"></div></div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="gen-btn" onclick="startSynthesis()" style="margin-top:.75rem">
+              <i class="ti ti-wand"></i> HÖRBUCH GENERIEREN
+            </button>
+            <button class="btn btn-danger btn-block" id="stop-btn" onclick="cancelJob()" style="margin-top:.4rem;display:none">
+              <i class="ti ti-player-stop"></i> <span data-i18n="btn_stop">GENERIERUNG STOPPEN</span>
+            </button>
+          </div>
+
+          <!-- Log -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Log</span>
+              <button class="btn btn-secondary btn-sm" onclick="clearLog()">Leeren</button>
+            </div>
+            <div class="log-box" id="studio-log"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Stimmen ══ -->
+    <div class="panel" id="panel-voices">
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Stimm-Bibliothek</span>
+              <span class="char-count" id="voice-count">0 Stimmen</span>
+            </div>
+            <div class="voice-grid" id="voice-grid"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Stimme hochladen</span></div>
+            <div class="upload-zone">
+              <input type="file" accept=".wav,.mp3,.mp4,.m4a,.ogg" onchange="handleVoiceUpload(this)">
+              <div class="upload-icon"><i class="ti ti-microphone"></i></div>
+              <div class="upload-text">Stimme hochladen</div>
+              <div class="upload-formats">WAV · MP3 · MP4 · M4A · 20–60 Sek empfohlen</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Tipps für gute Stimmen</span></div>
+            <div style="font-size:11px;color:var(--text3);line-height:1.8">
+              ✅ 30–60 Sekunden Aufnahme<br>
+              ✅ Stilles Zimmer, kein Hintergrundrauschen<br>
+              ✅ Gleichmäßig und deutlich sprechen<br>
+              ✅ In der Zielsprache aufnehmen<br>
+              ✅ WAV Format bevorzugen
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Musik ══ -->
+    <div class="panel" id="panel-musik">
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Musik-Bibliothek</span></div>
+            <div id="musik-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Musik hochgeladen</div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Musik hochladen</span></div>
+            <div class="upload-zone">
+              <input type="file" accept=".mp3,.wav,.m4a,.ogg" onchange="handleMusikUpload(this)">
+              <div class="upload-icon"><i class="ti ti-music"></i></div>
+              <div class="upload-text">Musik hochladen</div>
+              <div class="upload-formats">MP3 · WAV · M4A · OGG</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Mit Hörbuch mischen</span></div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Hintergrundmusik</div>
+              <select id="musik-select"><option value="">— Keine Musik —</option></select>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>🔊 Musik-Lautstärke</span><span id="musik-vol-val">15%</span></div>
+              <input type="range" id="musik-volume" min="0" max="50" step="1" value="15" oninput="document.getElementById('musik-vol-val').textContent=this.value+'%'">
+              <div class="slider-hint"><span>Leise</span><span>Laut</span></div>
+            </div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projekt</div>
+              <input type="text" id="mix-project" placeholder="hoerbuch" value="hoerbuch">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="mixMusikWithAudio()">
+              <i class="ti ti-music"></i> Mit Musik mischen
+            </button>
+            <div id="mix-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:.5rem"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Cover ══ -->
+    <div class="panel" id="panel-covers">
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Cover-Bibliothek</span>
+              <span class="char-count" id="cover-count">0 Cover</span>
+            </div>
+            <div id="cover-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.75rem">
+              <div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px;grid-column:1/-1">Noch keine Cover hochgeladen</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Cover hochladen</span></div>
+            <div class="upload-zone">
+              <input type="file" accept=".jpg,.jpeg,.png,.webp" onchange="handleCoverLibraryUpload(this)">
+              <div class="upload-icon"><i class="ti ti-photo"></i></div>
+              <div class="upload-text">Cover hochladen</div>
+              <div class="upload-formats">JPG · PNG · WEBP · Empfohlen: 500×500px</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Cover zu Hörbuch hinzufügen</span></div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Hörbuch-Datei</div>
+              <select id="cover-audio-select" style="width:100%"><option value="">— Datei auswählen —</option></select>
+            </div>
+            <div style="margin-bottom:.75rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Cover</div>
+              <select id="cover-select" style="width:100%"><option value="">— Cover auswählen —</option></select>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="addCoverToFile()">
+              <i class="ti ti-photo"></i> Cover hinzufügen
+            </button>
+            <div id="cover-add-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:.5rem"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Dateien ══ -->
+    <div class="panel" id="panel-files">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📚 Fertige Hörbücher</span>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="showNewHoerbuchFolderDialog()" title="Neuer Ordner">
+              <i class="ti ti-folder-plus"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="loadHoerbuchFolders()">
+              <i class="ti ti-refresh"></i>
+            </button>
+          </div>
+        </div>
+        <div id="new-hoerbuch-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" id="new-hoerbuch-folder-name" placeholder="z.B. roman_2026" style="flex:1">
+            <button class="btn btn-primary btn-sm" onclick="createHoerbuchFolder()">Erstellen</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('new-hoerbuch-folder-dialog').style.display='none'">✕</button>
+          </div>
+        </div>
+        <div id="hoerbuch-folder-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div></div>
+      </div>
+
+      <!-- Transkriptionen im Dateien-Tab -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📄 Transkriptionen</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFilesIntoElement('files-transcription-list')">
+            <i class="ti ti-refresh"></i>
+          </button>
+        </div>
+        <div id="files-transcription-list" style="font-size:12px;color:var(--text2)">
+          <div style="color:var(--text3);padding:.5rem">Klick Aktualisieren zum Laden</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Admin ══ -->
+    <div class="panel" id="panel-admin">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem">
+        <div style="width:36px;height:36px;background:rgba(239,68,68,.15);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--red)"><i class="ti ti-shield"></i></div>
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--text)">Admin Panel</div>
+          <div style="font-size:11px;color:var(--text3)">BookVoice-AI · Nur für Administratoren</div>
+        </div>
+        <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="lockAdmin()">🔒 Sperren</button>
+      </div>
+
+      <!-- Server Status -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Server Status</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;text-align:center">
+            <div style="font-size:18px;font-weight:600;color:var(--green)" id="admin-stat-files">—</div>
+            <div style="font-size:10px;color:var(--text3)">Dateien</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;text-align:center">
+            <div style="font-size:18px;font-weight:600;color:var(--blue)" id="admin-stat-voices">—</div>
+            <div style="font-size:10px;color:var(--text3)">Stimmen</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;text-align:center">
+            <div style="font-size:18px;font-weight:600;color:var(--amber)" id="admin-stat-device">—</div>
+            <div style="font-size:10px;color:var(--text3)">Device</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cloudflare Tunnel -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Community GPU</span></div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;line-height:1.6">
+          Aktiviere Community GPU damit User direkt mit deinem Colab verbinden können — ohne eigenen Account.
+        </div>
+        <div style="margin-bottom:.75rem">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Cloudflare Tunnel Token</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="password" id="cf-token" placeholder="eyJh..." style="flex:1" value="">
+            <button class="btn btn-secondary btn-sm" onclick="saveCFToken()">Speichern</button>
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:.25rem">Token aus Cloudflare → Zero Trust → Tunnels → Add connector</div>
+        </div>
+        <div style="margin-bottom:.75rem">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Community Colab URL</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" id="cf-fixed-url" placeholder="https://colab.aksoy-net.de" style="flex:1">
+            <button class="btn btn-primary btn-sm" onclick="saveCommunityGPU()">Aktivieren</button>
+            <button class="btn btn-danger btn-sm" onclick="deactivateCommunityGPU()">Deaktivieren</button>
+          </div>
+        </div>
+        <div id="community-gpu-status" style="font-size:11px;color:var(--text3)"></div>
+      </div>
+
+      <!-- GPU Verwaltung -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">GPU Verwaltung</span><span class="badge badge-amber">v3.0</span></div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.8">
+          <div>🔜 RunPod.io Integration</div>
+          <div>🔜 User Credits System</div>
+          <div>🔜 Pay-per-Use Abrechnung</div>
+          <div>🔜 PayPal / Stripe Integration</div>
+          <div>🔜 User Login für Premium</div>
+        </div>
+      </div>
+
+      <!-- API Key -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">API Sicherheit</span></div>
+        <div style="margin-bottom:.75rem">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Admin API Key (für Colab → Server Kommunikation)</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="password" id="admin-api-key" placeholder="Geheimer API Key" style="flex:1" value="">
+            <button class="btn btn-secondary btn-sm" onclick="generateApiKey()">Generieren</button>
+            <button class="btn btn-secondary btn-sm" onclick="saveApiKey()">Speichern</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Passwort ändern -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Admin Passwort ändern</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+          <input type="password" id="new-admin-pw" placeholder="Neues Passwort">
+          <input type="password" id="new-admin-pw2" placeholder="Wiederholen">
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="changeAdminPassword()">Passwort ändern</button>
+      </div>
+
+      <!-- Server Log -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 Server Log</span>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminLogs()"><i class="ti ti-refresh"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="clearAdminLogs()"><i class="ti ti-trash"></i> Leeren</button>
+          </div>
+        </div>
+        <div style="margin-bottom:.5rem;display:flex;gap:.5rem;align-items:center">
+          <label style="font-size:11px;display:flex;align-items:center;gap:.35rem;cursor:pointer">
+            <input type="checkbox" id="log-auto-refresh" onchange="toggleLogAutoRefresh()">
+            Auto-Refresh (5s)
+          </label>
+          <select id="log-level-filter" onchange="loadAdminLogs()" style="font-size:11px;padding:.2rem">
+            <option value="">Alle Level</option>
+            <option value="ERROR">Nur Fehler</option>
+            <option value="WARNING">Warning+</option>
+            <option value="INFO">Info+</option>
+          </select>
+        </div>
+        <div id="admin-log-window" style="height:400px;overflow-y:auto;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem;font-family:monospace;font-size:11px;line-height:1.6">
+          <div style="color:var(--text3)">Log wird geladen...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Transkription ══ -->
+    <div class="panel" id="panel-transcribe">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎙️ Transkription</span>
+          <span class="badge badge-green">FastWhisper</span>
+        </div>
+
+        <!-- Modus Tabs -->
+        <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+          <button class="btn btn-primary btn-sm" id="tab-audio-btn" onclick="setTranscribeMode('audio')" style="flex:1;justify-content:center">
+            🎙️ Audio / Video
+          </button>
+          <button class="btn btn-secondary btn-sm" id="tab-ocr-btn" onclick="setTranscribeMode('ocr')" style="flex:1;justify-content:center">
+            📸 Bild / Dokument (OCR)
+          </button>
+        </div>
+
+        <!-- Audio Mode -->
+        <div id="transcribe-audio-mode">
+          <!-- Projektname -->
+          <div style="margin-bottom:.75rem">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+              <div>
+                <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projektname</div>
+                <input type="text" id="transcribe-project" placeholder="z.B. rafet_interview" style="width:100%">
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">In Ordner speichern</div>
+                <select id="transcribe-folder-select" style="width:100%">
+                  <option value="">— Root (kein Ordner) —</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload -->
+          <div style="margin-bottom:.75rem">
+            <div class="drop-zone" id="transcribe-drop" onclick="document.getElementById('transcribe-file').click()"
+                 ondragover="event.preventDefault()" ondrop="handleTranscribeDrop(event)"
+                 style="padding:1.25rem;text-align:center;cursor:pointer;border:2px dashed var(--border);border-radius:8px">
+              <i class="ti ti-upload" style="font-size:1.75rem;color:var(--text3)"></i>
+              <div style="font-size:12px;color:var(--text2);margin-top:.35rem">MP3, WAV, M4A, OGG, MP4, MKV hochladen</div>
+            </div>
+            <input type="file" id="transcribe-file" accept=".mp3,.wav,.m4a,.ogg,.mp4,.mkv,.webm"
+                   style="display:none" onchange="handleTranscribeUpload(this)">
+          </div>
+
+          <!-- Optionen -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+            <div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Sprache</div>
+              <select id="transcribe-lang" style="width:100%">
+                <option value="auto">🌐 Auto-Erkennung</option>
+                <option value="tr">🇹🇷 Türkisch</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="en">🇬🇧 Englisch</option>
+                <option value="ar">🇸🇦 Arabisch</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Modell</div>
+              <select id="transcribe-model" style="width:100%">
+                <option value="small">Small (schnell, CPU)</option>
+                <option value="medium">Medium (besser)</option>
+                <option value="large-v3">Large-v3 (beste Qualität, GPU)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Diarization (GPU Vorbereitung) -->
+          <div id="diarization-option" style="display:none;margin-bottom:.5rem;padding:.5rem;background:var(--surface2);border-radius:6px;font-size:11px">
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+              <input type="checkbox" id="transcribe-diarize">
+              <span>👥 Sprecher-Erkennung (Speaker Diarization) — nur GPU</span>
+            </label>
+            <div style="color:var(--text3);margin-top:.25rem;margin-left:1.25rem">Erkennt automatisch verschiedene Sprecher mit Timestamps</div>
+          </div>
+        </div>
+
+        <!-- OCR Mode -->
+        <div id="transcribe-ocr-mode" style="display:none">
+          <!-- Projektname OCR -->
+          <div style="margin-bottom:.75rem">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projektname</div>
+            <input type="text" id="transcribe-ocr-project" placeholder="z.B. scan_buch" style="width:100%">
+          </div>
+          <div style="margin-bottom:.75rem">
+            <div class="drop-zone" id="transcribe-ocr-drop" onclick="document.getElementById('transcribe-ocr-file').click()"
+                 ondragover="event.preventDefault()" ondrop="handleOCRDrop(event)"
+                 style="padding:1.25rem;text-align:center;cursor:pointer;border:2px dashed var(--border);border-radius:8px">
+              <i class="ti ti-photo" style="font-size:1.75rem;color:var(--text3)"></i>
+              <div style="font-size:12px;color:var(--text2);margin-top:.35rem">JPG, PNG, WEBP, TIFF, PDF, DOCX hochladen</div>
+            </div>
+            <input type="file" id="transcribe-ocr-file" accept=".jpg,.jpeg,.png,.webp,.tiff,.bmp,.pdf,.docx,.doc,.odt"
+                   style="display:none" onchange="handleOCRUpload(this)">
+          </div>
+          <div style="margin-bottom:.5rem">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Sprache</div>
+            <select id="ocr-lang" style="width:100%">
+              <option value="tr">🇹🇷 Türkisch</option>
+              <option value="de">🇩🇪 Deutsch</option>
+              <option value="en">🇬🇧 Englisch</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display:flex;gap:.5rem;margin-bottom:.75rem;margin-top:.75rem">
+          <button class="btn btn-primary" id="transcribe-btn" onclick="startTranscribe()" style="flex:1;justify-content:center">
+            <i class="ti ti-wand"></i> TRANSKRIBIEREN
+          </button>
+          <button class="btn btn-danger" id="transcribe-abort-btn" onclick="abortTranscribe()" style="display:none;justify-content:center">
+            <i class="ti ti-square"></i> ABBRECHEN
+          </button>
+        </div>
+
+        <!-- Status -->
+        <div id="transcribe-status" style="font-size:11px;color:var(--text3);margin-bottom:.5rem"></div>
+
+        <!-- Ergebnis 2-spaltig -->
+        <div id="transcribe-result" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+            <div style="font-size:11px;color:var(--text2)" id="transcribe-info"></div>
+            <div style="display:flex;gap:.5rem">
+              <button class="btn btn-secondary btn-sm" onclick="downloadTranscription('txt')">
+                <i class="ti ti-download"></i> TXT
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="downloadTranscription('srt')">
+                <i class="ti ti-download"></i> SRT
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="sendToStudio()">
+                <i class="ti ti-wand"></i> → Hörbuch
+              </button>
+            </div>
+          </div>
+          <!-- 2-spaltig: Zeitstempel | Text -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+            <div>
+              <div style="font-size:10px;color:var(--text3);margin-bottom:.25rem">⏱ Mit Zeitstempel (SRT)</div>
+              <textarea id="transcribe-srt" style="width:100%;height:300px;font-size:11px;font-family:monospace;resize:vertical;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem;color:var(--text1)" readonly></textarea>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--text3);margin-bottom:.25rem">📄 Fertige Transkription</div>
+              <textarea id="transcribe-text" style="width:100%;height:300px;font-size:11px;font-family:monospace;resize:vertical;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem;color:var(--text1)" readonly></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gespeicherte Transkriptionen -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📄 Gespeicherte Transkriptionen</span>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="showNewFolderDialog()" title="Neuer Ordner">
+              <i class="ti ti-folder-plus"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFiles()">
+              <i class="ti ti-refresh"></i>
+            </button>
+          </div>
+        </div>
+        <!-- Neuer Ordner Dialog -->
+        <div id="new-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" id="new-folder-name" placeholder="z.B. interviews_2026" style="flex:1">
+            <button class="btn btn-primary btn-sm" onclick="createTranscriptionFolder()">Erstellen</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('new-folder-dialog').style.display='none'">✕</button>
+          </div>
+        </div>
+        <div id="transcription-list" style="font-size:12px;color:var(--text2)">Wird geladen...</div>
+      </div>
+    </div>
+
+    <!-- ══ Einstellungen ══ -->
+    <div class="panel" id="panel-settings">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Server</span></div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem">API URL</div>
+        <input type="text" id="api-url" value="/api" style="margin-bottom:.75rem">
+        <button class="btn btn-primary btn-sm" onclick="checkApi()">Verbindung testen</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Info</span></div>
+        <div style="font-size:12px;color:var(--text3);line-height:2">
+          <div>Version: <span style="color:var(--text)">BookVoice-AI v1.0</span></div>
+          <div>Model: <span style="color:var(--text)">XTTS-v2</span></div>
+          <div>GitHub: <a href="https://github.com/dolunay38/BookVoice-AI" style="color:var(--green)">dolunay38/BookVoice-AI</a></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- content -->
+</div><!-- main -->
+</div><!-- app -->
+
+<script>
+// ── Config ──────────────────────────────────────
+const TTS_URL = '/api';
+let activeJobId = null;
+let pollInterval = null;
+let selectedVoiceId = null;
+// Standard-Stimmen Bibliothek
+let voices = [
+  {id:1,  name:'suf1.mp3',                path:'/app/tts_models/suf1.mp3',                init:'S1', lang:'TR', gender:'M', style:'Sufi',    bg:'rgba(139,92,246,.15)', fg:'#a855f7', type:'builtin'},
+  {id:2,  name:'rom1.mp3',                path:'/app/tts_models/rom1.mp3',                init:'R1', lang:'TR', gender:'M', style:'Roman',   bg:'rgba(34,197,94,.15)',  fg:'#22c55e', type:'builtin'},
+  {id:3,  name:'tr_erkek_ahmet.mp3',      path:'/app/tts_models/tr_erkek_ahmet.mp3',      init:'TA', lang:'TR', gender:'M', style:'Neutral', bg:'rgba(59,130,246,.15)', fg:'#3b82f6', type:'builtin'},
+  {id:4,  name:'tr_kadin_emel.mp3',       path:'/app/tts_models/tr_kadin_emel.mp3',       init:'TE', lang:'TR', gender:'F', style:'Warm',    bg:'rgba(236,72,153,.15)', fg:'#ec4899', type:'builtin'},
+  {id:5,  name:'tr_erkek_sufi.mp3',       path:'/app/tts_models/tr_erkek_sufi.mp3',       init:'TS', lang:'TR', gender:'M', style:'Sufi',    bg:'rgba(245,158,11,.15)', fg:'#f59e0b', type:'builtin'},
+  {id:6,  name:'tr_erkek_sufi_divan.mp3', path:'/app/tts_models/tr_erkek_sufi_divan.mp3', init:'TD', lang:'TR', gender:'M', style:'Divan',   bg:'rgba(168,85,247,.15)', fg:'#a855f7', type:'builtin'},
+  {id:7,  name:'tr_sufi_emotion.mp3',     path:'/app/tts_models/tr_sufi_emotion.mp3',     init:'TM', lang:'TR', gender:'M', style:'Emotion', bg:'rgba(239,68,68,.15)',  fg:'#ef4444', type:'builtin'},
+  {id:8,  name:'de_maennlich_florian.mp3',path:'/app/tts_models/de_maennlich_florian.mp3',init:'DF', lang:'DE', gender:'M', style:'Klar',    bg:'rgba(59,130,246,.15)', fg:'#3b82f6', type:'builtin'},
+  {id:9,  name:'de_weiblich_seraphina.mp3',path:'/app/tts_models/de_weiblich_seraphina.mp3',init:'DS',lang:'DE',gender:'F',style:'Warm',   bg:'rgba(236,72,153,.15)', fg:'#ec4899', type:'builtin'},
+  {id:10, name:'en_maennlich_andrew.mp3', path:'/app/tts_models/en_maennlich_andrew.mp3', init:'EA', lang:'EN', gender:'M', style:'Deep',    bg:'rgba(34,197,94,.15)',  fg:'#22c55e', type:'builtin'},
+  {id:11, name:'en_weiblich_ava.mp3',     path:'/app/tts_models/en_weiblich_ava.mp3',     init:'EV', lang:'EN', gender:'F', style:'Clear',   bg:'rgba(245,158,11,.15)', fg:'#f59e0b', type:'builtin'},
+];
+
+const PRESETS = {
+  original:     {temp:0.1,  rep:10.0, topk:10, speed:1.0,  desc:'🎯 Original — maximale Treue zur Referenzstimme'},
+  sufi:         {temp:0.65, rep:4.0,  topk:25, speed:0.85, desc:'🕌 Ruhig, melodisch — für Sufi & religiöse Texte'},
+  traurig:      {temp:0.7,  rep:3.5,  topk:40, speed:0.75, desc:'😢 Traurig — langsam, tief, emotional'},
+  frohlich:     {temp:0.8,  rep:3.0,  topk:45, speed:1.15, desc:'😄 Fröhlich — lebhaft, hell, energetisch'},
+  geheimnisvoll:{temp:0.75, rep:4.0,  topk:35, speed:0.9,  desc:'🤫 Geheimnisvoll — flüsternd, ruhig'},
+  nachricht:    {temp:0.35, rep:7.0,  topk:15, speed:1.1,  desc:'📢 Nachricht — klar, professionell, neutral'},
+  siir:         {temp:0.85, rep:2.5,  topk:55, speed:0.78, desc:'📜 Şiir/Gedicht — melodisch, fließend, poetisch'},
+  roman:     {temp:0.60, rep:5.0, topk:30, speed:1.00, desc:'📖 Natürlich, ausdrucksstark — für Romane'},
+  sachtext:  {temp:0.35, rep:8.0, topk:40, speed:1.10, desc:'📰 Klar, neutral — für Sachtexte'},
+  dramatisch:{temp:0.80, rep:3.0, topk:20, speed:0.90, desc:'🎭 Emotional — für dramatische Szenen'},
+  schnell:   {temp:0.30, rep:9.0, topk:45, speed:1.40, desc:'⚡ Schnell & stabil — für lange Texte'},
+  kind:      {temp:0.40, rep:7.0, topk:35, speed:0.95, desc:'👶 Klar & langsam — für Kinder'}
+};
+
+const PREVIEW_TEXTS = {
+  tr:'Merhaba, bu bir ses önizlemesidir. Sistem çalışıyor.',
+  de:'Hallo, dies ist eine Sprachvorschau. Das System funktioniert.',
+  en:'Hello, this is a voice preview. The system is working.'
+};
+
+// ── Navigation ───────────────────────────────────
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item[id^=nav]').forEach(i => i.classList.remove('active'));
+  const panel = document.getElementById('panel-'+name);
+  const nav = document.getElementById('nav-'+name);
+  if(panel) panel.classList.add('active');
+  if(nav) nav.classList.add('active');
+  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',transcribe:'🎙️ Transkription',settings:'Einstellungen',admin:'🔧 Admin Panel'};
+  document.getElementById('page-title').textContent = titles[name] || name;
+  if(name==='files') { loadHoerbuchFolders(); updateHoerbuchFolderSelect(); }
+  if(name==='studio') updateHoerbuchFolderSelect();
+  if(name==='voices') loadVoicesFromServer();
+  if(name==='musik'){ loadMusikFromServer(); loadMusikList(); }
+  if(name==='covers'){ loadCoversFromServer(); loadCoverAudioSelect(); }
+  if(name==='transcribe') { loadTranscriptionFiles(); updateFolderSelect(); }
+  if(name==='admin') { loadAdminStats(); loadAdminLogs(); }
+}
+
+// ── Char Count ──────────────────────────────────
+function updateCharCount(){
+  const n = document.getElementById('test-text').value.length;
+  document.getElementById('char-count').textContent = `${n.toLocaleString()} Zeichen`;
+}
+
+// ── File Upload ─────────────────────────────────
+async function handleFileUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  const suffix = file.name.split('.').pop().toLowerCase();
+  addLog(`📄 Verarbeite: ${file.name}…`);
+
+  // TXT direkt im Browser lesen
+  if(suffix === 'txt'){
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('test-text').value = e.target.result;
+      updateCharCount();
+      addLog(`✔ ${e.target.result.length.toLocaleString()} Zeichen geladen`, 'ok');
+    };
+    reader.readAsText(file);
+    return;
+  }
+
+  // PDF, DOCX, EPUB etc. → Server konvertiert
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const resp = await fetch(`${getActiveUrl()}/tts/convert-to-text`, {method:'POST', body:formData});
+    const data = await resp.json();
+    if(data.status === 'ok'){
+      document.getElementById('test-text').value = data.text;
+      updateCharCount();
+      addLog(`✔ ${data.zeichen.toLocaleString()} Zeichen aus ${data.datei} extrahiert`, 'ok');
+    } else {
+      addLog(`Fehler: ${data.detail}`, 'err');
+    }
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+// Drag & Drop
+const dz = document.getElementById('drop-zone');
+if(dz){
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor='var(--green)'; });
+  dz.addEventListener('dragleave', () => { dz.style.borderColor=''; });
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.style.borderColor='';
+    const file = e.dataTransfer.files[0];
+    if(file){ const inp = dz.querySelector('input'); inp.files = e.dataTransfer.files; handleFileUpload(inp); }
+  });
+}
+
+// ── Presets ─────────────────────────────────────
+function applyPreset(name){
+  const p = PRESETS[name];
+  if(!p) return;
+  document.getElementById('temperature').value = p.temp;
+  document.getElementById('temp-val').textContent = p.temp.toFixed(2);
+  document.getElementById('rep-penalty').value = p.rep;
+  document.getElementById('rep-val').textContent = p.rep.toFixed(1);
+  document.getElementById('top-k').value = p.topk;
+  document.getElementById('topk-val').textContent = p.topk;
+  document.getElementById('speed').value = p.speed;
+  document.getElementById('speed-val').textContent = p.speed.toFixed(2)+'x';
+  document.getElementById('preset-desc').textContent = p.desc;
+  addLog(`[PRESET] ${p.desc}`, 'ok');
+}
+
+function resetSettings(){
+  document.getElementById('temperature').value = 0.5; document.getElementById('temp-val').textContent = '0.50';
+  document.getElementById('rep-penalty').value = 5; document.getElementById('rep-val').textContent = '5.0';
+  document.getElementById('top-k').value = 30; document.getElementById('topk-val').textContent = '30';
+  document.getElementById('speed').value = 1.0; document.getElementById('speed-val').textContent = '1.00x';
+  document.getElementById('preset-desc').textContent = 'Preset auswählen oder manuell einstellen';
+}
+
+// ── Voice Path ──────────────────────────────────
+function getVoicePath(){
+  const v = voices.find(x => x.id === selectedVoiceId);
+  return v && v.path ? v.path : '/app/tts_models/stimme.wav';
+}
+
+// ── Text Split ──────────────────────────────────
+function splitChapters(text, maxLen){
+  const chapters = [];
+  const paragraphs = text.split(/\n{2,}/);
+  let current = '';
+  for(const p of paragraphs){
+    if(current.length + p.length > maxLen && current.length > 0){ chapters.push(current.trim()); current = p; }
+    else{ current += (current ? '\n\n' : '') + p; }
+  }
+  if(current.trim()) chapters.push(current.trim());
+  return chapters.filter(c => c.length > 10);
+}
+
+// ── Synthese ────────────────────────────────────
+let currentCoverPath = '';
+
+async function handleCoverUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  const projectName = document.getElementById('project-name').value || 'hoerbuch';
+  addLog(`🖼️ Lade Cover hoch: ${file.name}…`);
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/upload-cover?book_name=${projectName}`, {method:'POST', body:formData});
+    const data = await resp.json();
+    if(data.status === 'ok'){
+      currentCoverPath = data.cover_path;
+      // Cover Vorschau anzeigen
+      const preview = document.getElementById('cover-preview');
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+      };
+      reader.readAsDataURL(file);
+      addLog(`✔ Cover hochgeladen!`, 'ok');
+    }
+  } catch(e) { addLog(`Fehler: ${e.message}`, 'err'); }
+}
+
+// ── GPU Colab ────────────────────────────────────────
+let gpuUrl = localStorage.getItem('bookvoice_gpu_url') || '';
+let currentEngine = 'xtts';
+let allEdgeVoices = [];
+let gpuConnected = false;
+let gpuSessionStart = null;
+let gpuStatsInterval = null;
+let gpuReconnectInterval = null;
+
+// ── Admin ─────────────────────────────────────────────
+const ADMIN_PW_KEY = 'bookvoice_admin_pw';
+let adminUnlocked = false;
+
+function showAdminLogin(){
+  if(adminUnlocked){ showPanel('admin'); return; }
+  const pw = prompt('Admin Passwort:');
+  if(!pw) return;
+  const savedPw = localStorage.getItem(ADMIN_PW_KEY) || 'admin123';
+  if(pw === savedPw){
+    adminUnlocked = true;
+    addLog('[ADMIN] Eingeloggt', 'ok');
+    showPanel('admin');
+    loadAdminStats();
+  } else {
+    alert('Falsches Passwort!');
+    addLog('[ADMIN] Falsches Passwort!', 'err');
+  }
+}
+
+function lockAdmin(){
+  adminUnlocked = false;
+  showPanel('dashboard');
+  addLog('[ADMIN] Gesperrt', 'warn');
+}
+
+async function loadAdminStats(){
+  try {
+    const [files, voices, health] = await Promise.all([
+      fetch(`${TTS_URL}/tts/files`).then(r=>r.json()),
+      fetch(`${TTS_URL}/tts/voices`).then(r=>r.json()),
+      fetch(`${TTS_URL}/health`).then(r=>r.json())
+    ]);
+    document.getElementById('admin-stat-files').textContent = files.anzahl||0;
+    document.getElementById('admin-stat-voices').textContent = voices.stimmen?.length||0;
+    document.getElementById('admin-stat-device').textContent = (health.device||'cpu').toUpperCase();
+  } catch(e) {}
+}
+
+function saveCFToken(){
+  const token = document.getElementById('cf-token').value;
+  if(!token) return;
+  localStorage.setItem('bookvoice_cf_token', token);
+  addLog('[ADMIN] Cloudflare Token gespeichert', 'ok');
+  alert('Token gespeichert!');
+}
+
+function saveCommunityGPU(){
+  const url = document.getElementById('cf-fixed-url').value.trim();
+  if(!url){ 
+    alert('Bitte Community Colab URL eingeben (z.B. https://colab.aksoy-net.de)'); 
+    return; 
+  }
+  localStorage.setItem('bookvoice_community_url', url);
+  localStorage.setItem('bookvoice_community_active', 'true');
+  // Community GPU Button im Hauptmenü einblenden
+  const btn = document.getElementById('community-gpu-btn');
+  if(btn) btn.style.display = 'block';
+  // Status anzeigen
+  const status = document.getElementById('community-gpu-status');
+  if(status){
+    status.textContent = `✅ Community GPU aktiv → ${url}`;
+    status.style.color = 'var(--green)';
+  }
+  addLog(`[ADMIN] Community GPU aktiviert: ${url}`, 'ok');
+  alert(`✅ Community GPU aktiviert!\nUser sehen jetzt den "Community GPU" Button.`);
+}
+
+function deactivateCommunityGPU(){
+  localStorage.removeItem('bookvoice_community_url');
+  localStorage.setItem('bookvoice_community_active', 'false');
+  const btn = document.getElementById('community-gpu-btn');
+  if(btn) btn.style.display = 'none';
+  const status = document.getElementById('community-gpu-status');
+  if(status){
+    status.textContent = '⛔ Community GPU deaktiviert';
+    status.style.color = 'var(--red)';
+  }
+  addLog('[ADMIN] Community GPU deaktiviert', 'warn');
+}
+
+function connectCommunityGPU(){
+  const url = localStorage.getItem('bookvoice_community_url');
+  if(!url){ 
+    addLog('[GPU] Community URL nicht gesetzt — Admin kontaktieren', 'err'); 
+    return; 
+  }
+  // URL ins GPU-Feld eintragen und verbinden
+  const input = document.getElementById('gpu-url');
+  if(input) input.value = url;
+  localStorage.setItem('bookvoice_gpu_url', url);
+  addLog(`[GPU] Community GPU verbinden: ${url}`, 'info');
+  connectGPU();
+}
+
+function generateApiKey(){
+  const key = 'bv_' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  document.getElementById('admin-api-key').value = key;
+  addLog('[ADMIN] API Key generiert', 'ok');
+}
+
+function saveApiKey(){
+  const key = document.getElementById('admin-api-key').value;
+  if(!key) return;
+  localStorage.setItem('bookvoice_api_key', key);
+  addLog('[ADMIN] API Key gespeichert', 'ok');
+  alert('API Key gespeichert!');
+}
+
+function changeAdminPassword(){
+  const pw1 = document.getElementById('new-admin-pw').value;
+  const pw2 = document.getElementById('new-admin-pw2').value;
+  if(!pw1){ alert('Passwort eingeben!'); return; }
+  if(pw1 !== pw2){ alert('Passwörter stimmen nicht überein!'); return; }
+  if(pw1.length < 6){ alert('Mindestens 6 Zeichen!'); return; }
+  localStorage.setItem(ADMIN_PW_KEY, pw1);
+  document.getElementById('new-admin-pw').value = '';
+  document.getElementById('new-admin-pw2').value = '';
+  addLog('[ADMIN] Passwort geändert', 'ok');
+  alert('Passwort erfolgreich geändert!');
+}
+
+let urlPollingInterval = null;
+
+function startUrlPolling(){
+  const pollingStatus = document.getElementById('polling-status');
+  pollingStatus.textContent = '⏳ Warte auf Colab URL...';
+  pollingStatus.style.color = 'var(--amber)';
+  addLog('[GPU] Warte auf Colab URL...', 'info');
+
+  if(urlPollingInterval) clearInterval(urlPollingInterval);
+  let attempts = 0;
+  urlPollingInterval = setInterval(async () => {
+    attempts++;
+    try {
+      const resp = await fetch(`${TTS_URL}/admin/colab-url`);
+      const data = await resp.json();
+      if(data.status === 'ok' && data.url){
+        clearInterval(urlPollingInterval);
+        document.getElementById('gpu-url').value = data.url;
+        pollingStatus.textContent = `✅ URL erhalten! Verbinden klicken.`;
+        pollingStatus.style.color = 'var(--green)';
+        addLog(`[GPU] URL erhalten: ${data.url}`, 'ok');
+        // Automatisch verbinden
+        connectGPU();
+      } else {
+        pollingStatus.textContent = `⏳ Warte... (${attempts * 5}s)`;
+      }
+    } catch(e) {}
+
+    if(attempts > 60){
+      clearInterval(urlPollingInterval);
+      pollingStatus.textContent = '❌ Timeout — URL manuell eingeben';
+      pollingStatus.style.color = 'var(--red)';
+    }
+  }, 5000);
+}
+
+function disconnectGPU(){
+  gpuUrl = '';
+  gpuConnected = false;
+  localStorage.removeItem('bookvoice_gpu_url');
+  if(gpuStatsInterval) clearInterval(gpuStatsInterval);
+  if(gpuReconnectInterval) clearInterval(gpuReconnectInterval);
+
+  // UI zurücksetzen
+  document.getElementById('gpu-url').value = '';
+  document.getElementById('gpu-status').textContent = '🔌 Verbindung getrennt';
+  document.getElementById('gpu-status').style.color = 'var(--text3)';
+  document.getElementById('gpu-live-dot').style.background = 'var(--text3)';
+  document.getElementById('gpu-live-dot').style.boxShadow = 'none';
+  document.getElementById('gpu-stats').style.display = 'none';
+  document.getElementById('gpu-connect-btn').style.display = 'block';
+  document.getElementById('gpu-disconnect-btn').style.display = 'none';
+  addLog('[GPU] Verbindung getrennt', 'warn');
+}
+
+function togglePresets(){
+  const grid = document.getElementById('preset-grid');
+  const arrow = document.getElementById('preset-arrow');
+  const btn = document.getElementById('preset-toggle-btn');
+  if(grid.style.display === 'none'){
+    grid.style.display = 'grid';
+    arrow.textContent = '▲';
+    btn.style.background = 'var(--green)';
+    btn.style.color = 'var(--bg)';
+  } else {
+    grid.style.display = 'none';
+    arrow.textContent = '▼';
+    btn.style.background = 'var(--green-dim)';
+    btn.style.color = 'var(--green)';
+  }
+}
+
+async function cancelJob(){
+  if(!activeJobId){ addLog('Kein aktiver Job', 'warn'); return; }
+  try {
+    const url = getActiveUrl();
+    await fetch(`${url}/tts/cancel/${activeJobId}`, {method:'POST'});
+    addLog('⛔ Generierung abgebrochen!', 'warn');
+    document.getElementById('stop-btn').style.display = 'none';
+    const btn = document.getElementById('gen-btn');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+    activeJobId = null;
+  } catch(e) {
+    addLog(`Fehler beim Abbrechen: ${e.message}`, 'err');
+  }
+}
+
+async function uploadVoiceToColab(){
+  const voicePath = getVoicePath();
+  const voiceFilename = voicePath.split('/').pop();
+  try {
+    addLog(`[GPU] Stimme hochladen: ${voiceFilename}`, 'info');
+    const resp = await fetch(`${TTS_URL}/tts/voices/${voiceFilename}`);
+    if(!resp.ok) throw new Error('Stimme nicht gefunden');
+    const blob = await resp.blob();
+    const formData = new FormData();
+    formData.append('file', blob, voiceFilename);
+    const uploadResp = await fetch(`${gpuUrl}/tts/upload-voice`, {method:'POST', body:formData});
+    const data = await uploadResp.json();
+    addLog(`[GPU] ✅ Stimme geladen: ${data.datei}`, 'ok');
+    return `/content/tts_models/${data.datei}`;
+  } catch(e) {
+    addLog(`[GPU] ⚠ Stimme Fallback: stimme.wav`, 'warn');
+    return '/content/tts_models/stimme.wav';
+  }
+}
+
+async function connectGPU(){
+  const url = document.getElementById('gpu-url').value.trim().replace(/\/$/, '');
+  if(!url){ addLog('Bitte Colab URL eingeben!','err'); return; }
+  const status = document.getElementById('gpu-status');
+  status.textContent = '⏳ Verbinde...';
+  status.style.color = 'var(--amber)';
+  try {
+    const resp = await fetch(`${url}/health`, {signal: AbortSignal.timeout(10000)});
+    const data = await resp.json();
+    if(data.status === 'ok'){
+      gpuUrl = url;
+      gpuConnected = true;
+      gpuSessionStart = Date.now();
+      // URL speichern
+      localStorage.setItem('bookvoice_gpu_url', url);
+      status.textContent = `✅ Verbunden! GPU: ${(data.device||'gpu').toUpperCase()}`;
+      status.style.color = 'var(--green)';
+
+      // Live Dot grün
+      const dot = document.getElementById('gpu-live-dot');
+      dot.style.background = 'var(--green)';
+      dot.style.boxShadow = '0 0 6px var(--green)';
+      dot.style.animation = 'blink 2s infinite';
+
+      // Buttons umschalten
+      document.getElementById('gpu-connect-btn').style.display = 'none';
+      document.getElementById('gpu-disconnect-btn').style.display = 'block';
+
+      // Stats anzeigen
+      document.getElementById('gpu-stats').style.display = 'grid';
+
+      // Stats Interval starten
+      if(gpuStatsInterval) clearInterval(gpuStatsInterval);
+      gpuStatsInterval = setInterval(updateGpuStats, 5000);
+      updateGpuStats();
+
+      // Auto-Reconnect starten
+      if(gpuReconnectInterval) clearInterval(gpuReconnectInterval);
+      gpuReconnectInterval = setInterval(autoReconnect, 30000);
+
+      addLog(`[GPU] Verbunden · ${(data.device||'cuda').toUpperCase()}`, 'ok');
+    }
+  } catch(e) {
+    status.textContent = '❌ Verbindung fehlgeschlagen!';
+    status.style.color = 'var(--red)';
+    gpuConnected = false;
+    document.getElementById('gpu-live-dot').style.background = 'var(--red)';
+    addLog('[GPU] Verbindung fehlgeschlagen!', 'err');
+  }
+}
+
+async function updateGpuStats(){
+  if(!gpuUrl || !gpuConnected) return;
+  try {
+    const resp = await fetch(`${gpuUrl}/health`, {signal: AbortSignal.timeout(5000)});
+    const data = await resp.json();
+
+    // Timer
+    if(gpuSessionStart){
+      const elapsed = Math.floor((Date.now() - gpuSessionStart) / 1000);
+      const remaining = Math.max(0, 3*60*60 - elapsed);
+      const h = Math.floor(remaining / 3600);
+      const m = Math.floor((remaining % 3600) / 60);
+      document.getElementById('gpu-timer').textContent = `${h}h${m}m`;
+      if(remaining < 30*60){
+        document.getElementById('gpu-timer').style.color = 'var(--red)';
+      }
+    }
+
+    // GPU Auslastung
+    if(data.gpu_util !== undefined){
+      document.getElementById('gpu-util').textContent = `${data.gpu_util}%`;
+    }
+    if(data.gpu_mem !== undefined){
+      document.getElementById('gpu-mem').textContent = data.gpu_mem;
+    }
+
+  } catch(e) {
+    // Verbindung verloren
+    gpuConnected = false;
+    document.getElementById('gpu-live-dot').style.background = 'var(--amber)';
+    document.getElementById('gpu-status').textContent = '⚠️ Verbindung unterbrochen — reconnecte...';
+    document.getElementById('gpu-status').style.color = 'var(--amber)';
+  }
+}
+
+async function autoReconnect(){
+  if(!gpuUrl) return;
+  if(!gpuConnected){
+    addLog('[GPU] Auto-Reconnect...', 'info');
+    try {
+      const resp = await fetch(`${gpuUrl}/health`, {signal: AbortSignal.timeout(5000)});
+      const data = await resp.json();
+      if(data.status === 'ok'){
+        gpuConnected = true;
+        document.getElementById('gpu-live-dot').style.background = 'var(--green)';
+        document.getElementById('gpu-status').textContent = '✅ Wieder verbunden!';
+        document.getElementById('gpu-status').style.color = 'var(--green)';
+        addLog('[GPU] Wieder verbunden!', 'ok');
+      }
+    } catch(e) {}
+  }
+}
+
+function getActiveUrl(){
+  if(currentEngine === 'gpu' && gpuUrl) return gpuUrl;
+  return TTS_URL;
+}
+
+function setEngine(engine){
+  currentEngine = engine;
+  const xttsBtn = document.getElementById('engine-xtts');
+  const edgeBtn = document.getElementById('engine-edge');
+  const gpuBtn = document.getElementById('engine-gpu');
+  const hint = document.getElementById('engine-hint');
+  const edgeCard = document.getElementById('edge-voices-card');
+  const gpuCard = document.getElementById('gpu-card');
+
+  xttsBtn.className = 'btn btn-secondary';
+  edgeBtn.className = 'btn btn-secondary';
+  gpuBtn.className = 'btn btn-secondary';
+
+  edgeCard.style.display = 'none';
+  gpuCard.style.display = 'none';
+
+  if(engine === 'xtts'){
+    xttsBtn.className = 'btn btn-primary';
+    hint.textContent = '🧠 XTTS-v2: Lokal · Voice Cloning · Eigene Stimme';
+    hint.style.color = 'var(--text3)';
+  } else if(engine === 'edge'){
+    edgeBtn.className = 'btn btn-primary';
+    hint.innerHTML = '⚡ Edge TTS: <span style="color:var(--amber)">⚠️ Online · Internet erforderlich</span> · 400+ Stimmen · Sehr schnell';
+    edgeCard.style.display = 'block';
+    if(allEdgeVoices.length === 0) loadEdgeVoices();
+  } else if(engine === 'gpu'){
+    gpuBtn.className = 'btn btn-primary';
+    hint.innerHTML = '☁️ GPU Colab: <span style="color:var(--green)">T4 GPU kostenlos</span> · 10x schneller · Voice Cloning';
+    gpuCard.style.display = 'block';
+  }
+  addLog(`[ENGINE] ${engine === 'xtts' ? 'XTTS-v2 (Lokal)' : engine === 'edge' ? 'Edge TTS (Online)' : 'GPU Colab'}`, 'info');
+}
+
+async function loadEdgeVoices(){
+  try {
+    document.getElementById('edge-voice-count').textContent = 'Lädt...';
+    const resp = await fetch(`${TTS_URL}/edge/voices`);
+    const data = await resp.json();
+    allEdgeVoices = data.voices;
+    document.getElementById('edge-voice-count').textContent = `${data.anzahl} Stimmen`;
+    filterEdgeVoices();
+    addLog(`[EDGE] ${data.anzahl} Stimmen geladen`, 'ok');
+  } catch(e) {
+    addLog('[EDGE] Stimmen konnten nicht geladen werden — Internet verfügbar?', 'err');
+  }
+}
+
+function filterEdgeVoices(){
+  const lang = document.getElementById('edge-lang-filter').value.toLowerCase();
+  const gender = document.getElementById('edge-gender-filter').value;
+  const sel = document.getElementById('edge-voice-select');
+  const filtered = allEdgeVoices.filter(v => {
+    const matchLang = !lang || v.lang.toLowerCase().startsWith(lang);
+    const matchGender = !gender || v.gender === gender;
+    return matchLang && matchGender;
+  });
+  sel.innerHTML = filtered.map(v =>
+    `<option value="${v.name}">${v.display} (${v.lang})</option>`
+  ).join('');
+  document.getElementById('edge-voice-count').textContent = `${filtered.length} Stimmen`;
+}
+
+async function startSynthesis(){
+  const text = document.getElementById('test-text').value.trim();
+  if(!text){ addLog('Kein Text eingegeben!','err'); return; }
+  const projectName = document.getElementById('project-name').value || 'hoerbuch';
+  const outputFormat = document.getElementById('output-format').value || 'mp3';
+  const lang = document.getElementById('tts-lang').value || 'tr';
+  const chapters = splitChapters(text, 2000);
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Generiert…';
+  document.getElementById('progress-wrap').style.display = 'block';
+
+  // GPU Colab — nutzt XTTS-v2 auf Colab
+  if(currentEngine === 'gpu'){
+    if(!gpuUrl){ addLog('Bitte zuerst mit Colab verbinden!','err'); btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none'; return; }
+    const lang = document.getElementById('tts-lang').value || 'tr';
+    const temperature = parseFloat(document.getElementById('temperature').value);
+    const repPenalty = parseFloat(document.getElementById('rep-penalty').value);
+    const topK = parseInt(document.getElementById('top-k').value);
+    const speed = parseFloat(document.getElementById('speed').value);
+    addLog(`☁️ GPU Colab: ${chapters.length} Kapitel · ${lang.toUpperCase()}`, 'ok');
+    try {
+      const resp = await fetch(`${gpuUrl}/tts/book`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({chapters, language:lang, speaker_wav: await uploadVoiceToColab(), book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed, cover_path:currentCoverPath})
+      });
+      const data = await resp.json();
+      activeJobId = data.job_id;
+      document.getElementById('stop-btn').style.display = 'block';
+      addLog(`Job: ${data.job_id}`, 'ok');
+      const currentGpuUrl = gpuUrl || document.getElementById('gpu-url').value.trim();
+      startJobPolling(data.job_id, chapters.length, currentGpuUrl);
+    } catch(e) {
+      addLog(`Fehler: ${e.message}`,'err');
+      btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none';
+    }
+    return;
+  }
+  if(currentEngine === 'edge'){
+    const voice = document.getElementById('edge-voice-select').value;
+    const rate = document.getElementById('edge-rate').value;
+    const pitch = document.getElementById('edge-pitch').value;
+    if(!voice){ addLog('Bitte Edge TTS Stimme auswählen!','err'); btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none'; return; }
+    addLog(`⚡ Edge TTS: ${chapters.length} Kapitel · ${voice}`, 'ok');
+    try {
+      const resp = await fetch(`${TTS_URL}/edge/book`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({chapters, voice, book_name:projectName, output_format:outputFormat, rate, pitch, cover_path:currentCoverPath})
+      });
+      const data = await resp.json();
+      activeJobId = data.job_id;
+      document.getElementById('stop-btn').style.display = 'block';
+      addLog(`Job: ${data.job_id}`, 'ok');
+      startJobPolling(data.job_id, chapters.length);
+    } catch(e) {
+      addLog(`Fehler: ${e.message}`,'err');
+      btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none';
+    }
+    return;
+  }
+
+  // XTTS-v2
+  const temperature = parseFloat(document.getElementById('temperature').value);
+  const repPenalty = parseFloat(document.getElementById('rep-penalty').value);
+  const topK = parseInt(document.getElementById('top-k').value);
+  const speed = parseFloat(document.getElementById('speed').value);
+  addLog(`🧠 XTTS-v2: ${chapters.length} Kapitel · ${lang.toUpperCase()} · ${outputFormat.toUpperCase()}`, 'ok');
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/book`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({chapters, language:lang, speaker_wav:getVoicePath(), book_name:projectName, output_format:outputFormat, temperature, repetition_penalty:repPenalty, top_k:topK, speed, cover_path:currentCoverPath})
+    });
+    const data = await resp.json();
+    activeJobId = data.job_id;
+    addLog(`Job: ${data.job_id}`, 'ok');
+    startJobPolling(data.job_id, chapters.length);
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`,'err');
+    btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none';
+  }
+}
+
+function startJobPolling(jobId, total, baseUrl){
+  const url = baseUrl || TTS_URL;
+  const btn = document.getElementById('gen-btn');
+  if(pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    try {
+      const sr = await fetch(`${url}/tts/book/status/${jobId}`);
+      const sd = await sr.json();
+      const progress = sd.total > 0 ? Math.round((sd.done/sd.total)*100) : 0;
+      document.getElementById('batch-bar').style.width = progress+'%';
+      document.getElementById('batch-pct').textContent = progress+'%';
+      document.getElementById('progress-text').textContent = `Kapitel ${sd.done} / ${sd.total}`;
+      if(sd.status==='fertig'||sd.status==='fertig_mit_fehlern'){
+        clearInterval(pollInterval);
+        btn.disabled=false; btn.innerHTML='<i class="ti ti-wand"></i> HÖRBUCH GENERIEREN';
+      document.getElementById('stop-btn').style.display = 'none';
+        addLog(`✔ Fertig! ${sd.done}/${sd.total} Kapitel · ${sd.output||''}`, 'ok');
+        if(sd.errors&&sd.errors.length) sd.errors.forEach(e=>addLog(`⚠ ${e}`,'warn'));
+        // GPU Colab: MP3 von Colab herunterladen und auf Server hochladen
+        if(baseUrl && sd.output){
+          addLog(`[GPU] 📥 MP3 von Colab herunterladen...`, 'info');
+          try {
+            const mp3Resp = await fetch(`${baseUrl}/tts/download/${sd.output}`);
+            const mp3Blob = await mp3Resp.blob();
+            const formData = new FormData();
+            formData.append('file', mp3Blob, sd.output);
+            const uploadResp = await fetch(`${TTS_URL}/tts/upload-audio`, {method:'POST', body:formData});
+            const uploadData = await uploadResp.json();
+            addLog(`[GPU] ✅ MP3 auf Server gespeichert: ${uploadData.datei}`, 'ok');
+          } catch(e) {
+            addLog(`[GPU] ⚠ Upload fehlgeschlagen: ${e.message}`, 'warn');
+          }
+        }
+        loadFilesFromServer(); loadDashboardStats();
+      }
+    } catch(e) {}
+  }, 3000);
+}
+
+// ── Preview ─────────────────────────────────────
+async function generatePreview(){
+  const lang = document.getElementById('tts-lang').value || 'tr';
+  const temperature = parseFloat(document.getElementById('temperature').value);
+  const speed = parseFloat(document.getElementById('speed').value);
+  const btn = document.getElementById('test-btn');
+  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader"></i> Generiert…';
+  addLog('👂 Test-Audio wird generiert…');
+  try {
+    // GPU Engine: Stimme hochladen und GPU nutzen
+    let speakerWav = getVoicePath();
+    let testUrl = TTS_URL;
+    if(currentEngine === 'gpu' && gpuUrl){
+      testUrl = gpuUrl;
+      speakerWav = await uploadVoiceToColab();
+    }
+    const resp = await fetch(`${testUrl}/tts/generate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text:PREVIEW_TEXTS[lang]||PREVIEW_TEXTS.tr, language:lang, speaker_wav:speakerWav, filename:`_preview_${Date.now()}.wav`, temperature, speed})
+    });
+    const data = await resp.json();
+    if(data.status==='ok'){
+      const player = document.getElementById('preview-player');
+      player.src = `${testUrl}/tts/download/${data.datei}`;
+      player.style.display='block'; player.play();
+      addLog(`✔ Test bereit — ${data.groesse_kb} KB`,'ok');
+    }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-player-play"></i> Test-Audio generieren';
+}
+
+// ── Files ────────────────────────────────────────
+async function loadFilesFromServer(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/files`);
+    const data = await resp.json();
+    const list = document.getElementById('file-list');
+    document.getElementById('stat-files').textContent = data.anzahl;
+    if(!data.dateien.length){ list.innerHTML='<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Dateien</div>'; return; }
+    list.innerHTML = data.dateien.map(f=>`
+      <div class="file-card" style="flex-direction:column;align-items:stretch">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <span class="file-icon">${f.name.endsWith('.mp3')?'🎵':f.name.endsWith('.m4b')?'📱':'🔊'}</span>
+          <span class="file-name">${f.name}</span>
+          <span class="file-size">${f.groesse_mb} MB</span>
+          <span style="font-size:10px;color:var(--text3);margin-left:auto">${f.datum_str || ''}</span>
+          <button onclick="togglePlayer('player_${f.name.replace(/\./g,'_')}')" class="btn btn-secondary btn-sm" title="Abspielen">▶</button>
+          <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+          <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+        </div>
+        <audio id="player_${f.name.replace(/\./g,'_')}" controls style="display:none;width:100%;margin-top:.5rem;height:32px">
+          <source src="${TTS_URL}/tts/download/${f.name}">
+        </audio>
+      </div>`).join('');
+  } catch(e) { addLog('Dateien konnten nicht geladen werden','err'); }
+}
+
+function togglePlayer(id){
+  const player = document.getElementById(id);
+  if(!player) return;
+  if(player.style.display === 'none'){
+    // Alle anderen stoppen
+    document.querySelectorAll('audio').forEach(a => {
+      if(a.id !== id){ a.pause(); a.style.display = 'none'; }
+    });
+    player.style.display = 'block';
+    player.play();
+  } else {
+    player.pause();
+    player.style.display = 'none';
+  }
+}
+
+async function deleteAudioFile(filename){
+  if(!confirm(`"${filename}" wirklich löschen?`)) return;
+  try {
+    await fetch(`${TTS_URL}/tts/files/${filename}`, {method:'DELETE'});
+    addLog(`Gelöscht: ${filename}`,'ok');
+    loadFilesFromServer();
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+// ── Voices ──────────────────────────────────────
+async function loadVoicesFromServer(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/voices`);
+    const data = await resp.json();
+    document.getElementById('stat-voices').textContent = data.stimmen.length;
+    const builtinNames = voices.filter(v=>v.type==='builtin').map(v=>v.name);
+    const serverVoices = data.stimmen
+      .filter(v => !builtinNames.includes(v.name))
+      .map((v, i) => ({
+        id: 100 + i,
+        name: v.name,
+        path: `/app/tts_models/${v.name}`,
+        init: v.name.slice(0,2).toUpperCase(),
+        lang: 'TR', gender: 'M', style: 'Custom',
+        bg: 'rgba(34,197,94,.15)', fg: '#22c55e',
+        type: 'custom',
+        groesse_kb: v.groesse_kb
+      }));
+    voices = [...voices.filter(v=>v.type==='builtin'), ...serverVoices];
+    if(voices.length && !selectedVoiceId){ selectedVoiceId=voices[0].id; updateActiveVoiceDisplay(); }
+    renderVoiceGrid();
+    document.getElementById('voice-count').textContent = `${voices.length} Stimmen`;
+  } catch(e) { addLog('Stimmen konnten nicht geladen werden','err'); }
+}
+
+function renderVoiceGrid(){
+  const grid = document.getElementById('voice-grid');
+  if(!grid) return;
+  grid.innerHTML = voices.map(v=>`
+    <div class="voice-card${v.id===selectedVoiceId?' active':''}" onclick="selectVoice(${v.id})">
+      <div class="vc-avatar" style="background:${v.bg};color:${v.fg}">${v.init}</div>
+      <div class="vc-name">${v.name.replace('.mp3','').replace(/_/g,' ')}</div>
+      <div class="vc-meta" style="display:flex;gap:4px;margin-top:2px">
+        <span style="background:${v.bg};color:${v.fg};padding:1px 6px;border-radius:4px;font-size:9px">${v.lang}</span>
+        <span style="background:var(--border);color:var(--text2);padding:1px 6px;border-radius:4px;font-size:9px">${v.gender==='M'?'♂':'♀'} ${v.style}</span>
+      </div>
+      <div class="vc-actions">
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();previewVoice(${v.id})" title="Vorschau">▶</button>
+        ${v.type!=='builtin'?`<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteVoiceFromServer('${v.name}')" title="Löschen">🗑</button>`:''}
+      </div>
+    </div>`).join('') + `
+    <div class="voice-card vc-add" onclick="document.querySelector('#panel-voices .upload-zone input').click()">
+      <div style="font-size:24px">+</div>
+      <div style="font-size:11px">Stimme hochladen</div>
+    </div>`;
+}
+
+function selectVoice(id){
+  selectedVoiceId = id;
+  updateActiveVoiceDisplay();
+  renderVoiceGrid();
+}
+
+function updateActiveVoiceDisplay(){
+  const v = voices.find(x=>x.id===selectedVoiceId);
+  if(!v) return;
+  document.getElementById('active-avatar').textContent = v.init;
+  document.getElementById('active-avatar').style.background = v.bg;
+  document.getElementById('active-avatar').style.color = v.fg;
+  document.getElementById('active-voice-name').textContent = v.name;
+  document.getElementById('active-voice-meta').textContent = 'TR/DE/EN · XTTS-v2';
+}
+
+async function previewVoice(id){
+  const v = voices.find(x=>x.id===id);
+  if(!v) return;
+  const lang = document.getElementById('tts-lang').value||'tr';
+  addLog(`🎙️ Stimme testen: ${v.name}`);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/generate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text:PREVIEW_TEXTS[lang]||PREVIEW_TEXTS.tr, language:lang, speaker_wav:v.path, filename:`_vpreview_${Date.now()}.wav`})
+    });
+    const data = await resp.json();
+    if(data.status==='ok'){ new Audio(`${TTS_URL}/tts/download/${data.datei}`).play(); addLog(`✔ Vorschau: ${v.name}`,'ok'); }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+async function handleVoiceUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  addLog(`⬆ Lade Stimme hoch: ${file.name}…`);
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/upload-voice`, {method:'POST', body:formData});
+    const data = await resp.json();
+    if(data.status==='ok'){ addLog(`✔ Stimme hochgeladen: ${data.datei}`,'ok'); loadVoicesFromServer(); }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+async function deleteVoiceFromServer(filename){
+  if(!confirm(`Stimme "${filename}" löschen?`)) return;
+  try {
+    await fetch(`${TTS_URL}/tts/voices/${filename}`, {method:'DELETE'});
+    addLog(`Stimme gelöscht: ${filename}`,'ok');
+    loadVoicesFromServer();
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+// ── Musik ────────────────────────────────────────
+async function loadMusikFromServer(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/musik`);
+    const data = await resp.json();
+    document.getElementById('stat-musik').textContent = data.anzahl;
+    const sel = document.getElementById('musik-select');
+    sel.innerHTML = '<option value="">— Keine Musik —</option>';
+    data.musik.forEach(m => { const o=document.createElement('option'); o.value=m.name; o.textContent=`🎵 ${m.name} (${m.groesse_mb}MB)`; sel.appendChild(o); });
+  } catch(e) {}
+}
+
+async function loadMusikList(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/musik`);
+    const data = await resp.json();
+    const list = document.getElementById('musik-list');
+    if(!data.musik.length){ list.innerHTML='<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Musik</div>'; return; }
+    list.innerHTML = data.musik.map(m=>`
+      <div class="file-card">
+        <span class="file-icon">🎵</span>
+        <span class="file-name">${m.name}</span>
+        <span class="file-size">${m.groesse_mb} MB</span>
+        <button onclick="deleteMusik('${m.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function handleMusikUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  addLog(`⬆ Musik hochladen: ${file.name}…`);
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/upload-musik`, {method:'POST', body:formData});
+    const data = await resp.json();
+    if(data.status==='ok'){ addLog(`✔ Musik hochgeladen: ${data.datei}`,'ok'); loadMusikFromServer(); loadMusikList(); }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+async function deleteMusik(filename){
+  if(!confirm(`"${filename}" löschen?`)) return;
+  try {
+    await fetch(`${TTS_URL}/tts/musik/${filename}`, {method:'DELETE'});
+    addLog(`Gelöscht: ${filename}`,'ok');
+    loadMusikList(); loadMusikFromServer();
+  } catch(e) {}
+}
+
+async function mixMusikWithAudio(){
+  const musikFile = document.getElementById('musik-select').value;
+  if(!musikFile){ addLog('Keine Musik ausgewählt!','err'); return; }
+  const volume = parseFloat(document.getElementById('musik-volume').value)/100;
+  const projectName = document.getElementById('mix-project').value||'hoerbuch';
+  addLog(`🎼 Mische mit ${musikFile}…`);
+  document.getElementById('mix-status').textContent = 'Mische…';
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/mix-musik`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({audio_file:`${projectName}_komplett.mp3`, musik_file:musikFile, musik_volume:volume, output_name:`${projectName}_mit_musik.mp3`})
+    });
+    const data = await resp.json();
+    if(data.status==='ok'){
+      addLog(`✔ Mix fertig: ${data.datei}`,'ok');
+      document.getElementById('mix-status').textContent = `✔ ${data.datei}`;
+      loadFilesFromServer();
+    }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+// ── Dashboard Stats ──────────────────────────────
+async function loadCoversFromServer(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/covers`);
+    const data = await resp.json();
+    document.getElementById('cover-count').textContent = `${data.anzahl} Cover`;
+    const grid = document.getElementById('cover-grid');
+    const sel = document.getElementById('cover-select');
+    if(sel){ sel.innerHTML = '<option value="">— Cover auswählen —</option>'; }
+    if(!data.covers.length){
+      grid.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px;grid-column:1/-1">Noch keine Cover</div>';
+      return;
+    }
+    grid.innerHTML = data.covers.map(c=>`
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer" onclick="selectCover('${c.name}')">
+        <img src="${TTS_URL}/tts/covers/${c.name}" style="width:100%;aspect-ratio:1;object-fit:cover" onerror="this.style.display='none'">
+        <div style="padding:.4rem;font-size:9px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+        <div style="padding:0 .4rem .4rem;display:flex;gap:.25rem">
+          <button class="btn btn-danger btn-sm" style="flex:1;font-size:9px" onclick="event.stopPropagation();deleteCover('${c.name}')">🗑</button>
+        </div>
+      </div>`).join('');
+    if(sel){
+      data.covers.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name; opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) { addLog('Cover konnten nicht geladen werden','err'); }
+}
+
+function selectCover(name){
+  const sel = document.getElementById('cover-select');
+  if(sel) sel.value = name;
+  addLog(`Cover ausgewählt: ${name}`, 'ok');
+}
+
+async function handleCoverLibraryUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  addLog(`🖼️ Cover hochladen: ${file.name}…`);
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/upload-cover-library`, {method:'POST', body:formData});
+    const data = await resp.json();
+    if(data.status==='ok'){ addLog(`✔ Cover hochgeladen: ${data.datei}`,'ok'); loadCoversFromServer(); }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+async function deleteCover(filename){
+  if(!confirm(`Cover "${filename}" löschen?`)) return;
+  try {
+    await fetch(`${TTS_URL}/tts/covers/${filename}`, {method:'DELETE'});
+    addLog(`Cover gelöscht: ${filename}`,'ok');
+    loadCoversFromServer();
+  } catch(e) {}
+}
+
+async function addCoverToFile(){
+  const audioFile = document.getElementById('cover-audio-select').value;
+  const coverFile = document.getElementById('cover-select').value;
+  if(!audioFile || !coverFile){ addLog('Bitte Datei und Cover auswählen!','err'); return; }
+  document.getElementById('cover-add-status').textContent = 'Füge Cover hinzu…';
+  addLog(`🖼️ Cover "${coverFile}" → "${audioFile}"…`);
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/add-cover-to-file?audio_file=${encodeURIComponent(audioFile)}&cover_file=${encodeURIComponent(coverFile)}`, {method:'POST'});
+    const data = await resp.json();
+    if(data.status==='ok'){
+      addLog(`✔ Fertig: ${data.datei} (${data.groesse_mb}MB)`,'ok');
+      document.getElementById('cover-add-status').textContent = `✔ ${data.datei}`;
+      loadFilesFromServer();
+    }
+  } catch(e) { addLog(`Fehler: ${e.message}`,'err'); }
+}
+
+async function loadCoverAudioSelect(){
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/files`);
+    const data = await resp.json();
+    const sel = document.getElementById('cover-audio-select');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">— Datei auswählen —</option>';
+    data.dateien.filter(f => f.name.endsWith('.mp3') || f.name.endsWith('.m4b')).forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.name; opt.textContent = `${f.name} (${f.groesse_mb}MB)`;
+      sel.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+async function loadDashboardStats(){
+  try {
+    const [files, voices, musik] = await Promise.all([
+      fetch(`${TTS_URL}/tts/files`).then(r=>r.json()),
+      fetch(`${TTS_URL}/tts/voices`).then(r=>r.json()),
+      fetch(`${TTS_URL}/tts/musik`).then(r=>r.json())
+    ]);
+    document.getElementById('stat-files').textContent = files.anzahl||0;
+    document.getElementById('stat-voices').textContent = voices.stimmen?.length||0;
+    document.getElementById('stat-musik').textContent = musik.anzahl||0;
+  } catch(e) {}
+}
+
+// ── Log ──────────────────────────────────────────
+function addLog(msg, type='info'){
+  ['log-box','studio-log'].forEach(id=>{
+    const box = document.getElementById(id);
+    if(!box) return;
+    const ts = new Date().toLocaleTimeString('de-DE');
+    const cls = type==='ok'?'log-ok':type==='err'?'log-err':type==='warn'?'log-warn':'log-info';
+    const div = document.createElement('div');
+    div.className = cls;
+    div.textContent = `[${ts}] ${msg}`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  });
+}
+
+function clearLog(){
+  ['log-box','studio-log'].forEach(id=>{ const b=document.getElementById(id); if(b) b.innerHTML=''; });
+}
+
+// ── Health Check ─────────────────────────────────
+async function checkApi(){
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('server-status-text');
+  try {
+    const r = await fetch(`${TTS_URL}/health`, {signal:AbortSignal.timeout(3000)});
+    if(r.ok){
+      const d = await r.json();
+      dot.className='status-dot online';
+      txt.textContent = `Online · ${(d.device||'cpu').toUpperCase()}`;
+      document.getElementById('stat-device').textContent = (d.device||'cpu').toUpperCase();
+      addLog(`✔ Server verbunden · ${(d.device||'cpu').toUpperCase()}`,'ok');
+    } else { dot.className='status-dot offline'; txt.textContent='Fehler'; }
+  } catch(e) { dot.className='status-dot offline'; txt.textContent='Offline'; }
+}
+
+// ── Init ─────────────────────────────────────────
+(function init(){
+  selectedVoiceId = voices[0].id;
+  updateActiveVoiceDisplay();
+  renderVoiceGrid();
+  checkApi();
+  loadVoicesFromServer();
+  loadFilesFromServer();
+  loadMusikFromServer();
+  loadCoversFromServer();
+  loadDashboardStats();
+  setInterval(checkApi, 30000);
+
+  // GPU URL aus localStorage laden
+  const savedUrl = localStorage.getItem('bookvoice_gpu_url');
+  if(savedUrl){
+    const input = document.getElementById('gpu-url');
+    if(input) input.value = savedUrl;
+    addLog(`[GPU] Gespeicherte URL geladen`, 'info');
+  }
+
+  // Community GPU — Status beim Laden wiederherstellen
+  const communityActive = localStorage.getItem('bookvoice_community_active') === 'true';
+  const communityUrl    = localStorage.getItem('bookvoice_community_url');
+  const communityBtn    = document.getElementById('community-gpu-btn');
+  if(communityActive && communityUrl && communityBtn){
+    communityBtn.style.display = 'block';
+    addLog(`[GPU] Community GPU verfügbar: ${communityUrl}`, 'info');
+  }
+  // Admin Panel: gespeicherte Community URL anzeigen
+  if(communityUrl){
+    const cfInput = document.getElementById('cf-fixed-url');
+    if(cfInput) cfInput.value = communityUrl;
+    const status = document.getElementById('community-gpu-status');
+    if(status && communityActive){
+      status.textContent = `✅ Community GPU aktiv → ${communityUrl}`;
+      status.style.color = 'var(--green)';
+    }
+  }
+})();
+
+// ── i18n Multi-Language ──────────────────────────────────
+const i18n = {
+  de: {
+    nav_studio:"Studio", nav_library:"Bibliothek", nav_voices:"Stimmen",
+    nav_musik:"Musik", nav_covers:"Cover", nav_files:"Dateien",
+    nav_settings:"Einstellungen", nav_admin:"Admin",
+    project_title:"Projekt", text_title:"Text eingeben",
+    upload_title:"Datei hochladen", voice_title:"Aktive Stimme",
+    output_title:"Ausgabe", log_title:"Log", system_log:"System Log",
+    upload_desc:"Drag & Drop oder", upload_click:"klicken",
+    gpu_connect:"Verbinden", gpu_disconnect:"Trennen",
+    voice_change:"Wechseln", btn_activate:"Aktivieren", btn_deactivate:"Deaktivieren",
+    btn_save:"Speichern", btn_clear:"Leeren", btn_refresh:"Aktualisieren",
+    btn_lock:"🔒 Sperren", btn_generate_key:"Generieren", btn_change_pw:"Passwort ändern", btn_stop:"GENERIERUNG STOPPEN", auto_tag_label:"Emotionen automatisch erkennen",
+    btn_test_connection:"Verbindung testen",
+    slider_temp:"Wärme", slider_nat:"Natürlichkeit", slider_krea:"Kreativität", slider_speed:"Geschwindigkeit",
+    output_generate:"HÖRBUCH GENERIEREN", output_test:"Test-Audio generieren",
+    gpu_open:"📓 Google Colab öffnen & warten",
+    preset_original:"Original", preset_sufi:"Sufi", preset_roman:"Roman",
+    preset_sachtext:"Sachtext", preset_dramatisch:"Dramatisch", preset_schnell:"Schnell", preset_kinder:"Kinder", preset_traurig:"Traurig", preset_frohlich:"Fröhlich", preset_geheimnisvoll:"Geheimnisvoll", preset_nachricht:"Nachricht", preset_siir:"Şiir/Gedicht",
+    new_book:"Neues Hörbuch",
+    stat_files:"Fertige Dateien", stat_musik:"Musik-Tracks", stat_device:"Device",
+    action_create:"Hörbuch erstellen", action_voices:"Stimmen verwalten",
+    action_musik:"Hintergrundmusik", files_title:"Fertige Hörbücher", files_empty:"Noch keine Dateien",
+    admin_title:"Admin Panel", community_gpu_title:"Community GPU",
+    voice_library:"Stimm-Bibliothek", musik_library:"Musik-Bibliothek",
+    cover_library:"Cover-Bibliothek", cover_upload:"Cover hochladen",
+    settings_server:"Server", settings_info:"Info"
+  },
+  tr: {
+    nav_studio:"Stüdyo", nav_library:"Kütüphane", nav_voices:"Sesler",
+    nav_musik:"Müzik", nav_covers:"Kapaklar", nav_files:"Dosyalar",
+    nav_settings:"Ayarlar", nav_admin:"Yönetici",
+    project_title:"Proje", text_title:"Metin Gir",
+    upload_title:"Dosya Yükle", voice_title:"Aktif Ses",
+    output_title:"Çıktı", log_title:"Log", system_log:"Sistem Logu",
+    upload_desc:"Sürükle & Bırak veya", upload_click:"tıkla",
+    gpu_connect:"Bağlan", gpu_disconnect:"Ayır",
+    voice_change:"Değiştir", btn_activate:"Etkinleştir", btn_deactivate:"Devre dışı",
+    btn_save:"Kaydet", btn_clear:"Temizle", btn_refresh:"Yenile",
+    btn_lock:"🔒 Kilitle", btn_generate_key:"Oluştur", btn_change_pw:"Şifreyi Değiştir", btn_stop:"ÜRETIMI DURDUR", auto_tag_label:"Duyguları otomatik tanı",
+    btn_test_connection:"Bağlantıyı Test Et",
+    slider_temp:"Sıcaklık", slider_nat:"Doğallık", slider_krea:"Yaratıcılık", slider_speed:"Hız",
+    output_generate:"SESLİ KİTAP OLUŞTUR", output_test:"Test sesi oluştur",
+    gpu_open:"📓 Google Colab'ı aç ve bekle",
+    preset_original:"Orijinal", preset_sufi:"Sufi", preset_roman:"Roman",
+    preset_sachtext:"Makale", preset_dramatisch:"Dramatik", preset_schnell:"Hızlı", preset_kinder:"Çocuk", preset_traurig:"Üzgün", preset_frohlich:"Neşeli", preset_geheimnisvoll:"Gizemli", preset_nachricht:"Haber", preset_siir:"Şiir/Şarkı",
+    new_book:"Yeni Sesli Kitap",
+    stat_files:"Tamamlanan Dosyalar", stat_musik:"Müzik Parçaları", stat_device:"Cihaz",
+    action_create:"Sesli Kitap Oluştur", action_voices:"Sesleri Yönet",
+    action_musik:"Arka Plan Müziği", files_title:"Tamamlanan Sesli Kitaplar", files_empty:"Henüz dosya yok",
+    admin_title:"Yönetici Paneli", community_gpu_title:"Topluluk GPU",
+    voice_library:"Ses Kütüphanesi", musik_library:"Müzik Kütüphanesi",
+    cover_library:"Kapak Kütüphanesi", cover_upload:"Kapak Yükle",
+    settings_server:"Sunucu", settings_info:"Bilgi"
+  },
+  en: {
+    nav_studio:"Studio", nav_library:"Library", nav_voices:"Voices",
+    nav_musik:"Music", nav_covers:"Covers", nav_files:"Files",
+    nav_settings:"Settings", nav_admin:"Admin",
+    project_title:"Project", text_title:"Enter Text",
+    upload_title:"Upload File", voice_title:"Active Voice",
+    output_title:"Output", log_title:"Log", system_log:"System Log",
+    upload_desc:"Drag & Drop or", upload_click:"click",
+    gpu_connect:"Connect", gpu_disconnect:"Disconnect",
+    voice_change:"Change", btn_activate:"Activate", btn_deactivate:"Deactivate",
+    btn_save:"Save", btn_clear:"Clear", btn_refresh:"Refresh",
+    btn_lock:"🔒 Lock", btn_generate_key:"Generate", btn_change_pw:"Change Password", btn_stop:"STOP GENERATION", auto_tag_label:"Auto-detect emotions",
+    btn_test_connection:"Test Connection",
+    slider_temp:"Warmth", slider_nat:"Naturalness", slider_krea:"Creativity", slider_speed:"Speed",
+    output_generate:"GENERATE AUDIOBOOK", output_test:"Generate test audio",
+    gpu_open:"📓 Open Google Colab & wait",
+    preset_original:"Original", preset_sufi:"Sufi", preset_roman:"Novel",
+    preset_sachtext:"Article", preset_dramatisch:"Dramatic", preset_schnell:"Fast", preset_kinder:"Children", preset_traurig:"Sad", preset_frohlich:"Happy", preset_geheimnisvoll:"Mysterious", preset_nachricht:"News", preset_siir:"Poem/Song",
+    new_book:"New Audiobook",
+    stat_files:"Completed Files", stat_musik:"Music Tracks", stat_device:"Device",
+    action_create:"Create Audiobook", action_voices:"Manage Voices",
+    action_musik:"Background Music", files_title:"Completed Audiobooks", files_empty:"No files yet",
+    admin_title:"Admin Panel", community_gpu_title:"Community GPU",
+    voice_library:"Voice Library", musik_library:"Music Library",
+    cover_library:"Cover Library", cover_upload:"Upload Cover",
+    settings_server:"Server", settings_info:"Info"
+  }
+};
+
+let currentLang = localStorage.getItem('bookvoice_lang') || 'de';
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('bookvoice_lang', lang);
+  applyLang();
+}
+
+function applyLang() {
+  const t = i18n[currentLang];
+  if(!t) return;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(t[key] !== undefined) el.textContent = t[key];
+  });
+  ['de','tr','en'].forEach(l => {
+    const btn = document.getElementById('lang-' + l);
+    if(btn) btn.style.opacity = l === currentLang ? '1' : '0.4';
+  });
+  const genBtn = document.getElementById('gen-btn');
+  if(genBtn && !genBtn.disabled) {
+    genBtn.innerHTML = '<i class="ti ti-wand"></i> ' + (t.output_generate || 'HÖRBUCH GENERIEREN');
+  }
+  const testText = document.getElementById('test-text');
+  if(testText) testText.placeholder = currentLang === 'tr' ? 'Metni buraya girin veya dosya yükleyin...' : currentLang === 'en' ? 'Enter text here or upload a file...' : 'Text hier eingeben oder Datei hochladen...';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  applyLang();
+});
+// ── Transkription ────────────────────────────────────────────
+let _lastTranscribeBase = '';
+let _lastTranscribeFolder = '';
+let _transcribeMode = 'audio';
+let _transcribeAbortCtrl = null;
+
+function setTranscribeMode(mode){
+  _transcribeMode = mode;
+  document.getElementById('transcribe-audio-mode').style.display = mode === 'audio' ? 'block' : 'none';
+  document.getElementById('transcribe-ocr-mode').style.display = mode === 'ocr' ? 'block' : 'none';
+  document.getElementById('tab-audio-btn').className = mode === 'audio' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  document.getElementById('tab-ocr-btn').className = mode === 'ocr' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  document.getElementById('tab-audio-btn').style.cssText += ';flex:1;justify-content:center';
+  document.getElementById('tab-ocr-btn').style.cssText += ';flex:1;justify-content:center';
+  document.getElementById('transcribe-result').style.display = 'none';
+}
+
+function handleTranscribeDrop(e){
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if(file) uploadTranscribeFile(file);
+}
+function handleTranscribeUpload(input){ if(input.files[0]) uploadTranscribeFile(input.files[0]); }
+function handleOCRDrop(e){ e.preventDefault(); const file = e.dataTransfer.files[0]; if(file) uploadOCRFile(file); }
+function handleOCRUpload(input){ if(input.files[0]) uploadOCRFile(input.files[0]); }
+
+function uploadTranscribeFile(file){
+  document.getElementById('transcribe-drop').innerHTML = `<i class="ti ti-file-music" style="font-size:1.75rem;color:var(--green)"></i><div style="font-size:12px;margin-top:.35rem">${file.name}</div>`;
+  document.getElementById('transcribe-btn')._file = file;
+  const proj = document.getElementById('transcribe-project');
+  if(!proj.value) proj.value = file.name.replace(/\.[^.]+$/, '');
+}
+
+function uploadOCRFile(file){
+  document.getElementById('transcribe-ocr-drop').innerHTML = `<i class="ti ti-photo" style="font-size:1.75rem;color:var(--green)"></i><div style="font-size:12px;margin-top:.35rem">${file.name}</div>`;
+  document.getElementById('transcribe-btn')._ocrFile = file;
+  const proj = document.getElementById('transcribe-ocr-project');
+  if(!proj.value) proj.value = file.name.replace(/\.[^.]+$/, '');
+}
+
+function abortTranscribe(){
+  if(_transcribeAbortCtrl){ _transcribeAbortCtrl.abort(); _transcribeAbortCtrl = null; }
+  const btn = document.getElementById('transcribe-btn');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
+  document.getElementById('transcribe-abort-btn').style.display = 'none';
+  document.getElementById('transcribe-status').textContent = '⛔ Abgebrochen';
+  document.getElementById('transcribe-status').style.color = 'var(--red)';
+  addLog('[TRANSKRIPT] Abgebrochen', 'err');
+}
+
+async function startTranscribe(){
+  const btn = document.getElementById('transcribe-btn');
+  const abortBtn = document.getElementById('transcribe-abort-btn');
+  const status = document.getElementById('transcribe-status');
+
+  if(_transcribeMode === 'ocr'){ await startOCR(); return; }
+
+  const file = btn._file;
+  if(!file){ addLog('Bitte zuerst eine Datei hochladen!','err'); return; }
+
+  const lang = document.getElementById('transcribe-lang').value;
+  const model = document.getElementById('transcribe-model').value;
+  const project = document.getElementById('transcribe-project').value.trim() || file.name.replace(/\.[^.]+$/, '');
+  const folder = document.getElementById('transcribe-folder-select')?.value || '';
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Transkribiere...';
+  abortBtn.style.display = 'flex';
+  status.textContent = '⏳ Job wird gestartet...';
+  status.style.color = 'var(--amber)';
+  document.getElementById('transcribe-result').style.display = 'none';
+  document.getElementById('transcribe-srt').value = '';
+  document.getElementById('transcribe-text').value = '';
+  _transcribeAbortCtrl = new AbortController();
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('language', lang);
+    fd.append('model_size', model);
+    fd.append('project_name', project);
+    fd.append('folder', folder);
+
+    // Live-Transkription via SSE
+    const resp = await fetch(`${TTS_URL}/transcribe/stream`, {
+      method:'POST', body:fd, signal:_transcribeAbortCtrl.signal
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let srtLines = [];
+    let textLines = [];
+    let segCount = 0;
+
+    document.getElementById('transcribe-result').style.display = 'block';
+
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for(const line of lines){
+        if(!line.startsWith('data: ')) continue;
+        try {
+          const data = JSON.parse(line.slice(6));
+
+          if(data.typ === 'info'){
+            status.textContent = `⏳ Transkribiere... · ${data.sprache?.toUpperCase()} · ${data.modell}`;
+            addLog(`[LIVE] Sprache: ${data.sprache?.toUpperCase()} · Modell: ${data.modell}`, 'ok');
+
+          } else if(data.typ === 'segment'){
+            segCount++;
+            textLines.push(data.text);
+            srtLines.push(data.srt);
+
+            // Panel beim ersten Segment einblenden
+            if(segCount === 1){
+              document.getElementById('transcribe-result').style.display = 'block';
+            }
+
+            // Live SRT links anzeigen
+            document.getElementById('transcribe-srt').value = srtLines.join('\n\n');
+            // Live Text rechts anzeigen
+            document.getElementById('transcribe-text').value = textLines.join('\n');
+            // Auto-scroll
+            const srtEl = document.getElementById('transcribe-srt');
+            srtEl.scrollTop = srtEl.scrollHeight;
+            status.textContent = `⏳ ${segCount} Sätze transkribiert...`;
+
+          } else if(data.typ === 'fertig'){
+            _lastTranscribeBase = data.txt_datei?.replace('.txt','') || project;
+            document.getElementById('transcribe-info').textContent =
+              `🌐 ${lang === 'auto' ? 'Auto' : lang.toUpperCase()} · ${data.woerter} Wörter · Modell: ${model}`;
+            status.textContent = '✅ Fertig!';
+            status.style.color = 'var(--green)';
+            addLog(`[TRANSKRIPT] ${data.woerter} Wörter · ${segCount} Sätze · Modell: ${model}`, 'ok');
+            loadTranscriptionFiles();
+            updateFolderSelect();
+
+          } else if(data.typ === 'fehler'){
+            throw new Error(data.nachricht);
+          }
+        } catch(parseErr) {
+          // Ungültige JSON Zeile ignorieren
+        }
+      }
+    }
+  } catch(e) {
+    if(e.name === 'AbortError') return;
+    status.textContent = `❌ Fehler: ${e.message}`;
+    status.style.color = 'var(--red)';
+    addLog(`Transkription Fehler: ${e.message}`, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
+    abortBtn.style.display = 'none';
+    _transcribeAbortCtrl = null;
+  }
+}
+
+async function startOCR(){
+  const btn = document.getElementById('transcribe-btn');
+  const status = document.getElementById('transcribe-status');
+  const file = btn._ocrFile;
+  if(!file){ addLog('Bitte zuerst eine Datei hochladen!','err'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> OCR läuft...';
+  status.textContent = '⏳ Text wird erkannt...';
+  status.style.color = 'var(--amber)';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const resp = await fetch(`${TTS_URL}/tts/convert-to-text`, {method:'POST', body:fd});
+    if(!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    const text = data.text || data.content || '';
+    document.getElementById('transcribe-text').value = text;
+    document.getElementById('transcribe-srt').value = '';
+    document.getElementById('transcribe-info').textContent = `📸 OCR · ${text.split(' ').length} Wörter`;
+    document.getElementById('transcribe-result').style.display = 'block';
+    _lastTranscribeBase = document.getElementById('transcribe-ocr-project').value || 'ocr_ergebnis';
+    status.textContent = '✅ Fertig!';
+    status.style.color = 'var(--green)';
+    addLog(`[OCR] ${text.split(' ').length} Wörter erkannt`, 'ok');
+  } catch(e) {
+    status.textContent = `❌ Fehler: ${e.message}`;
+    status.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
+  }
+}
+
+function downloadTranscription(ext){
+  if(!_lastTranscribeBase){ addLog('Keine Transkription vorhanden','err'); return; }
+  window.open(`${TTS_URL}/transcribe/download/${_lastTranscribeBase}.${ext}`);
+}
+
+function sendToStudio(){
+  const text = document.getElementById('transcribe-text').value;
+  if(!text){ addLog('Kein Text vorhanden','err'); return; }
+  document.getElementById('test-text').value = text;
+  updateCharCount();
+  showPanel('studio');
+  addLog('[TRANSKRIPT] Text ins Studio übertragen ✅', 'ok');
+}
+
+async function loadTranscriptionFilesIntoElement(elementId){
+  const list = document.getElementById(elementId);
+  if(!list) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files`);
+    const data = await resp.json();
+    let html = '';
+    (data.ordner||[]).forEach(o => {
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <i class="ti ti-folder" style="color:var(--amber)"></i>
+          <div><div style="font-weight:500">${o.name}</div><div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien</div></div>
+        </div></div>`;
+    });
+    (data.dateien||[]).forEach(f => {
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+        <div><div style="font-weight:500">${f.name}</div><div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${f.name}')"><i class="ti ti-download"></i></button>
+      </div>`;
+    });
+    if(!html) html = '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
+    list.innerHTML = html;
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+async function loadTranscriptionFiles(){
+  const list = document.getElementById('transcription-list');
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files`);
+    const data = await resp.json();
+    let html = '';
+
+    // Dateien nach Datum sortieren (neueste zuerst)
+    if(data.dateien) data.dateien.sort((a,b) => (b.datum||0) - (a.datum||0));
+
+    // Ordner anzeigen
+    if(data.ordner && data.ordner.length > 0){
+      html += data.ordner.map(o => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <i class="ti ti-folder" style="color:var(--amber)"></i>
+            <div>
+              <div style="font-weight:500">${o.name}</div>
+              <div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="openTranscriptionFolder('${o.name}')">
+              <i class="ti ti-folder-open"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTranscriptionFolder('${o.name}')">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>`).join('');
+    }
+
+    // Dateien anzeigen
+    if(data.dateien && data.dateien.length > 0){
+      html += data.dateien.map(f => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-weight:500">${f.name}</div>
+            <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB · ${f.datum_str || ''}</div>
+          </div>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${f.name}')">
+              <i class="ti ti-download"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTranscription('${f.name}')">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>`).join('');
+    }
+
+    if(!html) html = '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
+    list.innerHTML = html;
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+async function deleteFolderFile(folder, filename){
+  if(!confirm(`"${filename}" löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files/${folder}/${filename}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error(await resp.text());
+    addLog(`[ORDNER] "${filename}" gelöscht`, 'ok');
+    openTranscriptionFolder(folder);
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+function openTranscriptionFolder(name){
+  const list = document.getElementById('transcription-list');
+  list.innerHTML = '<div style="color:var(--text3);padding:.5rem">⏳ Lade Ordner-Inhalt...</div>';
+  fetch(`${TTS_URL}/transcribe/folder/${name}`)
+    .then(r => r.json())
+    .then(data => {
+      let html = `<div style="padding:.35rem 0;margin-bottom:.35rem;border-bottom:1px solid var(--border)">
+        <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFiles()">
+          <i class="ti ti-arrow-left"></i> Zurück
+        </button>
+        <span style="margin-left:.5rem;font-size:11px;color:var(--text2)">📁 ${name}</span>
+      </div>`;
+      if(data.dateien.length === 0){
+        html += '<div style="color:var(--text3);padding:.5rem">Ordner ist leer</div>';
+      } else {
+        html += data.dateien.map(f => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-weight:500">${f.name}</div>
+              <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB · ${f.datum_str || ''}</div>
+            </div>
+            <div style="display:flex;gap:.35rem">
+              <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${name}/${f.name}')">
+                <i class="ti ti-download"></i>
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="deleteFolderFile('${name}','${f.name}')">
+                <i class="ti ti-trash"></i>
+              </button>
+            </div>
+          </div>`).join('');
+      }
+      list.innerHTML = html;
+    }).catch(() => { list.innerHTML = '<div style="color:var(--red)">Fehler</div>'; });
+}
+
+async function updateFolderSelect(){
+  const sel = document.getElementById('transcribe-folder-select');
+  if(!sel) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/files`);
+    const data = await resp.json();
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Root (kein Ordner) —</option>';
+    (data.ordner || []).forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.name;
+      opt.textContent = `📁 ${o.name}`;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  } catch(e) {}
+}
+
+async function deleteTranscriptionFolder(name){
+  if(!confirm(`Ordner "${name}" und alle Dateien darin löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/folder/${name}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error(await resp.text());
+    addLog(`[ORDNER] "${name}" gelöscht`, 'ok');
+    loadTranscriptionFiles();
+    updateFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+async function deleteTranscription(filename){
+  if(!confirm(`"${filename}" löschen?`)) return;
+  await fetch(`${TTS_URL}/transcribe/files/${filename}`, {method:'DELETE'});
+  loadTranscriptionFiles();
+}
+
+function showNewFolderDialog(){
+  const d = document.getElementById('new-folder-dialog');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  if(d.style.display === 'block') document.getElementById('new-folder-name').focus();
+}
+
+async function createTranscriptionFolder(){
+  const name = document.getElementById('new-folder-name').value.trim();
+  if(!name){ addLog('Bitte Ordnername eingeben!','err'); return; }
+  try {
+    const resp = await fetch(`${TTS_URL}/transcribe/folder`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+    document.getElementById('new-folder-name').value = '';
+    document.getElementById('new-folder-dialog').style.display = 'none';
+    addLog(`[ORDNER] "${name}" erstellt ✅`, 'ok');
+    loadTranscriptionFiles();
+    updateFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+
+
+// ── Hörbuch Ordner ───────────────────────────────────────────
+
+async function loadHoerbuchFolders(){
+  const list = document.getElementById('hoerbuch-folder-list');
+  if(!list) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folders`);
+    const data = await resp.json();
+    let html = '';
+    if(data.ordner && data.ordner.length > 0){
+      html += data.ordner.map(o => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <i class="ti ti-folder" style="color:var(--amber)"></i>
+            <div>
+              <div style="font-weight:500">${o.name}</div>
+              <div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien · ${o.groesse_mb} MB · ${o.datum_str}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:.35rem">
+            <button class="btn btn-secondary btn-sm" onclick="openHoerbuchFolder('${o.name}')">
+              <i class="ti ti-folder-open"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteHoerbuchFolder('${o.name}')">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>`).join('');
+    }
+    if(!html) html = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Hörbücher vorhanden</div>';
+    const total = (data.ordner||[]).reduce((s,o) => s + o.dateien_anzahl, 0);
+    const statEl = document.getElementById('stat-files');
+    if(statEl) statEl.textContent = total;
+    list.innerHTML = html;
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+function openHoerbuchFolder(name){
+  const list = document.getElementById('hoerbuch-folder-list');
+  list.innerHTML = '<div style="color:var(--text3);padding:.5rem">⏳ Lade...</div>';
+  fetch(`${TTS_URL}/tts/hoerbuch/folder/${name}`)
+    .then(r => r.json())
+    .then(data => {
+      let html = `<div style="padding:.35rem 0;margin-bottom:.35rem;border-bottom:1px solid var(--border)">
+        <button class="btn btn-secondary btn-sm" onclick="loadHoerbuchFolders()">
+          <i class="ti ti-arrow-left"></i> Zurück
+        </button>
+        <span style="margin-left:.5rem;font-size:11px;color:var(--text2)">📁 ${name}</span>
+      </div>`;
+      if(!data.dateien || data.dateien.length === 0){
+        html += '<div style="color:var(--text3);padding:.5rem">Ordner ist leer</div>';
+      } else {
+        html += data.dateien.map(f => {
+          const icon = f.name.endsWith('.mp3') ? '🎵' : f.name.endsWith('.m4b') ? '📱' : '🔊';
+          const pid = `hbplayer_${f.name.replace(/[^a-z0-9]/gi,'_')}`;
+          return `
+          <div style="padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <span>${icon}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+                <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB · ${f.datum_str}</div>
+              </div>
+              <button onclick="togglePlayer('${pid}')" class="btn btn-secondary btn-sm">▶</button>
+              <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+              <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+            </div>
+            <audio id="${pid}" controls style="display:none;width:100%;margin-top:.35rem;height:32px">
+              <source src="${TTS_URL}/tts/download/${f.name}">
+            </audio>
+          </div>`;
+        }).join('');
+      }
+      list.innerHTML = html;
+    }).catch(() => { list.innerHTML = '<div style="color:var(--red)">Fehler</div>'; });
+}
+
+async function updateHoerbuchFolderSelect(){
+  const sel = document.getElementById('hoerbuch-folder-select');
+  if(!sel) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folders`);
+    const data = await resp.json();
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Neues Buch anlegen —</option>';
+    (data.ordner || []).forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.name;
+      opt.textContent = `📁 ${o.name} (${o.dateien_anzahl} Dateien)`;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  } catch(e) {}
+}
+
+async function createHoerbuchFolder(){
+  const name = document.getElementById('new-hoerbuch-folder-name').value.trim();
+  if(!name){ addLog('Bitte Ordnername eingeben!','err'); return; }
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folder`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+    document.getElementById('new-hoerbuch-folder-name').value = '';
+    document.getElementById('new-hoerbuch-folder-dialog').style.display = 'none';
+    addLog(`[ORDNER] "${name}" erstellt ✅`, 'ok');
+    loadHoerbuchFolders();
+    updateHoerbuchFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+async function deleteHoerbuchFolder(name){
+  if(!confirm(`Ordner "${name}" und alle Dateien darin löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folder/${name}`, {method:'DELETE'});
+    if(!resp.ok) throw new Error(await resp.text());
+    addLog(`[ORDNER] "${name}" gelöscht`, 'ok');
+    loadHoerbuchFolders();
+    updateHoerbuchFolderSelect();
+  } catch(e) {
+    addLog(`Fehler: ${e.message}`, 'err');
+  }
+}
+
+function showNewHoerbuchFolderDialog(){
+  const d = document.getElementById('new-hoerbuch-folder-dialog');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  if(d.style.display === 'block') document.getElementById('new-hoerbuch-folder-name').focus();
+}
+
+// ── Admin Log ────────────────────────────────────────────────
+let _logRefreshTimer = null;
+
+async function loadAdminLogs(){
+  const win = document.getElementById('admin-log-window');
+  if(!win) return;
+  const filter = document.getElementById('log-level-filter')?.value || '';
+  try {
+    const resp = await fetch(`${TTS_URL}/admin/logs?n=200`);
+    const data = await resp.json();
+    let logs = data.logs;
+    if(filter) logs = logs.filter(l => l.level === filter || 
+      (filter === 'WARNING' && ['WARNING','ERROR'].includes(l.level)) ||
+      (filter === 'INFO' && ['INFO','WARNING','ERROR'].includes(l.level)));
+    
+    const levelColor = {ERROR:'var(--red)', WARNING:'var(--amber)', INFO:'var(--text2)', DEBUG:'var(--text3)'};
+    win.innerHTML = logs.map(l => 
+      `<div style="color:${levelColor[l.level]||'var(--text2)'}">
+        <span style="color:var(--text3)">[${l.zeit}]</span>
+        <span style="color:${levelColor[l.level]||'var(--text2)'}">[${l.level}]</span>
+        ${l.nachricht}
+      </div>`
+    ).join('') || '<div style="color:var(--text3)">Keine Logs vorhanden</div>';
+    win.scrollTop = win.scrollHeight;
+  } catch(e) {
+    win.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+  }
+}
+
+async function clearAdminLogs(){
+  if(!confirm('Alle Logs löschen?')) return;
+  await fetch(`${TTS_URL}/admin/logs`, {method:'DELETE'});
+  loadAdminLogs();
+}
+
+function toggleLogAutoRefresh(){
+  const cb = document.getElementById('log-auto-refresh');
+  if(cb.checked){
+    _logRefreshTimer = setInterval(loadAdminLogs, 5000);
+  } else {
+    clearInterval(_logRefreshTimer);
+    _logRefreshTimer = null;
+  }
+}
+
+</script>
+</body>
+</html>
