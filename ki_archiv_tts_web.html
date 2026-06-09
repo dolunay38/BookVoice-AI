@@ -203,6 +203,23 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 .archiv-row-head{display:flex;align-items:center;gap:.45rem}
 .archiv-row input[type=checkbox]{accent-color:var(--green);width:13px;height:13px;cursor:pointer;flex-shrink:0}
 .mini-player{width:100%;height:28px;margin-top:.35rem;accent-color:var(--green)}
+.archiv-group{margin-bottom:.5rem}
+.archiv-group-head{display:flex;align-items:center;gap:.4rem;padding:.4rem .5rem;background:var(--surface2);border-radius:var(--radius);cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);user-select:none;transition:background .12s}
+.archiv-group-head:hover{background:var(--border)}
+.archiv-group-count{background:var(--green-dim);color:var(--green);font-size:10px;padding:.1rem .45rem;border-radius:99px;font-weight:600}
+.archiv-group-body{padding:0 .25rem}
+.archiv-detail{margin:.25rem 0 .5rem 1.9rem;padding:.5rem .65rem;background:var(--surface2);border-radius:var(--radius);font-size:11px;border-left:2px solid var(--green)}
+.archiv-detail-row{display:flex;justify-content:space-between;gap:1rem;padding:.12rem 0;color:var(--text3)}
+.archiv-detail-row code{color:var(--text2);font-family:var(--mono);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.archiv-sort-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.6rem;flex-wrap:wrap}
+.archiv-sort-btn{padding:.25rem .6rem;border-radius:var(--radius);font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3);transition:all .12s;font-family:var(--sans)}
+.archiv-sort-btn:hover{color:var(--text2);border-color:var(--text3)}
+.archiv-sort-btn.active{background:var(--green-dim);color:var(--green);border-color:var(--green)}
+.sort-arrow{font-size:10px}
+.files-folder{margin-bottom:.3rem}
+.files-folder-head{display:flex;align-items:center;gap:.45rem;padding:.45rem .5rem;background:var(--surface2);border-radius:var(--radius);cursor:pointer;user-select:none;transition:background .12s}
+.files-folder-head:hover{background:var(--border)}
+.files-folder-body{padding:0 .25rem}
 </style>
 </head>
 <body>
@@ -1152,11 +1169,14 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
       <!-- Storage Card -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="cursor:pointer" onclick="toggleStorageCard()">
           <span class="card-title">🗄️ Archiv</span>
-          <button class="btn btn-secondary btn-sm" onclick="loadArchivFolders()"><i class="ti ti-refresh"></i></button>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();loadArchivFolders()"><i class="ti ti-refresh"></i></button>
+            <i class="ti ti-chevron-down" id="archiv-storage-chevron"></i>
+          </div>
         </div>
-        <div>
+        <div id="archiv-storage-body">
           <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:.25rem">
             <span>Speicherbelegung</span>
             <span id="archiv-storage-label" style="font-family:var(--mono)">— MB</span>
@@ -1166,8 +1186,8 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             <div class="storage-seg" id="archiv-bar-transkription" style="background:var(--amber);width:0%"></div>
           </div>
           <div style="display:flex;gap:1.25rem;font-size:10px;color:var(--text3)">
-            <span><span style="color:var(--green)">■</span> Hörbuch: <span id="archiv-sz-hoerbuch">—</span> MB</span>
-            <span><span style="color:var(--amber)">■</span> Transkription: <span id="archiv-sz-transkription">—</span> MB</span>
+            <span><span style="color:var(--green)">■</span> Audio/Video: <span id="archiv-sz-hoerbuch">—</span> MB</span>
+            <span><span style="color:var(--amber)">■</span> Dokumente: <span id="archiv-sz-transkription">—</span> MB</span>
           </div>
         </div>
       </div>
@@ -1176,14 +1196,22 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
       <div class="card">
         <!-- Tabs -->
         <div class="tab-bar">
-          <button class="tab-btn active" id="archiv-tab-hoerbuch" onclick="switchArchivTab('hoerbuch')">🎵 Hörbuch</button>
-          <button class="tab-btn" id="archiv-tab-transkription" onclick="switchArchivTab('transkription')">📄 Transkription</button>
+          <button class="tab-btn active" id="archiv-tab-hoerbuch" onclick="switchArchivTab('hoerbuch')">🎵 Audio/Video</button>
+          <button class="tab-btn" id="archiv-tab-transkription" onclick="switchArchivTab('transkription')">📄 Dokumente</button>
         </div>
 
         <!-- Suche -->
         <div class="search-row">
           <input class="search-input" id="archiv-search" placeholder="Datei suchen..." oninput="filterArchiv()">
           <button class="btn btn-secondary btn-sm" onclick="filterArchiv()"><i class="ti ti-search"></i></button>
+        </div>
+
+        <!-- Sortierung -->
+        <div class="archiv-sort-row">
+          <span style="font-size:10px;color:var(--text3)">Sortieren:</span>
+          <button class="archiv-sort-btn active" id="archiv-sort-datum" onclick="setArchivSort('datum')">Datum <span class="sort-arrow">↓</span></button>
+          <button class="archiv-sort-btn" id="archiv-sort-name" onclick="setArchivSort('name')">Name <span class="sort-arrow"></span></button>
+          <button class="archiv-sort-btn" id="archiv-sort-groesse" onclick="setArchivSort('groesse')">Größe <span class="sort-arrow"></span></button>
         </div>
 
         <!-- Massenauswahl-Toolbar -->
@@ -1301,13 +1329,13 @@ function showPanel(name){
   if(nav) nav.classList.add('active');
   const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',archiv:'🗄️ Archiv',transcribe:'🎙️ Transkription',settings:'Einstellungen',admin:'🔧 Admin Panel'};
   document.getElementById('page-title').textContent = titles[name] || name;
-  if(name==='files') { loadHoerbuchFolders(); updateHoerbuchFolderSelect(); }
+  if(name==='files') { loadHoerbuchFolders(); loadTranscriptionFilesIntoElement('files-transcription-list'); updateHoerbuchFolderSelect(); }
   if(name==='archiv') loadArchivFolders();
   if(name==='studio') updateHoerbuchFolderSelect();
   if(name==='voices') loadVoicesFromServer();
   if(name==='musik'){ loadMusikFromServer(); loadMusikList(); }
   if(name==='covers'){ loadCoversFromServer(); loadCoverAudioSelect(); }
-  if(name==='transcribe') { loadTranscriptionFiles(); updateFolderSelect(); }
+  if(name==='transcribe') { loadTranscriptionFiles(); updateFolderSelect(); _updateDiarizationVisibility(); }
   if(name==='admin') { loadAdminStats(); loadAdminLogs(); }
 }
 
@@ -1620,6 +1648,18 @@ function disconnectGPU(){
   document.getElementById('gpu-connect-btn').style.display = 'block';
   document.getElementById('gpu-disconnect-btn').style.display = 'none';
   addLog('[GPU] Verbindung getrennt', 'warn');
+  _updateDiarizationVisibility();
+}
+
+// Sprecher-Erkennung nur sichtbar wenn GPU-Engine verbunden
+function _updateDiarizationVisibility(){
+  const opt = document.getElementById('diarization-option');
+  if(!opt) return;
+  opt.style.display = gpuConnected ? 'block' : 'none';
+  if(!gpuConnected){
+    const cb = document.getElementById('transcribe-diarize');
+    if(cb) cb.checked = false;
+  }
 }
 
 function togglePresets(){
@@ -1687,6 +1727,8 @@ async function connectGPU(){
     if(data.status === 'ok'){
       gpuUrl = url;
       gpuConnected = true;
+      // Engine-Typ aus URL erkennen (Metadaten fuer Anzeige/Abrechnung)
+      _remoteEngineType = /runpod\.(io|net)|proxy\.runpod/i.test(url) ? 'runpod' : 'colab';
       gpuSessionStart = Date.now();
       // URL speichern
       localStorage.setItem('bookvoice_gpu_url', url);
@@ -1716,6 +1758,7 @@ async function connectGPU(){
       gpuReconnectInterval = setInterval(autoReconnect, 30000);
 
       addLog(`[GPU] Verbunden · ${(data.device||'cuda').toUpperCase()}`, 'ok');
+      _updateDiarizationVisibility();
     }
   } catch(e) {
     status.textContent = '❌ Verbindung fehlgeschlagen!';
@@ -1774,6 +1817,7 @@ async function autoReconnect(){
         document.getElementById('gpu-status').textContent = '✅ Wieder verbunden!';
         document.getElementById('gpu-status').style.color = 'var(--green)';
         addLog('[GPU] Wieder verbunden!', 'ok');
+        _updateDiarizationVisibility();
       }
     } catch(e) {}
   }
@@ -1782,6 +1826,31 @@ async function autoReconnect(){
 function getActiveUrl(){
   if(currentEngine === 'gpu' && gpuUrl) return gpuUrl;
   return TTS_URL;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ZENTRALE ENGINE-ABSTRAKTION (RunPod-ready)
+// ══════════════════════════════════════════════════════════════
+// Alle schweren Operationen (TTS-Synthese, Transkription, Diarization)
+// laufen ueber getComputeUrl(). Dadurch ist die Compute-Quelle
+// austauschbar: lokal (CPU/GPU) / Colab / RunPod — alles nur URLs.
+//
+// Wenn eine Remote-GPU-Engine verbunden ist -> dort. Sonst lokal.
+// Spaeter (Geschaeftsmodell): Pay-per-Use-Zaehler einfach um diese
+// eine Funktion herum, da ALLE GPU-Calls hier durchlaufen.
+//
+// _remoteEngineType: nur Metadaten fuer Anzeige/Abrechnung spaeter.
+//   'colab'  = kostenlose Google GPU (Notebook)
+//   'runpod' = bezahlte GPU (Pod, kein Notebook noetig)
+let _remoteEngineType = 'colab';
+
+function getComputeUrl(){
+  if(gpuConnected && gpuUrl) return gpuUrl;  // Remote GPU (Colab/RunPod)
+  return TTS_URL;                            // Lokal (CPU oder lokale GPU)
+}
+
+function remoteEngineActive(){
+  return !!(gpuConnected && gpuUrl);
 }
 
 function setEngine(engine){
@@ -2585,11 +2654,20 @@ async function startTranscribe(){
   const model = document.getElementById('transcribe-model').value;
   const project = document.getElementById('transcribe-project').value.trim() || file.name.replace(/\.[^.]+$/, '');
   const folder = document.getElementById('transcribe-folder-select')?.value || '';
+  const diarize = !!(document.getElementById('transcribe-diarize')?.checked && gpuConnected);
+  // Transkription laeuft generell auf der GPU-Engine wenn verbunden (schneller),
+  // sonst lokal (CPU). Diarization erfordert zwingend eine GPU-Engine.
+  const transcribeUrl = getComputeUrl();
+  if(diarize && !remoteEngineActive()){
+    addLog('Sprecher-Erkennung benötigt eine GPU-Engine (Colab/RunPod)!','err');
+    return;
+  }
+  const engineLabel = remoteEngineActive() ? `GPU (${_remoteEngineType})` : 'CPU lokal';
 
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Transkribiere...';
   abortBtn.style.display = 'flex';
-  status.textContent = '⏳ Job wird gestartet...';
+  status.textContent = `⏳ Job wird gestartet... · ${engineLabel}`;
   status.style.color = 'var(--amber)';
   document.getElementById('transcribe-result').style.display = 'none';
   document.getElementById('transcribe-srt').value = '';
@@ -2603,9 +2681,10 @@ async function startTranscribe(){
     fd.append('model_size', model);
     fd.append('project_name', project);
     fd.append('folder', folder);
+    fd.append('diarize', diarize ? 'true' : 'false');
 
     // Live-Transkription via SSE
-    const resp = await fetch(`${TTS_URL}/transcribe/stream`, {
+    const resp = await fetch(`${transcribeUrl}/transcribe/stream`, {
       method:'POST', body:fd, signal:_transcribeAbortCtrl.signal
     });
     if(!resp.ok) throw new Error(await resp.text());
@@ -2636,7 +2715,9 @@ async function startTranscribe(){
 
           } else if(data.typ === 'segment'){
             segCount++;
-            textLines.push(data.text);
+            // Sprecher-Label voranstellen falls vorhanden (Diarization)
+            const sprecher = data.sprecher ? `[${data.sprecher}] ` : '';
+            textLines.push(sprecher + data.text);
             srtLines.push(data.srt);
 
             // Panel beim ersten Segment einblenden
@@ -2733,89 +2814,226 @@ function sendToStudio(){
   addLog('[TRANSKRIPT] Text ins Studio übertragen ✅', 'ok');
 }
 
+// ══════════════════════════════════════════════════════
+// Geteiltes Sortier- + Klapp-System (Transkription & Dateien)
+// ══════════════════════════════════════════════════════
+let _listSort = {
+  trans:   {by:'datum', dir:'desc'},
+  filesHb: {by:'datum', dir:'desc'},
+  filesTr: {by:'datum', dir:'desc'}
+};
+let _listData    = {trans:null, filesHb:null, filesTr:null};
+let _folderOpen  = {};   // listKey/name -> true wenn aufgeklappt
+let _folderCache = {};   // listKey/name -> {dateien:[...]}
+
+function _itemSize(x){
+  return x.groesse_mb != null ? x.groesse_mb : (x.groesse_kb != null ? x.groesse_kb/1024 : 0);
+}
+function _sortItems(items, sort){
+  const {by, dir} = sort;
+  const m = dir === 'asc' ? 1 : -1;
+  return [...items].sort((a,b) => {
+    if(by === 'name'){ const av=a.name.toLowerCase(), bv=b.name.toLowerCase(); return av<bv?-m:av>bv?m:0; }
+    if(by === 'groesse') return (_itemSize(a) - _itemSize(b)) * m;
+    return ((a.datum||0) - (b.datum||0)) * m;
+  });
+}
+function _sortBar(k){
+  const s = _listSort[k];
+  const b = (by,l) => {
+    const a = s.by === by;
+    return `<button class="archiv-sort-btn${a?' active':''}" onclick="setListSort('${k}','${by}')">${l} <span class="sort-arrow">${a?(s.dir==='asc'?'↑':'↓'):''}</span></button>`;
+  };
+  return `<div class="archiv-sort-row"><span style="font-size:10px;color:var(--text3)">Sortieren:</span>${b('datum','Datum')}${b('name','Name')}${b('groesse','Größe')}</div>`;
+}
+function setListSort(k, by){
+  const s = _listSort[k];
+  if(s.by === by) s.dir = s.dir === 'asc' ? 'desc' : 'asc';
+  else { s.by = by; s.dir = by === 'name' ? 'asc' : 'desc'; }
+  if(k === 'trans') renderTransList();
+  else if(k === 'filesHb') renderFilesHb();
+  else if(k === 'filesTr') renderFilesTr();
+}
+
+// Klappbarer Ordner-Block (für Dateien-Tab)
+function _folderBlock(listKey, o, type){
+  const key  = listKey + '/' + o.name;
+  const open = !!_folderOpen[key];
+  const size = o.groesse_mb != null ? o.groesse_mb+' MB' : (o.groesse_kb != null ? o.groesse_kb+' KB' : '');
+  const meta = `${o.dateien_anzahl} Dateien${size?' · '+size:''}${o.datum_str?' · '+o.datum_str:''}`;
+  const delFn = type === 'hoerbuch' ? 'deleteHoerbuchFolder' : 'deleteTranscriptionFolder';
+  let body = '';
+  if(open){
+    const cached = _folderCache[key];
+    body = cached ? _renderFolderFiles(cached, o.name, type)
+                  : '<div style="color:var(--text3);padding:.5rem;font-size:11px">⏳ Lade...</div>';
+  }
+  return `<div class="files-folder">
+    <div class="files-folder-head" onclick="toggleListFolder('${listKey}','${o.name}','${type}')">
+      <i class="ti ti-chevron-${open?'down':'right'}" style="font-size:14px"></i>
+      <i class="ti ti-folder" style="color:var(--amber)"></i>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:500;font-size:12px">${o.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${meta}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();${delFn}('${o.name}')"><i class="ti ti-trash"></i></button>
+    </div>
+    <div class="files-folder-body" style="display:${open?'block':'none'}">${body}</div>
+  </div>`;
+}
+
+function _renderFolderFiles(data, folderName, type){
+  const files = data.dateien || [];
+  if(!files.length) return '<div style="color:var(--text3);padding:.5rem;font-size:11px">Ordner ist leer</div>';
+  return files.map(f => {
+    const size = f.groesse_mb != null ? f.groesse_mb+' MB' : (f.groesse_kb != null ? f.groesse_kb+' KB' : '');
+    if(type === 'hoerbuch'){
+      const pid = 'fp_' + (folderName+f.name).replace(/[^a-z0-9]/gi,'_');
+      const icon = f.name.endsWith('.mp3')?'🎵':f.name.endsWith('.m4b')?'📱':'🔊';
+      return `<div style="padding:.35rem .5rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:.4rem">
+          <span>${icon}</span>
+          <div style="flex:1;min-width:0"><div style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+          <div style="font-size:10px;color:var(--text3)">${size}${f.datum_str?' · '+f.datum_str:''}</div></div>
+          <button onclick="togglePlayer('${pid}')" class="btn btn-secondary btn-sm">▶</button>
+          <a href="${TTS_URL}/tts/download/${encodeURIComponent(f.name)}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+          <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+        </div>
+        <audio id="${pid}" controls style="display:none;width:100%;margin-top:.35rem;height:30px"><source src="${TTS_URL}/tts/download/${encodeURIComponent(f.name)}"></audio>
+      </div>`;
+    } else {
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-bottom:1px solid var(--border);font-size:11px">
+        <div style="min-width:0;flex:1"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${size}${f.datum_str?' · '+f.datum_str:''}</div></div>
+        <div style="display:flex;gap:.3rem">
+          <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${encodeURIComponent(folderName)}/${encodeURIComponent(f.name)}')"><i class="ti ti-download"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deleteFolderFile('${folderName}','${f.name}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+    }
+  }).join('');
+}
+
+async function toggleListFolder(listKey, name, type){
+  const key = listKey + '/' + name;
+  _folderOpen[key] = !_folderOpen[key];
+  if(_folderOpen[key] && !_folderCache[key]){
+    const ep = type === 'hoerbuch'
+      ? `/tts/hoerbuch/folder/${encodeURIComponent(name)}`
+      : `/transcribe/folder/${encodeURIComponent(name)}`;
+    try { const r = await fetch(`${TTS_URL}${ep}`); _folderCache[key] = await r.json(); }
+    catch(e){ _folderCache[key] = {dateien:[]}; }
+  }
+  if(listKey === 'filesHb') renderFilesHb();
+  else if(listKey === 'filesTr') renderFilesTr();
+  else if(listKey === 'trans') renderTransList();
+}
+
+function _clearListCache(listKey){
+  Object.keys(_folderCache).forEach(k => { if(k.startsWith(listKey+'/')) delete _folderCache[k]; });
+}
+
+// Offene Ordner ohne Cache nachladen und neu rendern
+function _hydrateOpenFolders(listKey, type){
+  Object.keys(_folderOpen).forEach(key => {
+    if(_folderOpen[key] && key.startsWith(listKey+'/') && !_folderCache[key]){
+      const name = key.slice((listKey+'/').length);
+      const ep = type === 'hoerbuch'
+        ? `/tts/hoerbuch/folder/${encodeURIComponent(name)}`
+        : `/transcribe/folder/${encodeURIComponent(name)}`;
+      fetch(`${TTS_URL}${ep}`).then(r => r.json()).then(d => {
+        _folderCache[key] = d || {dateien:[]};
+        if(listKey === 'filesHb') renderFilesHb();
+        else if(listKey === 'filesTr') renderFilesTr();
+      }).catch(() => { _folderCache[key] = {dateien:[]}; });
+    }
+  });
+}
+
+// ── Bild 3: Transkriptionen im Dateien-Tab ──────────────────
 async function loadTranscriptionFilesIntoElement(elementId){
   const list = document.getElementById(elementId);
   if(!list) return;
   try {
     const resp = await fetch(`${TTS_URL}/transcribe/files`);
-    const data = await resp.json();
-    let html = '';
-    (data.ordner||[]).forEach(o => {
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:.5rem">
-          <i class="ti ti-folder" style="color:var(--amber)"></i>
-          <div><div style="font-weight:500">${o.name}</div><div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien</div></div>
-        </div></div>`;
-    });
-    (data.dateien||[]).forEach(f => {
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
-        <div><div style="font-weight:500">${f.name}</div><div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB</div></div>
-        <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${f.name}')"><i class="ti ti-download"></i></button>
-      </div>`;
-    });
-    if(!html) html = '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
-    list.innerHTML = html;
+    _listData.filesTr = await resp.json();
+    _clearListCache('filesTr');
+    renderFilesTr();
   } catch(e) {
     if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
   }
+}
+
+function renderFilesTr(){
+  const list = document.getElementById('files-transcription-list');
+  if(!list) return;
+  const data    = _listData.filesTr || {};
+  const folders = _sortItems(data.ordner||[],  _listSort.filesTr);
+  const files   = _sortItems(data.dateien||[], _listSort.filesTr);
+  let html = _sortBar('filesTr');
+  folders.forEach(o => { html += _folderBlock('filesTr', o, 'transkription'); });
+  files.forEach(f => {
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem .25rem;border-bottom:1px solid var(--border)">
+      <div style="min-width:0;flex:1"><div style="font-weight:500;font-size:12px">${f.name}</div>
+      <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB${f.datum_str?' · '+f.datum_str:''}</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${encodeURIComponent(f.name)}')"><i class="ti ti-download"></i></button>
+    </div>`;
+  });
+  if(!folders.length && !files.length) html += '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
+  list.innerHTML = html;
+  _hydrateOpenFolders('filesTr','transkription');
 }
 
 async function loadTranscriptionFiles(){
   const list = document.getElementById('transcription-list');
   try {
     const resp = await fetch(`${TTS_URL}/transcribe/files`);
-    const data = await resp.json();
-    let html = '';
-
-    // Dateien nach Datum sortieren (neueste zuerst)
-    if(data.dateien) data.dateien.sort((a,b) => (b.datum||0) - (a.datum||0));
-
-    // Ordner anzeigen
-    if(data.ordner && data.ordner.length > 0){
-      html += data.ordner.map(o => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <i class="ti ti-folder" style="color:var(--amber)"></i>
-            <div>
-              <div style="font-weight:500">${o.name}</div>
-              <div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:.35rem">
-            <button class="btn btn-secondary btn-sm" onclick="openTranscriptionFolder('${o.name}')">
-              <i class="ti ti-folder-open"></i>
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteTranscriptionFolder('${o.name}')">
-              <i class="ti ti-trash"></i>
-            </button>
-          </div>
-        </div>`).join('');
-    }
-
-    // Dateien anzeigen
-    if(data.dateien && data.dateien.length > 0){
-      html += data.dateien.map(f => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
-          <div>
-            <div style="font-weight:500">${f.name}</div>
-            <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB · ${f.datum_str || ''}</div>
-          </div>
-          <div style="display:flex;gap:.35rem">
-            <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${f.name}')">
-              <i class="ti ti-download"></i>
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteTranscription('${f.name}')">
-              <i class="ti ti-trash"></i>
-            </button>
-          </div>
-        </div>`).join('');
-    }
-
-    if(!html) html = '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
-    list.innerHTML = html;
+    _listData.trans = await resp.json();
+    renderTransList();
   } catch(e) {
-    list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
+    if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
   }
+}
+
+function renderTransList(){
+  const list = document.getElementById('transcription-list');
+  if(!list) return;
+  const data    = _listData.trans || {};
+  const folders = _sortItems(data.ordner||[],  _listSort.trans);
+  const files   = _sortItems(data.dateien||[], _listSort.trans);
+  let html = _sortBar('trans');
+
+  folders.forEach(o => {
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-folder" style="color:var(--amber)"></i>
+        <div>
+          <div style="font-weight:500">${o.name}</div>
+          <div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien${o.groesse_kb!=null?' · '+o.groesse_kb+' KB':''}${o.datum_str?' · '+o.datum_str:''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.35rem">
+        <button class="btn btn-secondary btn-sm" onclick="openTranscriptionFolder('${o.name}')"><i class="ti ti-folder-open"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTranscriptionFolder('${o.name}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  });
+
+  files.forEach(f => {
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-weight:500">${f.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${f.groesse_kb} KB · ${f.datum_str || ''}</div>
+      </div>
+      <div style="display:flex;gap:.35rem">
+        <button class="btn btn-secondary btn-sm" onclick="window.open('${TTS_URL}/transcribe/download/${encodeURIComponent(f.name)}')"><i class="ti ti-download"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTranscription('${f.name}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  });
+
+  if(!folders.length && !files.length) html += '<div style="color:var(--text3);padding:.5rem">Keine Transkriptionen vorhanden</div>';
+  list.innerHTML = html;
 }
 
 async function deleteFolderFile(folder, filename){
@@ -2824,7 +3042,13 @@ async function deleteFolderFile(folder, filename){
     const resp = await fetch(`${TTS_URL}/transcribe/files/${folder}/${filename}`, {method:'DELETE'});
     if(!resp.ok) throw new Error(await resp.text());
     addLog(`[ORDNER] "${filename}" gelöscht`, 'ok');
-    openTranscriptionFolder(folder);
+    delete _folderCache['filesTr/'+folder];
+    delete _folderCache['trans/'+folder];
+    // Bild 3 (Dateien-Tab) aktualisieren
+    if(document.getElementById('files-transcription-list')) loadTranscriptionFilesIntoElement('files-transcription-list');
+    // Bild 1 — falls Drill-in offen, neu laden, sonst Liste
+    const tl = document.getElementById('transcription-list');
+    if(tl){ if(tl.innerHTML.includes('Zurück')) openTranscriptionFolder(folder); else loadTranscriptionFiles(); }
   } catch(e) {
     addLog(`Fehler: ${e.message}`, 'err');
   }
@@ -2936,76 +3160,52 @@ async function loadHoerbuchFolders(){
   if(!list) return;
   try {
     const resp = await fetch(`${TTS_URL}/tts/hoerbuch/folders`);
-    const data = await resp.json();
-    let html = '';
-    if(data.ordner && data.ordner.length > 0){
-      html += data.ordner.map(o => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <i class="ti ti-folder" style="color:var(--amber)"></i>
-            <div>
-              <div style="font-weight:500">${o.name}</div>
-              <div style="font-size:10px;color:var(--text3)">${o.dateien_anzahl} Dateien · ${o.groesse_mb} MB · ${o.datum_str}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:.35rem">
-            <button class="btn btn-secondary btn-sm" onclick="openHoerbuchFolder('${o.name}')">
-              <i class="ti ti-folder-open"></i>
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteHoerbuchFolder('${o.name}')">
-              <i class="ti ti-trash"></i>
-            </button>
-          </div>
-        </div>`).join('');
-    }
-    if(!html) html = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Hörbücher vorhanden</div>';
-    const total = (data.ordner||[]).reduce((s,o) => s + o.dateien_anzahl, 0);
-    const statEl = document.getElementById('stat-files');
-    if(statEl) statEl.textContent = total;
-    list.innerHTML = html;
+    _listData.filesHb = await resp.json();
+    _clearListCache('filesHb');
+    renderFilesHb();
   } catch(e) {
     if(list) list.innerHTML = '<div style="color:var(--red)">Fehler beim Laden</div>';
   }
 }
 
-function openHoerbuchFolder(name){
+function renderFilesHb(){
   const list = document.getElementById('hoerbuch-folder-list');
-  list.innerHTML = '<div style="color:var(--text3);padding:.5rem">⏳ Lade...</div>';
-  fetch(`${TTS_URL}/tts/hoerbuch/folder/${name}`)
-    .then(r => r.json())
-    .then(data => {
-      let html = `<div style="padding:.35rem 0;margin-bottom:.35rem;border-bottom:1px solid var(--border)">
-        <button class="btn btn-secondary btn-sm" onclick="loadHoerbuchFolders()">
-          <i class="ti ti-arrow-left"></i> Zurück
-        </button>
-        <span style="margin-left:.5rem;font-size:11px;color:var(--text2)">📁 ${name}</span>
-      </div>`;
-      if(!data.dateien || data.dateien.length === 0){
-        html += '<div style="color:var(--text3);padding:.5rem">Ordner ist leer</div>';
-      } else {
-        html += data.dateien.map(f => {
-          const icon = f.name.endsWith('.mp3') ? '🎵' : f.name.endsWith('.m4b') ? '📱' : '🔊';
-          const pid = `hbplayer_${f.name.replace(/[^a-z0-9]/gi,'_')}`;
-          return `
-          <div style="padding:.4rem 0;border-bottom:1px solid var(--border)">
-            <div style="display:flex;align-items:center;gap:.5rem">
-              <span>${icon}</span>
-              <div style="flex:1;min-width:0">
-                <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
-                <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB · ${f.datum_str}</div>
-              </div>
-              <button onclick="togglePlayer('${pid}')" class="btn btn-secondary btn-sm">▶</button>
-              <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
-              <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
-            </div>
-            <audio id="${pid}" controls style="display:none;width:100%;margin-top:.35rem;height:32px">
-              <source src="${TTS_URL}/tts/download/${f.name}">
-            </audio>
-          </div>`;
-        }).join('');
-      }
-      list.innerHTML = html;
-    }).catch(() => { list.innerHTML = '<div style="color:var(--red)">Fehler</div>'; });
+  if(!list) return;
+  const data    = _listData.filesHb || {};
+  const folders = _sortItems(data.ordner||[],  _listSort.filesHb);
+  const files   = _sortItems(data.dateien||[], _listSort.filesHb);
+  let html = _sortBar('filesHb');
+
+  folders.forEach(o => { html += _folderBlock('filesHb', o, 'hoerbuch'); });
+
+  files.forEach(f => {
+    const pid  = 'hbr_' + f.name.replace(/[^a-z0-9]/gi,'_');
+    const icon = f.name.endsWith('.mp3')?'🎵':f.name.endsWith('.m4b')?'📱':'🔊';
+    html += `<div style="padding:.4rem .25rem;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <span>${icon}</span>
+        <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB${f.datum_str?' · '+f.datum_str:''}</div></div>
+        <button onclick="togglePlayer('${pid}')" class="btn btn-secondary btn-sm">▶</button>
+        <a href="${TTS_URL}/tts/download/${encodeURIComponent(f.name)}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+        <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+      </div>
+      <audio id="${pid}" controls style="display:none;width:100%;margin-top:.35rem;height:30px"><source src="${TTS_URL}/tts/download/${encodeURIComponent(f.name)}"></audio>
+    </div>`;
+  });
+
+  if(!folders.length && !files.length) html += '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Noch keine Hörbücher vorhanden</div>';
+  const total = (data.ordner||[]).reduce((s,o) => s + o.dateien_anzahl, 0) + files.length;
+  const statEl = document.getElementById('stat-files');
+  if(statEl) statEl.textContent = total;
+  list.innerHTML = html;
+  _hydrateOpenFolders('filesHb','hoerbuch');
+}
+
+function openHoerbuchFolder(name){
+  // Veraltet — Hörbuch-Ordner sind jetzt klappbar (siehe _folderBlock/renderFilesHb).
+  // Beibehalten als no-op falls noch irgendwo referenziert.
+  loadHoerbuchFolders();
 }
 
 async function updateHoerbuchFolderSelect(){
@@ -3069,6 +3269,8 @@ function showNewHoerbuchFolderDialog(){
 let _archivData = {hoerbuch:[], transkription:[]};
 let _archivTab  = 'hoerbuch';
 let _renameCtx  = null;
+let _archivSort = {by:'datum', dir:'desc'};
+let _archivCollapsed = {};
 
 async function loadArchivFolders(){
   const list = document.getElementById('archiv-file-list');
@@ -3115,44 +3317,141 @@ function switchArchivTab(tab){
 
 function filterArchiv(){ renderArchivList(); }
 
+// ── Sortierung ───────────────────────────────────────────────
+function setArchivSort(by){
+  if(_archivSort.by === by){
+    _archivSort.dir = _archivSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    _archivSort.by = by;
+    _archivSort.dir = by === 'name' ? 'asc' : 'desc';
+  }
+  // Button-States aktualisieren
+  document.querySelectorAll('.archiv-sort-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('archiv-sort-' + by);
+  if(btn){
+    btn.classList.add('active');
+    const arrow = _archivSort.dir === 'asc' ? '↑' : '↓';
+    document.querySelectorAll('.archiv-sort-btn .sort-arrow').forEach(a => a.textContent = '');
+    const ar = btn.querySelector('.sort-arrow');
+    if(ar) ar.textContent = arrow;
+  }
+  renderArchivList();
+}
+
+function _sortArchivFiles(files){
+  const {by, dir} = _archivSort;
+  const mult = dir === 'asc' ? 1 : -1;
+  return [...files].sort((a,b) => {
+    if(by === 'name'){
+      const av = a.name.toLowerCase(), bv = b.name.toLowerCase();
+      return av < bv ? -mult : av > bv ? mult : 0;
+    }
+    if(by === 'groesse') return (a.groesse_mb - b.groesse_mb) * mult;
+    return (a.datum - b.datum) * mult; // datum (default)
+  });
+}
+
+// ── Datums-Gruppierung ───────────────────────────────────────
+function _getDateGroup(timestamp){
+  const now = new Date();
+  const dayMs = 86400000;
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const weekStart  = todayStart - 6 * dayMs;
+  const ts = timestamp * 1000;
+  if(ts >= todayStart) return 'Heute';
+  if(ts >= weekStart)  return 'Diese Woche';
+  return 'Älter';
+}
+
+function _fileIcon(name){
+  return name.endsWith('.mp3')||name.endsWith('.m4b') ? '🎵'
+       : name.endsWith('.wav') ? '🔊'
+       : name.endsWith('.txt') ? '📄'
+       : name.endsWith('.srt') ? '📋'
+       : /\.(pdf)$/i.test(name) ? '📕'
+       : /\.(epub|mobi)$/i.test(name) ? '📚'
+       : /\.(docx?|odt)$/i.test(name) ? '📝'
+       : /\.(jpg|jpeg|png|webp|tiff?|bmp)$/i.test(name) ? '🖼️'
+       : '📁';
+}
+
 function renderArchivList(){
   const q     = document.getElementById('archiv-search').value.toLowerCase().trim();
-  const files = (_archivData[_archivTab] || []).filter(f => !q || f.name.toLowerCase().includes(q));
+  let   files = (_archivData[_archivTab] || []).filter(f => !q || f.name.toLowerCase().includes(q));
   const list  = document.getElementById('archiv-file-list');
 
   if(!files.length){
-    list.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Keine Dateien vorhanden</div>';
+    list.innerHTML = `<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">
+      <i class="ti ti-folder-off" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.5"></i>
+      ${q ? 'Keine Treffer für "'+q+'"' : 'Keine Dateien vorhanden'}</div>`;
     _updateBulkToolbar();
     return;
   }
 
-  const isAudioFile = name => /\.(mp3|wav|m4b|ogg|flac|m4a|aac|opus)$/i.test(name);
-  const fileIcon    = name => name.endsWith('.mp3')||name.endsWith('.m4b') ? '🎵'
-                            : name.endsWith('.wav') ? '🔊'
-                            : name.endsWith('.txt') ? '📄'
-                            : name.endsWith('.srt') ? '📋' : '📁';
+  files = _sortArchivFiles(files);
 
-  list.innerHTML = files.map((f, i) => {
-    const audio = isAudioFile(f.name);
-    const pid   = 'ap_' + i + '_' + f.name.replace(/[^a-z0-9]/gi,'_');
-    const src   = `${TTS_URL}/archiv/stream/${_archivTab}/${encodeURIComponent(f.name)}`;
-    return `<div class="archiv-row">
-      <div class="archiv-row-head">
-        <input type="checkbox" class="archiv-cb" data-name="${f.name}" onchange="_updateBulkToolbar()">
-        <span style="font-size:15px">${fileIcon(f.name)}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px">${f.name}</div>
-          <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB &middot; ${f.datum_str}</div>
-        </div>
-        ${audio ? `<button onclick="toggleArchivPlayer('${pid}')" class="btn btn-secondary btn-sm" title="Abspielen">▶</button>` : ''}
-        <button onclick="openRenameModal('${_archivTab}','${f.name}')" class="btn btn-secondary btn-sm" title="Umbenennen"><i class="ti ti-pencil"></i></button>
-        <button onclick="deleteSingleArchiv('${_archivTab}','${f.name}')" class="btn btn-danger btn-sm" title="Löschen"><i class="ti ti-trash"></i></button>
+  // In Datums-Gruppen einteilen
+  const groups = {'Heute':[], 'Diese Woche':[], 'Älter':[]};
+  files.forEach(f => groups[_getDateGroup(f.datum)].push(f));
+
+  let html = '';
+  let gidx = 0;
+  for(const groupName of ['Heute','Diese Woche','Älter']){
+    const gf = groups[groupName];
+    if(!gf.length) continue;
+    const collapsed = !!_archivCollapsed[groupName];
+    html += `<div class="archiv-group">
+      <div class="archiv-group-head" onclick="toggleArchivGroup('${groupName}')">
+        <i class="ti ti-chevron-${collapsed ? 'right' : 'down'}" style="font-size:14px"></i>
+        <span style="flex:1">${groupName}</span>
+        <span class="archiv-group-count">${gf.length}</span>
       </div>
-      ${audio ? `<audio class="mini-player" id="${pid}" controls preload="none" style="display:none"><source src="${src}"></audio>` : ''}
-    </div>`;
-  }).join('');
+      <div class="archiv-group-body" style="display:${collapsed ? 'none' : 'block'}">`;
+    gf.forEach(f => { html += renderArchivRow(f, gidx++); });
+    html += `</div></div>`;
+  }
 
+  list.innerHTML = html;
   _updateBulkToolbar();
+}
+
+function renderArchivRow(f, i){
+  const audio = /\.(mp3|wav|m4b|ogg|flac|m4a|aac|opus)$/i.test(f.name);
+  const pid   = 'ap_' + i + '_' + f.name.replace(/[^a-z0-9]/gi,'_');
+  const did   = 'ad_' + i;
+  const src   = `${TTS_URL}/archiv/stream/${_archivTab}/${encodeURIComponent(f.name)}`;
+  return `<div class="archiv-row">
+    <div class="archiv-row-head">
+      <input type="checkbox" class="archiv-cb" data-name="${f.name}" onchange="_updateBulkToolbar()">
+      <span style="font-size:15px">${_fileIcon(f.name)}</span>
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleArchivDetail('${did}')" title="Details anzeigen">
+        <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px">${f.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB &middot; ${f.datum_str}</div>
+      </div>
+      ${audio ? `<button onclick="toggleArchivPlayer('${pid}')" class="btn btn-secondary btn-sm" title="Abspielen">▶</button>` : ''}
+      <button onclick="openRenameModal('${_archivTab}','${f.name}')" class="btn btn-secondary btn-sm" title="Umbenennen"><i class="ti ti-pencil"></i></button>
+      <button onclick="deleteSingleArchiv('${_archivTab}','${f.name}')" class="btn btn-danger btn-sm" title="Löschen"><i class="ti ti-trash"></i></button>
+    </div>
+    <div class="archiv-detail" id="${did}" style="display:none">
+      <div class="archiv-detail-row"><span>Pfad</span><code>ARCHIV/${_archivTab}/${f.name}</code></div>
+      <div class="archiv-detail-row"><span>Größe</span><code>${f.groesse_mb} MB</code></div>
+      <div class="archiv-detail-row"><span>Datum</span><code>${f.datum_str}</code></div>
+      <div class="archiv-detail-row"><span>Typ</span><code>${(f.name.split('.').pop()||'').toUpperCase()}</code></div>
+      <a href="${src}" download="${f.name}" class="btn btn-secondary btn-sm" style="margin-top:.4rem"><i class="ti ti-download"></i> Herunterladen</a>
+    </div>
+    ${audio ? `<audio class="mini-player" id="${pid}" controls preload="none" style="display:none"><source src="${src}"></audio>` : ''}
+  </div>`;
+}
+
+function toggleArchivGroup(name){
+  _archivCollapsed[name] = !_archivCollapsed[name];
+  renderArchivList();
+}
+
+function toggleArchivDetail(did){
+  const el = document.getElementById(did);
+  if(!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 function toggleArchivPlayer(pid){
@@ -3161,6 +3460,15 @@ function toggleArchivPlayer(pid){
   const visible = el.style.display !== 'none';
   document.querySelectorAll('.mini-player').forEach(a => { a.style.display='none'; a.pause(); });
   if(!visible){ el.style.display='block'; el.play().catch(()=>{}); }
+}
+
+function toggleStorageCard(){
+  const body = document.getElementById('archiv-storage-body');
+  const chev = document.getElementById('archiv-storage-chevron');
+  if(!body) return;
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? 'block' : 'none';
+  if(chev) chev.className = 'ti ti-chevron-' + (hidden ? 'down' : 'right');
 }
 
 function toggleSelectAllArchiv(checked){

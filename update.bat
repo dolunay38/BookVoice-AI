@@ -1,77 +1,57 @@
 @echo off
-title BookVoice-AI Update
-color 0A
+REM ============================================================
+REM BookVoice-AI — Update
+REM Holt die neueste Version von GitHub und baut neu auf.
+REM
+REM CPU-User:  Doppelklick auf diese Datei
+REM GPU-User:  setze unten USE_GPU=1
+REM ============================================================
+
+REM --- GPU? (0 = CPU Standard, 1 = lokale NVIDIA-GPU) ---
+set USE_GPU=0
 
 echo.
-echo ==========================================
-echo  BookVoice-AI - Auto Update
-echo  github.com/dolunay38/BookVoice-AI
-echo ==========================================
+echo ============================================
+echo   BookVoice-AI Update
+echo ============================================
 echo.
 
-set INSTALL_DIR=%USERPROFILE%\BookVoice-AI
-set GITHUB=https://raw.githubusercontent.com/dolunay38/BookVoice-AI/main
-
-REM Docker pruefen
-echo [1/4] Pruefe Docker...
-docker ps > nul 2>&1
-if %errorlevel% neq 0 (
-    echo Docker laeuft nicht - starte Docker Desktop...
-    start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-    timeout /t 30 /nobreak > nul
-    docker ps > nul 2>&1
-    if %errorlevel% neq 0 (
-        echo FEHLER: Docker konnte nicht gestartet werden!
-        pause
-        exit /b 1
-    )
-)
-echo OK: Docker laeuft!
-
-REM Neue Dateien laden
-echo.
-echo [2/4] Lade neue Dateien von GitHub...
-curl -s -o "%INSTALL_DIR%\compose.yaml" "%GITHUB%/compose.yaml"
-curl -s -o "%INSTALL_DIR%\tts_server.py" "%GITHUB%/tts_server.py"
-curl -s -o "%INSTALL_DIR%\ki_archiv_tts_web.html" "%GITHUB%/ki_archiv_tts_web.html"
-curl -s -o "%INSTALL_DIR%\nginx-bookvoice.conf" "%GITHUB%/nginx-bookvoice.conf"
-curl -s -o "%INSTALL_DIR%\Dockerfile.tts" "%GITHUB%/Dockerfile.tts"
-echo OK: Dateien aktualisiert!
-
-REM Container neu starten
-echo.
-echo [3/4] Starte Container neu...
-cd /d "%INSTALL_DIR%"
-docker compose down > nul 2>&1
-docker compose up -d --build
-
-if %errorlevel% neq 0 (
-    echo FEHLER: Container konnten nicht gestartet werden!
+echo [1/3] Hole neueste Version von GitHub...
+git pull
+if errorlevel 1 (
+    echo FEHLER: git pull fehlgeschlagen. Aenderungen vorher committen oder stashen.
     pause
     exit /b 1
 )
-echo OK: Container gestartet!
 
-REM Warten
 echo.
-echo [4/4] Warte auf Server...
-set COUNTER=0
-:WAIT
-set /a COUNTER+=1
-if %COUNTER% gtr 60 goto DONE
-curl -s http://localhost:7502 > nul 2>&1
-if %errorlevel% neq 0 (
-    timeout /t 5 /nobreak > nul
-    echo Warte... (%COUNTER%/60)
-    goto WAIT
+echo [2/3] Baue Container neu auf (--build holt neue Pakete)...
+if "%USE_GPU%"=="1" (
+    echo    GPU-Modus: compose.gpu.yaml
+    docker compose -f compose.gpu.yaml up -d --build
+) else (
+    echo    CPU-Modus: compose.yaml
+    docker compose up -d --build
 )
 
-:DONE
 echo.
-echo ==========================================
-echo  Update erfolgreich!
-echo  Browser: http://localhost:7502
-echo ==========================================
+echo [3/3] Status:
+docker ps --filter "name=bookvoice" --format "table {{.Names}}\t{{.Status}}"
+
 echo.
-start http://localhost:7502
+echo ============================================
+echo   Update fertig! Browser: http://localhost:7502
+echo ============================================
+echo.
+echo Hinweis: Wenn neue Pakete dazukamen und etwas fehlt,
+echo          fuehre einmalig einen sauberen Rebuild aus:
+echo.
+if "%USE_GPU%"=="1" (
+    echo    docker compose -f compose.gpu.yaml build --no-cache
+    echo    docker compose -f compose.gpu.yaml up -d
+) else (
+    echo    docker compose build --no-cache
+    echo    docker compose up -d
+)
+echo.
 pause

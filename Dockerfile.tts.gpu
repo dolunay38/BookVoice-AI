@@ -1,0 +1,86 @@
+# ============================================================
+# BookVoice-AI — GPU-Variante (CUDA)
+# Fuer User MIT lokaler NVIDIA-GPU (VRAM).
+# Standard-User nehmen weiterhin Dockerfile.tts (CPU).
+#
+# Voraussetzung auf dem Host:
+#   - NVIDIA-Treiber
+#   - nvidia-container-toolkit
+#   - Start ueber compose.gpu.yaml (gpus: all)
+#
+# Diarization (pyannote) ist hier installiert, wird aber nur
+# aktiv wenn HF_TOKEN gesetzt ist (siehe ENV unten).
+# ============================================================
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+
+WORKDIR /app
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Python 3.11 + System-Tools
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-venv \
+    python3.11-distutils \
+    python3-pip \
+    ffmpeg \
+    libsndfile1 \
+    calibre \
+    tesseract-ocr \
+    tesseract-ocr-tur \
+    tesseract-ocr-deu \
+    tesseract-ocr-eng \
+    tesseract-ocr-ara \
+    poppler-utils \
+    libgl1 \
+    libglib2.0-0 \
+    libreoffice \
+    antiword \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python3 && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python
+
+# PyTorch MIT CUDA 11.8 (GPU wird zur Laufzeit erkannt)
+RUN pip install --no-cache-dir \
+    torch==2.1.0+cu118 \
+    torchaudio==2.1.0+cu118 \
+    --index-url https://download.pytorch.org/whl/cu118
+
+# TTS + API + OCR + eBook + Edge TTS (identisch zur CPU-Variante)
+RUN pip install --no-cache-dir \
+    transformers==4.40.0 \
+    TTS \
+    fastapi \
+    uvicorn \
+    pydantic \
+    python-multipart \
+    pytesseract \
+    pdf2image \
+    PyPDF2 \
+    pillow \
+    ebooklib \
+    edge-tts \
+    python-docx \
+    openpyxl \
+    python-pptx \
+    xlrd \
+    faster-whisper \
+    httpx
+
+# Diarization (pyannote) — nur sinnvoll auf GPU.
+# Aktiviert sich im Code nur wenn HF_TOKEN gesetzt + CUDA vorhanden.
+RUN pip install --no-cache-dir \
+    pyannote.audio==3.1.1
+
+COPY tts_server.py /app/tts_server.py
+
+EXPOSE 7500
+ENV COQUI_TOS_AGREED=1
+ENV DEVICE=auto
+# HF_TOKEN leer lassen = Diarization aus. Zum Aktivieren in compose.gpu.yaml setzen.
+ENV HF_TOKEN=""
+
+CMD ["uvicorn", "tts_server:app", "--host", "0.0.0.0", "--port", "7500"]

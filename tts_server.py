@@ -24,8 +24,25 @@ EINGABE_DIR = Path("/app/EINGABE")
 EINGABE_DIR.mkdir(parents=True, exist_ok=True)
 ARCHIV_DIR = Path("/app/ARCHIV")
 ARCHIV_DIR.mkdir(parents=True, exist_ok=True)
-(ARCHIV_DIR / "hoerbuch").mkdir(exist_ok=True)
-(ARCHIV_DIR / "transkription").mkdir(exist_ok=True)
+
+# Archiv-Routing nach Dateityp
+AUDIO_VIDEO_EXT = {
+    ".mp3", ".wav", ".ogg", ".m4a", ".aac", ".opus", ".flac", ".wma",
+    ".mp4", ".mkv", ".webm", ".mov", ".avi", ".m4b"
+}
+
+def archiv_subfolder_for(filename: str) -> str:
+    """Audio/Video -> hoerbuch, alles andere (Text/PDF/Bild/Doc) -> transkription"""
+    ext = Path(filename).suffix.lower()
+    return "hoerbuch" if ext in AUDIO_VIDEO_EXT else "transkription"
+
+def archiviere_quelle(src_path: Path, filename: str):
+    """Original-Datei in den passenden Archiv-Unterordner kopieren"""
+    sub = archiv_subfolder_for(filename)
+    ziel_dir = ARCHIV_DIR / sub
+    ziel_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src_path, ziel_dir / filename)
+
 # Dynamischer Modell-Pfad — funktioniert auf Docker und Colab
 _possible_model_dirs = [
     Path("/app/tts_models/tts_models--multilingual--multi-dataset--xtts_v2"),
@@ -47,7 +64,7 @@ DEFAULT_SPEAKER_WAV = str(next((p for p in _possible_stimme if p.exists()), _pos
 
 # CPU/GPU Auto-Detect
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"🖥️ Device: {DEVICE.upper()}")
+print(f"[INFO] Device: {DEVICE.upper()}")
 
 AUDIO_FORMATS = {".wav", ".mp3", ".m4a", ".ogg", ".flac", ".aac", ".weba", ".opus"}
 VIDEO_FORMATS = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".webm"}
@@ -64,23 +81,23 @@ _cached_latents = {}
 def ensure_model():
     """Stellt sicher dass XTTS-v2 Modell vorhanden ist"""
     if not MODEL_DIR.exists() or not (MODEL_DIR / "config.json").exists():
-        print("🔄 XTTS-v2 Modell wird heruntergeladen (~1.8 GB)...")
-        print("   Bitte warten — dies dauert beim ersten Start einige Minuten!")
+        print("XTTS-v2 Modell wird heruntergeladen (~1.8 GB)...")
+        print("   Bitte warten - dies dauert beim ersten Start einige Minuten!")
         try:
             from TTS.api import TTS as TTSDownloader
             TTSDownloader("tts_models/multilingual/multi-dataset/xtts_v2")
-            print("✅ Modell erfolgreich heruntergeladen!")
+            print("[OK] Modell erfolgreich heruntergeladen!")
         except Exception as e:
-            print(f"❌ Modell-Download fehlgeschlagen: {e}")
+            print(f"[FEHLER] Modell-Download fehlgeschlagen: {e}")
     else:
-        print("✅ XTTS-v2 Modell bereits vorhanden!")
+        print("[OK] XTTS-v2 Modell bereits vorhanden!")
 
 # ── Standard-Stimme erstellen falls keine vorhanden ───────────
 def ensure_default_voice():
     """Erstellt eine Standard-Stimme falls keine vorhanden"""
     voice_path = Path(DEFAULT_SPEAKER_WAV)
     if not voice_path.exists():
-        print("🎙️ Erstelle Standard-Stimme...")
+        print("[INFO] Erstelle Standard-Stimme...")
         try:
             import numpy as np
             sample_rate = 22050
@@ -90,12 +107,12 @@ def ensure_default_voice():
             audio = np.sin(2 * np.pi * 200 * t) * 0.3
             audio_tensor = torch.tensor(audio, dtype=torch.float32).unsqueeze(0)
             torchaudio.save(str(voice_path), audio_tensor, sample_rate)
-            print("✅ Standard-Stimme erstellt!")
-            print("⚠️  Bitte eigene Stimme hochladen für beste Qualität!")
+            print("[OK] Standard-Stimme erstellt!")
+            print("[WARNUNG] Bitte eigene Stimme hochladen für beste Qualität!")
         except Exception as e:
-            print(f"⚠️  Standard-Stimme konnte nicht erstellt werden: {e}")
+            print(f"[WARNUNG] Standard-Stimme konnte nicht erstellt werden: {e}")
     else:
-        print("✅ Stimme vorhanden!")
+        print("[OK] Stimme vorhanden!")
 
 # Beim Start ausführen
 ensure_model()
@@ -105,7 +122,7 @@ def load_model():
     global tts_engine
     if tts_engine is not None:
         return
-    print("🔊 Lade XTTS-v2 Modell...")
+    print("Lade XTTS-v2 Modell...")
     from TTS.tts.configs.xtts_config import XttsConfig
     from TTS.tts.models.xtts import Xtts
     config = XttsConfig()
@@ -114,7 +131,7 @@ def load_model():
     tts_engine.load_checkpoint(config, checkpoint_dir=str(MODEL_DIR), eval=True)
     if DEVICE == "cuda":
         tts_engine = tts_engine.cuda()
-    print(f"✅ XTTS-v2 bereit! [{DEVICE.upper()}]")
+    print(f"[OK] XTTS-v2 bereit! [{DEVICE.upper()}]")
 
 app = FastAPI(title="BookVoice-AI Server", version="1.0")
 app.add_middleware(
@@ -605,6 +622,10 @@ async def process_ebook(
         shutil.copyfileobj(file.file, f)
 
     chapters = extract_text_from_ebook(tmp_path)
+
+    # Original-Datei archivieren bevor sie geloescht wird
+    archiviere_quelle(tmp_path, file.filename)
+
     tmp_path.unlink(missing_ok=True)
 
     req = ChapterRequest(
@@ -696,64 +717,6 @@ def delete_file(filename: str):
         f.unlink()
         return {"status": "ok", "geloescht": filename}
     raise HTTPException(status_code=404, detail="Datei nicht gefunden")
-
-@app.get("/tts/hoerbuch/folders")
-def list_hoerbuch_folders():
-    import datetime
-    ordner = []
-    for d in sorted(OUTPUT_DIR.iterdir()):
-        if not d.is_dir():
-            continue
-        dateien = [f for ext in ["*.wav", "*.mp3", "*.m4b"] for f in d.glob(ext) if not f.name.startswith("_")]
-        groesse = sum(f.stat().st_size for f in dateien)
-        mtime = max((f.stat().st_mtime for f in dateien), default=d.stat().st_mtime)
-        ordner.append({
-            "name": d.name,
-            "dateien_anzahl": len(dateien),
-            "groesse_mb": round(groesse / 1024 / 1024, 2),
-            "datum": mtime,
-            "datum_str": datetime.datetime.fromtimestamp(mtime).strftime("%d.%m.%Y %H:%M")
-        })
-    ordner.sort(key=lambda x: x["datum"], reverse=True)
-    return {"ordner": ordner, "anzahl": len(ordner)}
-
-@app.get("/tts/hoerbuch/folder/{folder_name}")
-def get_hoerbuch_folder(folder_name: str):
-    import datetime
-    folder = OUTPUT_DIR / folder_name
-    if not folder.exists() or not folder.is_dir():
-        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
-    dateien = []
-    for ext in ["*.wav", "*.mp3", "*.m4b"]:
-        for f in folder.glob(ext):
-            if not f.name.startswith("_"):
-                dateien.append({
-                    "name": f.name,
-                    "pfad": f"{folder_name}/{f.name}",
-                    "groesse_mb": round(f.stat().st_size / 1024 / 1024, 2),
-                    "datum": f.stat().st_mtime,
-                    "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
-                })
-    dateien.sort(key=lambda x: x["name"])
-    return {"ordner": folder_name, "dateien": dateien}
-
-@app.post("/tts/hoerbuch/folder")
-async def create_hoerbuch_folder(data: dict):
-    name = data.get("name", "").strip()
-    if not name:
-        raise HTTPException(status_code=400, detail="Kein Ordnername angegeben")
-    name = re.sub(r'[^\w\-_]', '_', name)
-    folder = OUTPUT_DIR / name
-    folder.mkdir(parents=True, exist_ok=True)
-    return {"status": "ok", "ordner": name}
-
-@app.delete("/tts/hoerbuch/folder/{folder_name}")
-def delete_hoerbuch_folder(folder_name: str):
-    folder = OUTPUT_DIR / folder_name
-    if not folder.exists() or not folder.is_dir():
-        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
-    shutil.rmtree(folder)
-    return {"status": "ok", "geloescht": folder_name}
 
 @app.post("/tts/upload-cover")
 async def upload_cover(file: UploadFile = File(...), book_name: str = "hoerbuch"):
@@ -1562,6 +1525,7 @@ def _run_transcribe_job(job_id, content, suffix, filename, language, model_size,
         full_text = "\n".join(text_parts)
         srt_text = "\n".join(srt_parts)
 
+        base_name = project_name.strip() if project_name.strip() else Path(filename).stem
         base_name = re.sub(r'[^\w\-_]', '_', base_name)
         if folder.strip():
             folder_clean = re.sub(r'[^\w\-_]', '_', folder.strip())
@@ -1574,7 +1538,7 @@ def _run_transcribe_job(job_id, content, suffix, filename, language, model_size,
         (save_dir / f"{base_name}.srt").write_text(srt_text, encoding="utf-8")
 
         if archive:
-            shutil.copy2(tmp_path, ARCHIV_DIR / tmp_path.name)
+            archiviere_quelle(tmp_path, filename)
 
         with _transcribe_jobs_lock:
             _transcribe_jobs[job_id].update({
@@ -1611,9 +1575,12 @@ async def transcribe_stream(
     language: str = Form("auto"),
     model_size: str = Form("small"),
     project_name: str = Form(""),
-    folder: str = Form("")
+    folder: str = Form(""),
+    diarize: str = Form("false")
 ):
-    """Live-Transkription mit Server-Sent Events — Satz für Satz"""
+    """Live-Transkription mit Server-Sent Events — Satz für Satz.
+    diarize: Sprecher-Erkennung. Nur auf Remote-GPU-Engine (Colab/RunPod) verfuegbar,
+    da lokal kein VRAM. Lokal wird der Parameter ignoriert (siehe DIARIZATION-Block)."""
     content = await file.read()
     suffix = Path(file.filename).suffix.lower()
     filename = file.filename
@@ -1652,6 +1619,13 @@ async def transcribe_stream(
             import json
             yield f"data: {json.dumps({'typ': 'info', 'sprache': info.language, 'modell': model_size})}\n\n"
 
+            # Diarization (nur wenn angefragt UND GPU+Token verfuegbar)
+            diar_turns = []
+            want_diarize = str(diarize).lower() == "true"
+            if want_diarize and diarization_enabled():
+                yield f"data: {json.dumps({'typ': 'info', 'sprache': info.language, 'modell': model_size, 'diarize': 'laeuft'})}\n\n"
+                diar_turns = diarize_audio(wav_path)
+
             # Live streamen UND sammeln für Merge
             raw_segments = []
             all_text_live = []
@@ -1662,12 +1636,17 @@ async def transcribe_stream(
                 raw_segments.append(seg)
                 seg_num_live += 1
                 text = seg.text.strip()
+                sprecher = sprecher_fuer_segment(seg.start, seg.end, diar_turns) if diar_turns else None
                 start = f"{int(seg.start//3600):02d}:{int((seg.start%3600)//60):02d}:{seg.start%60:06.3f}".replace(".", ",")
                 end = f"{int(seg.end//3600):02d}:{int((seg.end%3600)//60):02d}:{seg.end%60:06.3f}".replace(".", ",")
-                srt_zeile = f"{seg_num_live}\n{start} --> {end}\n{text}"
+                prefix = f"[{sprecher}] " if sprecher else ""
+                srt_zeile = f"{seg_num_live}\n{start} --> {end}\n{prefix}{text}"
                 all_text_live.append(text)
                 all_srt_live.append(srt_zeile)
-                yield f"data: {json.dumps({'typ': 'segment', 'nr': seg_num_live, 'text': text, 'start': start, 'end': end, 'srt': srt_zeile})}\n\n"
+                seg_payload = {'typ': 'segment', 'nr': seg_num_live, 'text': text, 'start': start, 'end': end, 'srt': srt_zeile}
+                if sprecher:
+                    seg_payload['sprecher'] = sprecher
+                yield f"data: {json.dumps(seg_payload)}\n\n"
 
             # Nach dem Stream: Segmente mergen für Speicherung
             merged = merge_short_segments(raw_segments, min_words=5)
@@ -1692,6 +1671,12 @@ async def transcribe_stream(
 
             (save_dir / f"{base_name}.txt").write_text(full_text, encoding="utf-8")
             (save_dir / f"{base_name}.srt").write_text(srt_text, encoding="utf-8")
+
+            # Original-Quelldatei archivieren
+            try:
+                archiviere_quelle(tmp_path, filename)
+            except Exception:
+                pass
 
             yield f"data: {json.dumps({'typ': 'fertig', 'woerter': len(full_text.split()), 'txt_datei': f'{base_name}.txt', 'srt_datei': f'{base_name}.srt', 'text': full_text, 'srt': srt_text})}\n\n"
 
@@ -1793,8 +1778,7 @@ async def transcribe_audio(
 
         # Archivieren
         if archive:
-            archiv_path = ARCHIV_DIR / tmp_path.name
-            shutil.copy2(tmp_path, archiv_path)
+            archiviere_quelle(tmp_path, file.filename)
 
         return {
             "status": "ok",
@@ -1825,10 +1809,15 @@ def list_transcriptions():
     ordner = []
     for f in TRANSCRIPTION_DIR.iterdir():
         if f.is_dir():
+            inner = [x for x in f.glob("*") if x.suffix in [".txt", ".srt"]]
+            groesse = sum(x.stat().st_size for x in inner)
             ordner.append({
                 "name": f.name,
                 "typ": "ordner",
-                "dateien_anzahl": len(list(f.glob("*.txt"))) + len(list(f.glob("*.srt")))
+                "dateien_anzahl": len(inner),
+                "groesse_kb": round(groesse / 1024, 1),
+                "datum": f.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
             })
         elif f.suffix in [".txt", ".srt"]:
             files.append({
@@ -1905,8 +1894,167 @@ def delete_transcription_folder(folder_name: str):
     return {"status": "ok", "geloescht": folder_name}
 
 # ════════════════════════════════════════════════════════════════
-# Archiv Endpoints
+# DIARIZATION (Sprecher-Erkennung)
 # ════════════════════════════════════════════════════════════════
+# Laeuft NUR auf GPU + mit HuggingFace-Token + installiertem pyannote.
+# Auf dem lokalen CPU-Server ist diarization_enabled() == False ->
+# kein Import, kein Crash, normale Transkription ohne Sprecher.
+#
+# Aktivierung (GPU-Image / Colab):
+#   1. pip install pyannote.audio
+#   2. HF_TOKEN env setzen (https://huggingface.co/settings/tokens)
+#   3. Lizenz akzeptieren: huggingface.co/pyannote/speaker-diarization-3.1
+# ════════════════════════════════════════════════════════════════
+
+HF_TOKEN = os.environ.get("HF_TOKEN", "").strip()
+_diarize_pipeline = None
+
+def remote_engine_url() -> str:
+    """Konfigurierte Remote-GPU-Engine URL (Colab/RunPod), sonst ''."""
+    try:
+        with open("/tmp/colab_url.txt", "r") as f:
+            return f.read().strip()
+    except Exception:
+        return ""
+
+def diarization_enabled() -> bool:
+    """True nur wenn CUDA + HF_TOKEN + pyannote installiert."""
+    if not HF_TOKEN:
+        return False
+    if not torch.cuda.is_available():
+        return False
+    try:
+        import pyannote.audio  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+def _get_diarize_pipeline():
+    global _diarize_pipeline
+    if _diarize_pipeline is None:
+        from pyannote.audio import Pipeline
+        _diarize_pipeline = Pipeline.from_pretrained(
+            "pyannote/speaker-diarization-3.1",
+            use_auth_token=HF_TOKEN
+        )
+        if torch.cuda.is_available():
+            _diarize_pipeline.to(torch.device("cuda"))
+    return _diarize_pipeline
+
+def diarize_audio(wav_path):
+    """Liefert [(start, end, 'Sprecher N'), ...] oder [] bei Fehler."""
+    try:
+        pipeline = _get_diarize_pipeline()
+        diar = pipeline(str(wav_path))
+        sprecher_map, naechste = {}, [1]
+        turns = []
+        for turn, _, raw in diar.itertracks(yield_label=True):
+            if raw not in sprecher_map:
+                sprecher_map[raw] = f"Sprecher {naechste[0]}"
+                naechste[0] += 1
+            turns.append((turn.start, turn.end, sprecher_map[raw]))
+        return turns
+    except Exception as e:
+        print(f"[DIARIZE] Fehler: {e}")
+        return []
+
+def sprecher_fuer_segment(seg_start, seg_end, turns):
+    """Dominanten Sprecher fuer ein Whisper-Segment finden (max. Ueberlappung)."""
+    if not turns:
+        return None
+    best, best_overlap = None, 0.0
+    for (d_start, d_end, sprecher) in turns:
+        overlap = min(seg_end, d_end) - max(seg_start, d_start)
+        if overlap > best_overlap:
+            best_overlap, best = overlap, sprecher
+    return best
+
+@app.get("/transcribe/diarize/status")
+def diarize_status():
+    """Frontend fragt ab, ob Sprecher-Erkennung moeglich ist."""
+    local_gpu = diarization_enabled()
+    return {
+        "verfuegbar": local_gpu,
+        "engine": "local-gpu" if local_gpu else "none",
+        "cuda": torch.cuda.is_available(),
+        "hf_token": bool(HF_TOKEN),
+        "hinweis": "GPU + Token bereit." if local_gpu
+                   else "Sprecher-Erkennung benoetigt CUDA-GPU + HF_TOKEN + pyannote."
+    }
+
+# ════════════════════════════════════════════════════════════════
+# Hörbuch Ordner-Struktur
+# ════════════════════════════════════════════════════════════════
+@app.get("/tts/hoerbuch/folders")
+def list_hoerbuch_folders():
+    import datetime
+    folders = []
+    files_root = []
+    for item in OUTPUT_DIR.iterdir():
+        if item.is_dir():
+            audio_files = []
+            for ext in ["*.mp3", "*.wav", "*.m4b"]:
+                audio_files.extend(item.glob(ext))
+            audio_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+            folders.append({
+                "name": item.name,
+                "dateien_anzahl": len(audio_files),
+                "groesse_mb": round(sum(f.stat().st_size for f in audio_files) / 1024 / 1024, 2),
+                "datum": item.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(item.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+            })
+        elif item.suffix in [".mp3", ".wav", ".m4b"] and not item.name.startswith("_"):
+            files_root.append({
+                "name": item.name,
+                "groesse_mb": round(item.stat().st_size / 1024 / 1024, 2),
+                "datum": item.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(item.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+            })
+    folders.sort(key=lambda x: x["datum"], reverse=True)
+    files_root.sort(key=lambda x: x["datum"], reverse=True)
+    return {"ordner": folders, "dateien": files_root}
+
+@app.get("/tts/hoerbuch/folder/{folder_name}")
+def get_hoerbuch_folder(folder_name: str):
+    import datetime
+    folder = OUTPUT_DIR / folder_name
+    if not folder.exists() or not folder.is_dir():
+        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    files = []
+    for ext in ["*.mp3", "*.wav", "*.m4b"]:
+        for f in folder.glob(ext):
+            files.append({
+                "name": f.name,
+                "pfad": f"{folder_name}/{f.name}",
+                "groesse_mb": round(f.stat().st_size / 1024 / 1024, 2),
+                "datum": f.stat().st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%d.%m.%Y %H:%M")
+            })
+    files.sort(key=lambda x: x["datum"], reverse=True)
+    return {"ordner": folder_name, "dateien": files}
+
+@app.post("/tts/hoerbuch/folder")
+async def create_hoerbuch_folder(data: dict):
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Kein Ordnername")
+    name = re.sub(r'[^\w\-_]', '_', name)
+    folder = OUTPUT_DIR / name
+    folder.mkdir(parents=True, exist_ok=True)
+    return {"status": "ok", "ordner": name}
+
+@app.delete("/tts/hoerbuch/folder/{folder_name}")
+def delete_hoerbuch_folder(folder_name: str):
+    folder = OUTPUT_DIR / folder_name
+    if not folder.exists() or not folder.is_dir():
+        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    shutil.rmtree(folder)
+    return {"status": "ok", "geloescht": folder_name}
+
+# Archiv Endpoints (Gemini)
+# ════════════════════════════════════════════════════════════════
+(ARCHIV_DIR / "hoerbuch").mkdir(exist_ok=True)
+(ARCHIV_DIR / "transkription").mkdir(exist_ok=True)
 
 @app.get("/archiv/folders")
 def list_archiv_folders():
@@ -1927,22 +2075,6 @@ def list_archiv_folders():
         } for f in files]
     return {"ordner": result}
 
-@app.patch("/archiv/rename")
-async def rename_archiv_file(data: dict):
-    subfolder = data.get("subfolder", "")
-    old_name  = data.get("old_name", "").strip()
-    new_name  = re.sub(r'[^\w\-_.]', '_', data.get("new_name", "").strip())
-    if not old_name or not new_name or subfolder not in ["hoerbuch", "transkription"]:
-        raise HTTPException(status_code=400, detail="Ungültige Eingabe")
-    old_path = ARCHIV_DIR / subfolder / old_name
-    new_path = ARCHIV_DIR / subfolder / new_name
-    if not old_path.exists():
-        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
-    if new_path.exists():
-        raise HTTPException(status_code=409, detail="Name bereits vergeben")
-    old_path.rename(new_path)
-    return {"status": "ok", "neu": new_name}
-
 @app.delete("/archiv/files/{subfolder}/{filename}")
 def delete_archiv_file(subfolder: str, filename: str):
     if subfolder not in ["hoerbuch", "transkription"]:
@@ -1951,21 +2083,29 @@ def delete_archiv_file(subfolder: str, filename: str):
     if not path.exists():
         raise HTTPException(status_code=404, detail="Datei nicht gefunden")
     path.unlink()
-    return {"status": "ok", "geloescht": filename}
+    return {"status": "ok"}
+
+@app.patch("/archiv/rename")
+async def rename_archiv_file(data: dict):
+    subfolder = data.get("subfolder", "")
+    old_name  = data.get("old_name", "").strip()
+    new_name  = re.sub(r'[^\w\-_.]', '_', data.get("new_name", "").strip())
+    old_path = ARCHIV_DIR / subfolder / old_name
+    new_path = ARCHIV_DIR / subfolder / new_name
+    if not old_path.exists():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    old_path.rename(new_path)
+    return {"status": "ok", "neu": new_name}
 
 @app.get("/archiv/stream/{subfolder}/{filename}")
 def stream_archiv_file(subfolder: str, filename: str):
-    if subfolder not in ["hoerbuch", "transkription"]:
-        raise HTTPException(status_code=400, detail="Ungültiger Ordner")
     path = ARCHIV_DIR / subfolder / filename
     if not path.exists():
         raise HTTPException(status_code=404, detail="Datei nicht gefunden")
-    media_map = {".mp3": "audio/mpeg", ".m4b": "audio/mp4", ".wav": "audio/wav",
-                 ".ogg": "audio/ogg", ".flac": "audio/flac", ".m4a": "audio/mp4"}
+    media_map = {".mp3": "audio/mpeg", ".wav": "audio/wav", ".m4a": "audio/mp4"}
     media_type = media_map.get(Path(filename).suffix.lower(), "application/octet-stream")
     return FileResponse(path, media_type=media_type, filename=filename)
 
-# ════════════════════════════════════════════════════════════════
 # Admin Logging
 # ════════════════════════════════════════════════════════════════
 import logging as _logging
