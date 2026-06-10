@@ -26,7 +26,7 @@
   --mono:'JetBrains Mono',monospace;
   --sans:'Inter',sans-serif;
   --radius:8px;
-  --radius-lg:12px;
+  --radius-lg:12px;--zebra:rgba(255,255,255,0.03);
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px}
 
@@ -38,7 +38,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .sb-logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#000;font-weight:700;font-size:14px;margin-bottom:.75rem;flex-shrink:0}
 .sb-item{width:38px;height:38px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;transition:all .15s;position:relative}
 .sb-item:hover{background:var(--surface2);color:var(--text2)}
-.sb-item.active{background:var(--green-dim);color:var(--green)}
+.sb-item.active{background:var(--green-dim);color:var(--green);box-shadow:inset 2px 0 0 var(--green)}
 .sb-item i{font-size:18px}
 .sb-tooltip{position:absolute;left:48px;background:#1e1e1e;border:1px solid var(--border2);color:var(--text);font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100}
 .sb-item:hover .sb-tooltip{opacity:1}
@@ -65,7 +65,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 @media(max-width:900px){.two-col{grid-template-columns:1fr}}
 
 /* ── Cards ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.25rem}
 .card:last-child{margin-bottom:0}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
 .card-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
@@ -237,6 +237,20 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 .files-folder-head{display:flex;align-items:center;gap:.45rem;padding:.45rem .5rem;background:var(--surface2);border-radius:var(--radius);cursor:pointer;user-select:none;transition:background .12s}
 .files-folder-head:hover{background:var(--border)}
 .files-folder-body{padding:0 .25rem}
+body.light-mode{--bg:#f5f5f5;--surface:#ffffff;--surface2:#f0f0f0;--border:#e0e0e0;--border2:#d5d5d5;--text:#111111;--text2:#555555;--text3:#888888;--green:#1a7a3a;--green-dim:rgba(26,122,58,0.1);--green-glow:rgba(26,122,58,0.25);--amber:#b45309;--zebra:rgba(0,0,0,0.03)}
+#temp-val,#rep-val,#topk-val,#speed-val{background:var(--green-dim);color:var(--green);padding:2px 8px;border-radius:20px;font-size:12px;font-weight:500;display:inline-block}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.archiv-row:nth-child(even),.file-card:nth-child(even){background:var(--zebra)}
+#app-modal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:1rem}
+#app-modal .am-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:420px;width:100%;padding:1.5rem}
+#app-toasts{position:fixed;top:1rem;right:1rem;z-index:10000;display:flex;flex-direction:column;gap:8px}
+body.light-mode{--text2:#4a4a4a;--text3:#707070}
+body.light-mode .sb-tooltip{color:#fff}
+body.light-mode .log-box{background:#1a1a1a;color:#d8d8d8}
+body.light-mode .btn-primary{color:#fff}
+.skel{background:var(--surface2);border-radius:6px;animation:skelPulse 1.2s ease-in-out infinite}
+@keyframes skelPulse{0%,100%{opacity:.45}50%{opacity:.85}}
 </style>
 </head>
 <body>
@@ -312,6 +326,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
         <button onclick="setLang('de')" id="lang-de" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇩🇪</button>
         <button onclick="setLang('tr')" id="lang-tr" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇹🇷</button>
         <button onclick="setLang('en')" id="lang-en" class="btn btn-sm" style="padding:2px 7px;font-size:13px">🇬🇧</button>
+        <button onclick="toggleTheme()" id="theme-toggle" class="btn btn-sm" style="padding:2px 7px;font-size:13px" aria-label="Hell/Dunkel umschalten"><i class="ti ti-sun" id="theme-toggle-ic"></i></button>
       </div>
       <div class="server-info">
         <span id="server-status-text">Verbinde…</span>
@@ -1296,6 +1311,7 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           <button class="btn btn-secondary btn-sm" onclick="loadMediaCategory(_mediaActive)"><i class="ti ti-refresh"></i></button>
         </div>
         <div id="media-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem"></div>
+        <input id="media-filter" type="text" oninput="renderMediaList(_mediaActive)" placeholder="Dateien filtern…" style="width:100%;margin-bottom:.6rem">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;padding:0 2px">
           <div id="media-count" style="font-size:12px;color:var(--text2)"></div>
           <div style="display:flex;align-items:center;gap:.4rem">
@@ -1433,6 +1449,7 @@ function renderMediaPills(){
 function setMediaCategory(id){
   _mediaActive = id;
   renderMediaPills();
+  const _f = document.getElementById('media-filter'); if(_f) _f.value = '';
   loadMediaCategory(id);
 }
 
@@ -1440,7 +1457,7 @@ async function loadMediaCategory(cat){
   const list = document.getElementById('media-list');
   const count = document.getElementById('media-count');
   if(!list) return;
-  list.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div>';
+  list.innerHTML = _mediaSkeleton();
   try {
     const resp = await fetch(`${TTS_URL}/files/${cat}`);
     const data = await resp.json();
@@ -1457,6 +1474,12 @@ async function loadMediaCategory(cat){
   }
 }
 
+function _mediaSkeleton(){
+  return ['60%','45%','70%','50%','65%'].map(function(x){
+    return '<div style="display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border)"><div class="skel" style="width:34px;height:34px;border-radius:8px"></div><div style="flex:1"><div class="skel" style="height:11px;width:'+x+';margin-bottom:6px"></div><div class="skel" style="height:9px;width:28%"></div></div></div>';
+  }).join('');
+}
+
 function renderMediaList(cat){
   const reg = MEDIA_REGISTRY.find(r=>r.id===cat) || {icon:'ti-file', kind:'text'};
   const list = document.getElementById('media-list');
@@ -1464,7 +1487,9 @@ function renderMediaList(cat){
     list.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Keine Dateien</div>';
     return;
   }
-  list.innerHTML = _mediaData.map((f, i) => {
+  const _term = ((document.getElementById('media-filter')||{}).value || '').toLowerCase();
+  const _ml = _mediaData.map((f, i) => {
+    if(_term && f.relpath.toLowerCase().indexOf(_term) === -1) return '';
     const enc = _encPath(f.relpath);
     const playBtn = reg.kind === 'audio'
       ? `<button class="btn btn-secondary btn-sm" title="Abspielen" onclick="mediaPlay('${cat}',${i})"><i class="ti ti-player-play"></i></button>`
@@ -1482,7 +1507,8 @@ function renderMediaList(cat){
         <button class="btn btn-danger btn-sm" title="Löschen" onclick="mediaDelete('${cat}',${i})"><i class="ti ti-trash"></i></button>
       </div>
     </div>`;
-  }).join('') + `<audio id="media-audio" controls style="display:none;width:100%;margin-top:.75rem"></audio>`;
+  }).join('');
+  list.innerHTML = (_ml.trim() ? _ml : '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Keine Treffer</div>') + '<audio id="media-audio" controls style="display:none;width:100%;margin-top:.75rem"></audio>';
 }
 
 function mediaPlay(cat, i){
@@ -1496,7 +1522,7 @@ function mediaPlay(cat, i){
 async function mediaRename(cat, i){
   const f = _mediaData[i]; if(!f) return;
   const cur = f.relpath.split('/').pop();
-  const neu = prompt('Neuer Name:', cur);
+  const neu = await showModal({ title:'Umbenennen', icon:'ti-edit', message:'Neuer Name für "' + cur + '"', prompt:true, default:cur, okText:'Umbenennen', cancelText:'Abbrechen' });
   if(!neu || neu === cur) return;
   try {
     const resp = await fetch(`${TTS_URL}/files/rename`, {
@@ -1506,20 +1532,104 @@ async function mediaRename(cat, i){
     const data = await resp.json();
     if(!resp.ok) throw new Error(data.detail || 'Fehler');
     addLog(`[MEDIATHEK] Umbenannt: ${cur} → ${data.neu}`, 'ok');
+    showToast('Umbenannt: ' + data.neu, 'ok');
     loadMediaCategory(cat);
   } catch(e){ addLog('[MEDIATHEK] Fehler: ' + e.message, 'err'); }
 }
 
 async function mediaDelete(cat, i){
   const f = _mediaData[i]; if(!f) return;
-  if(!confirm(`"${f.relpath}" wirklich löschen?`)) return;
+  const ok = await showModal({ title:'Löschen', icon:'ti-trash', iconColor:'var(--red)', message:'"' + f.relpath + '" wirklich löschen?', okText:'Löschen', cancelText:'Abbrechen' });
+  if(!ok) return;
   try {
     const resp = await fetch(`${TTS_URL}/files/${cat}/${_encPath(f.relpath)}`, { method:'DELETE' });
     const data = await resp.json();
     if(!resp.ok) throw new Error(data.detail || 'Fehler');
     addLog(`[MEDIATHEK] Gelöscht: ${f.relpath}`, 'ok');
+    showToast('Gelöscht', 'ok');
     loadMediaCategory(cat);
   } catch(e){ addLog('[MEDIATHEK] Fehler: ' + e.message, 'err'); }
+}
+
+// ── Toast + Modal + Theme + Validierung (Batch 1) ─
+function showToast(msg, type){
+  const wrap = document.getElementById('app-toasts'); if(!wrap) return;
+  const col = { ok:'var(--green)', err:'var(--red)', info:'var(--text2)' }[type] || 'var(--text2)';
+  const t = document.createElement('div');
+  t.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-left:3px solid '+col+';color:var(--text);font-size:13px;padding:10px 14px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);opacity:0;transform:translateX(10px);transition:opacity .2s,transform .2s;max-width:300px';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  requestAnimationFrame(function(){ t.style.opacity='1'; t.style.transform='translateX(0)'; });
+  setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateX(10px)'; setTimeout(function(){ t.remove(); }, 250); }, 3000);
+}
+
+function showModal(opts){
+  opts = opts || {};
+  return new Promise(function(resolve){
+    const m = document.getElementById('app-modal');
+    const icon = document.getElementById('app-modal-icon');
+    const title = document.getElementById('app-modal-title');
+    const msg = document.getElementById('app-modal-msg');
+    const ok = document.getElementById('app-modal-ok');
+    const cancel = document.getElementById('app-modal-cancel');
+    const input = document.getElementById('app-modal-input');
+    icon.className = 'ti ' + (opts.icon || 'ti-info-circle');
+    icon.style.color = opts.iconColor || 'var(--amber)';
+    title.textContent = opts.title || '';
+    msg.textContent = opts.message || '';
+    ok.textContent = opts.okText || 'OK';
+    if(opts.cancelText){ cancel.style.display=''; cancel.textContent = opts.cancelText; } else { cancel.style.display='none'; }
+    if(opts.prompt){ input.style.display=''; input.value = opts.default || ''; } else { input.style.display='none'; }
+    m.style.display = 'flex';
+    function close(val){ m.style.display='none'; ok.onclick=null; cancel.onclick=null; resolve(val); }
+    ok.onclick = function(){ close(opts.prompt ? input.value : true); };
+    cancel.onclick = function(){ close(opts.prompt ? null : false); };
+    if(opts.prompt){ setTimeout(function(){ input.focus(); }, 50); }
+  });
+}
+
+function toggleTheme(){
+  const light = document.body.classList.toggle('light-mode');
+  const ic = document.getElementById('theme-toggle-ic');
+  if(ic) ic.className = 'ti ' + (light ? 'ti-moon' : 'ti-sun');
+  try { localStorage.setItem('bv-theme', light ? 'light' : 'dark'); } catch(e){}
+}
+(function(){
+  try {
+    const saved = localStorage.getItem('bv-theme');
+    const useLight = saved ? (saved === 'light') : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+    if(useLight){
+      document.body.classList.add('light-mode');
+      const ic = document.getElementById('theme-toggle-ic');
+      if(ic) ic.className = 'ti ti-moon';
+    }
+  } catch(e){}
+})();
+
+function requireTranscribeTarget(){
+  const pe = document.getElementById('transcribe-project');
+  const fe = document.getElementById('transcribe-folder-select');
+  const proj = (pe ? pe.value : '').trim();
+  const folder = (fe ? fe.value : '') || '';
+  const fehlt = [];
+  if(!proj) fehlt.push('einen Projektnamen');
+  if(!folder) fehlt.push('einen Ordner');
+  if(fehlt.length){
+    showModal({ title:'Angaben fehlen', icon:'ti-alert-triangle', message:'Bitte vergib ' + fehlt.join(' und ') + ', bevor du transkribierst — sonst landet alles ungeordnet im Hauptverzeichnis.', okText:'Verstanden' });
+    return false;
+  }
+  return true;
+}
+
+function resetTranscribeUpload(){
+  const btn = document.getElementById('transcribe-btn');
+  if(btn) btn._file = null;
+  const drop = document.getElementById('transcribe-drop');
+  if(drop) drop.innerHTML = '<i class="ti ti-upload" style="font-size:1.75rem;color:var(--text3)"></i><div style="font-size:12px;color:var(--text2);margin-top:.35rem">MP3, WAV, M4A, OGG, MP4, MKV hochladen</div>';
+  const proj = document.getElementById('transcribe-project');
+  if(proj) proj.value = '';
+  const fi = document.getElementById('transcribe-file');
+  if(fi) fi.value = '';
 }
 
 // ── Char Count ──────────────────────────────────
@@ -2807,6 +2917,7 @@ async function importYoutube(){
   const url = document.getElementById('youtube-url').value.trim();
   if(!url){ addLog('Bitte eine URL einfügen!','err'); return; }
   const ziel = _getImportZiel();
+  if(ziel === 'transcribe' && !requireTranscribeTarget()) return;
   const btn = document.getElementById('youtube-btn');
   const status = document.getElementById('transcribe-status');
   btn.disabled = true;
@@ -2950,6 +3061,7 @@ async function startTranscribe(){
 
   const file = btn._file;
   if(!file){ addLog('Bitte zuerst eine Datei hochladen!','err'); return; }
+  if(!requireTranscribeTarget()) return;
 
   const lang = document.getElementById('transcribe-lang').value;
   const model = document.getElementById('transcribe-model').value;
@@ -3032,6 +3144,8 @@ async function startTranscribe(){
             addLog(`[TRANSKRIPT] ${data.woerter} Wörter · ${segCount} Sätze · Modell: ${model}`, 'ok');
             loadTranscriptionFiles();
             updateFolderSelect();
+            resetTranscribeUpload();
+            showToast('Transkription fertig — ' + data.woerter + ' Wörter', 'ok');
 
           } else if(data.typ === 'fehler'){
             throw new Error(data.nachricht);
@@ -3939,5 +4053,18 @@ function toggleLogAutoRefresh(){
 }
 
 </script>
+<div id="app-modal"><div class="am-box">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem">
+    <i id="app-modal-icon" class="ti ti-alert-triangle" style="font-size:22px;color:var(--amber)"></i>
+    <div id="app-modal-title" style="font-size:15px;font-weight:600;color:var(--text)"></div>
+  </div>
+  <div id="app-modal-msg" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:1.25rem"></div>
+  <input id="app-modal-input" type="text" style="display:none;width:100%;margin-bottom:1rem">
+  <div style="display:flex;gap:.5rem;justify-content:flex-end">
+    <button id="app-modal-cancel" class="btn btn-secondary" style="display:none"></button>
+    <button id="app-modal-ok" class="btn btn-primary"></button>
+  </div>
+</div></div>
+<div id="app-toasts"></div>
 </body>
 </html>
