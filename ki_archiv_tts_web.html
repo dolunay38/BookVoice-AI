@@ -834,38 +834,42 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
     <!-- ══ Dateien ══ -->
     <div class="panel" id="panel-files">
       <div class="card">
-        <div class="card-header">
-          <span class="card-title">📚 Fertige Hörbücher</span>
+        <div class="card-header" style="cursor:pointer" onclick="toggleFilesSection('hb')">
+          <span class="card-title"><i class="ti ti-chevron-right" id="files-hb-chevron"></i> 📚 Fertige Hörbücher</span>
           <div style="display:flex;gap:.35rem">
-            <button class="btn btn-secondary btn-sm" onclick="showNewHoerbuchFolderDialog()" title="Neuer Ordner">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();showNewHoerbuchFolderDialog()" title="Neuer Ordner">
               <i class="ti ti-folder-plus"></i>
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="loadHoerbuchFolders()">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();loadHoerbuchFolders()">
               <i class="ti ti-refresh"></i>
             </button>
           </div>
         </div>
-        <div id="new-hoerbuch-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
-          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
-          <div style="display:flex;gap:.5rem">
-            <input type="text" id="new-hoerbuch-folder-name" placeholder="z.B. roman_2026" style="flex:1">
-            <button class="btn btn-primary btn-sm" onclick="createHoerbuchFolder()">Erstellen</button>
-            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('new-hoerbuch-folder-dialog').style.display='none'">✕</button>
+        <div id="files-hb-body" style="display:none">
+          <div id="new-hoerbuch-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
+            <div style="display:flex;gap:.5rem">
+              <input type="text" id="new-hoerbuch-folder-name" placeholder="z.B. roman_2026" style="flex:1">
+              <button class="btn btn-primary btn-sm" onclick="createHoerbuchFolder()">Erstellen</button>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('new-hoerbuch-folder-dialog').style.display='none'">✕</button>
+            </div>
           </div>
+          <div id="hoerbuch-folder-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div></div>
         </div>
-        <div id="hoerbuch-folder-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div></div>
       </div>
 
       <!-- Transkriptionen im Dateien-Tab -->
       <div class="card">
-        <div class="card-header">
-          <span class="card-title">📄 Transkriptionen</span>
-          <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFilesIntoElement('files-transcription-list')">
+        <div class="card-header" style="cursor:pointer" onclick="toggleFilesSection('tr')">
+          <span class="card-title"><i class="ti ti-chevron-right" id="files-tr-chevron"></i> 📄 Transkriptionen</span>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();loadTranscriptionFilesIntoElement('files-transcription-list')">
             <i class="ti ti-refresh"></i>
           </button>
         </div>
-        <div id="files-transcription-list" style="font-size:12px;color:var(--text2)">
-          <div style="color:var(--text3);padding:.5rem">Klick Aktualisieren zum Laden</div>
+        <div id="files-tr-body" style="display:none">
+          <div id="files-transcription-list" style="font-size:12px;color:var(--text2)">
+            <div style="color:var(--text3);padding:.5rem">Klick Aktualisieren zum Laden</div>
+          </div>
         </div>
       </div>
     </div>
@@ -3154,6 +3158,16 @@ async function createTranscriptionFolder(){
 
 
 // ── Hörbuch Ordner ───────────────────────────────────────────
+
+// Hauptbereiche im Dateien-Tab auf-/zuklappen (Standard: zu)
+function toggleFilesSection(which){
+  const body = document.getElementById(which === 'hb' ? 'files-hb-body' : 'files-tr-body');
+  const chev = document.getElementById(which === 'hb' ? 'files-hb-chevron' : 'files-tr-chevron');
+  if(!body) return;
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? 'block' : 'none';
+  if(chev) chev.className = 'ti ti-chevron-' + (hidden ? 'down' : 'right');
+}
 
 async function loadHoerbuchFolders(){
   const list = document.getElementById('hoerbuch-folder-list');
