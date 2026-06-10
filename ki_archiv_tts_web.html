@@ -834,42 +834,38 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
     <!-- ══ Dateien ══ -->
     <div class="panel" id="panel-files">
       <div class="card">
-        <div class="card-header" style="cursor:pointer" onclick="toggleFilesSection('hb')">
-          <span class="card-title"><i class="ti ti-chevron-right" id="files-hb-chevron"></i> 📚 Fertige Hörbücher</span>
+        <div class="card-header">
+          <span class="card-title">📚 Fertige Hörbücher</span>
           <div style="display:flex;gap:.35rem">
-            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();showNewHoerbuchFolderDialog()" title="Neuer Ordner">
+            <button class="btn btn-secondary btn-sm" onclick="showNewHoerbuchFolderDialog()" title="Neuer Ordner">
               <i class="ti ti-folder-plus"></i>
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();loadHoerbuchFolders()">
+            <button class="btn btn-secondary btn-sm" onclick="loadHoerbuchFolders()">
               <i class="ti ti-refresh"></i>
             </button>
           </div>
         </div>
-        <div id="files-hb-body" style="display:none">
-          <div id="new-hoerbuch-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
-            <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
-            <div style="display:flex;gap:.5rem">
-              <input type="text" id="new-hoerbuch-folder-name" placeholder="z.B. roman_2026" style="flex:1">
-              <button class="btn btn-primary btn-sm" onclick="createHoerbuchFolder()">Erstellen</button>
-              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('new-hoerbuch-folder-dialog').style.display='none'">✕</button>
-            </div>
+        <div id="new-hoerbuch-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" id="new-hoerbuch-folder-name" placeholder="z.B. roman_2026" style="flex:1">
+            <button class="btn btn-primary btn-sm" onclick="createHoerbuchFolder()">Erstellen</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('new-hoerbuch-folder-dialog').style.display='none'">✕</button>
           </div>
-          <div id="hoerbuch-folder-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div></div>
         </div>
+        <div id="hoerbuch-folder-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div></div>
       </div>
 
       <!-- Transkriptionen im Dateien-Tab -->
       <div class="card">
-        <div class="card-header" style="cursor:pointer" onclick="toggleFilesSection('tr')">
-          <span class="card-title"><i class="ti ti-chevron-right" id="files-tr-chevron"></i> 📄 Transkriptionen</span>
-          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();loadTranscriptionFilesIntoElement('files-transcription-list')">
+        <div class="card-header">
+          <span class="card-title">📄 Transkriptionen</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFilesIntoElement('files-transcription-list')">
             <i class="ti ti-refresh"></i>
           </button>
         </div>
-        <div id="files-tr-body" style="display:none">
-          <div id="files-transcription-list" style="font-size:12px;color:var(--text2)">
-            <div style="color:var(--text3);padding:.5rem">Klick Aktualisieren zum Laden</div>
-          </div>
+        <div id="files-transcription-list" style="font-size:12px;color:var(--text2)">
+          <div style="color:var(--text3);padding:.5rem">Klick Aktualisieren zum Laden</div>
         </div>
       </div>
     </div>
@@ -1038,6 +1034,30 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
             </div>
             <input type="file" id="transcribe-file" accept=".mp3,.wav,.m4a,.ogg,.mp4,.mkv,.webm"
                    style="display:none" onchange="handleTranscribeUpload(this)">
+          </div>
+
+          <!-- Import: YouTube / Mikrofon -->
+          <div style="margin-bottom:.75rem;padding:.6rem;background:var(--surface2);border-radius:8px">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.45rem;font-weight:600">🌐 URL-Import &middot; 🎤 Mikrofon</div>
+            <!-- Ziel-Auswahl -->
+            <div style="display:flex;gap:.6rem;margin-bottom:.55rem;font-size:11px">
+              <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer">
+                <input type="radio" name="import-ziel" value="transcribe" checked> Transkribieren
+              </label>
+              <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer">
+                <input type="radio" name="import-ziel" value="voice"> Als Stimme speichern
+              </label>
+            </div>
+            <!-- YouTube / URL -->
+            <div style="display:flex;gap:.4rem;margin-bottom:.5rem">
+              <input type="text" id="youtube-url" placeholder="YouTube- oder Audio-URL einfügen..." style="flex:1">
+              <button class="btn btn-secondary btn-sm" id="youtube-btn" onclick="importYoutube()"><i class="ti ti-download"></i> Import</button>
+            </div>
+            <!-- Mikrofon -->
+            <div style="display:flex;gap:.4rem;align-items:center">
+              <button class="btn btn-secondary btn-sm" id="mic-btn" onclick="toggleMicRecording()"><i class="ti ti-microphone"></i> Aufnehmen</button>
+              <span id="mic-status" style="font-size:11px;color:var(--text3)"></span>
+            </div>
           </div>
 
           <!-- Optionen -->
@@ -1333,13 +1353,13 @@ function showPanel(name){
   if(nav) nav.classList.add('active');
   const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',archiv:'🗄️ Archiv',transcribe:'🎙️ Transkription',settings:'Einstellungen',admin:'🔧 Admin Panel'};
   document.getElementById('page-title').textContent = titles[name] || name;
-  if(name==='files') { loadHoerbuchFolders(); loadTranscriptionFilesIntoElement('files-transcription-list'); updateHoerbuchFolderSelect(); }
+  if(name==='files') { loadHoerbuchFolders(); updateHoerbuchFolderSelect(); }
   if(name==='archiv') loadArchivFolders();
   if(name==='studio') updateHoerbuchFolderSelect();
   if(name==='voices') loadVoicesFromServer();
   if(name==='musik'){ loadMusikFromServer(); loadMusikList(); }
   if(name==='covers'){ loadCoversFromServer(); loadCoverAudioSelect(); }
-  if(name==='transcribe') { loadTranscriptionFiles(); updateFolderSelect(); _updateDiarizationVisibility(); }
+  if(name==='transcribe') { loadTranscriptionFiles(); updateFolderSelect(); }
   if(name==='admin') { loadAdminStats(); loadAdminLogs(); }
 }
 
@@ -1652,18 +1672,6 @@ function disconnectGPU(){
   document.getElementById('gpu-connect-btn').style.display = 'block';
   document.getElementById('gpu-disconnect-btn').style.display = 'none';
   addLog('[GPU] Verbindung getrennt', 'warn');
-  _updateDiarizationVisibility();
-}
-
-// Sprecher-Erkennung nur sichtbar wenn GPU-Engine verbunden
-function _updateDiarizationVisibility(){
-  const opt = document.getElementById('diarization-option');
-  if(!opt) return;
-  opt.style.display = gpuConnected ? 'block' : 'none';
-  if(!gpuConnected){
-    const cb = document.getElementById('transcribe-diarize');
-    if(cb) cb.checked = false;
-  }
 }
 
 function togglePresets(){
@@ -1731,8 +1739,6 @@ async function connectGPU(){
     if(data.status === 'ok'){
       gpuUrl = url;
       gpuConnected = true;
-      // Engine-Typ aus URL erkennen (Metadaten fuer Anzeige/Abrechnung)
-      _remoteEngineType = /runpod\.(io|net)|proxy\.runpod/i.test(url) ? 'runpod' : 'colab';
       gpuSessionStart = Date.now();
       // URL speichern
       localStorage.setItem('bookvoice_gpu_url', url);
@@ -1762,7 +1768,6 @@ async function connectGPU(){
       gpuReconnectInterval = setInterval(autoReconnect, 30000);
 
       addLog(`[GPU] Verbunden · ${(data.device||'cuda').toUpperCase()}`, 'ok');
-      _updateDiarizationVisibility();
     }
   } catch(e) {
     status.textContent = '❌ Verbindung fehlgeschlagen!';
@@ -1821,7 +1826,6 @@ async function autoReconnect(){
         document.getElementById('gpu-status').textContent = '✅ Wieder verbunden!';
         document.getElementById('gpu-status').style.color = 'var(--green)';
         addLog('[GPU] Wieder verbunden!', 'ok');
-        _updateDiarizationVisibility();
       }
     } catch(e) {}
   }
@@ -1830,31 +1834,6 @@ async function autoReconnect(){
 function getActiveUrl(){
   if(currentEngine === 'gpu' && gpuUrl) return gpuUrl;
   return TTS_URL;
-}
-
-// ══════════════════════════════════════════════════════════════
-// ZENTRALE ENGINE-ABSTRAKTION (RunPod-ready)
-// ══════════════════════════════════════════════════════════════
-// Alle schweren Operationen (TTS-Synthese, Transkription, Diarization)
-// laufen ueber getComputeUrl(). Dadurch ist die Compute-Quelle
-// austauschbar: lokal (CPU/GPU) / Colab / RunPod — alles nur URLs.
-//
-// Wenn eine Remote-GPU-Engine verbunden ist -> dort. Sonst lokal.
-// Spaeter (Geschaeftsmodell): Pay-per-Use-Zaehler einfach um diese
-// eine Funktion herum, da ALLE GPU-Calls hier durchlaufen.
-//
-// _remoteEngineType: nur Metadaten fuer Anzeige/Abrechnung spaeter.
-//   'colab'  = kostenlose Google GPU (Notebook)
-//   'runpod' = bezahlte GPU (Pod, kein Notebook noetig)
-let _remoteEngineType = 'colab';
-
-function getComputeUrl(){
-  if(gpuConnected && gpuUrl) return gpuUrl;  // Remote GPU (Colab/RunPod)
-  return TTS_URL;                            // Lokal (CPU oder lokale GPU)
-}
-
-function remoteEngineActive(){
-  return !!(gpuConnected && gpuUrl);
 }
 
 function setEngine(engine){
@@ -2644,6 +2623,144 @@ function abortTranscribe(){
   addLog('[TRANSKRIPT] Abgebrochen', 'err');
 }
 
+// ── Import-Ziel lesen (transcribe | voice) ──────────────────
+function _getImportZiel(){
+  const r = document.querySelector('input[name="import-ziel"]:checked');
+  return r ? r.value : 'transcribe';
+}
+
+// ── YouTube / URL Import ────────────────────────────────────
+async function importYoutube(){
+  const url = document.getElementById('youtube-url').value.trim();
+  if(!url){ addLog('Bitte eine URL einfügen!','err'); return; }
+  const ziel = _getImportZiel();
+  const btn = document.getElementById('youtube-btn');
+  const status = document.getElementById('transcribe-status');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Lädt...';
+  status.style.color = 'var(--amber)';
+  status.textContent = ziel === 'voice' ? '⏳ Lade Audio für Stimme...' : '⏳ Lade & transkribiere...';
+  addLog(`[YOUTUBE] Import (${ziel}): ${url}`, 'info');
+
+  try {
+    const fd = new FormData();
+    fd.append('url', url);
+    fd.append('ziel', ziel);
+    fd.append('language', document.getElementById('transcribe-lang').value);
+    fd.append('model_size', document.getElementById('transcribe-model').value);
+    fd.append('project_name', document.getElementById('transcribe-project').value.trim());
+    fd.append('folder', document.getElementById('transcribe-folder-select')?.value || '');
+    // Transkription auf GPU-Engine wenn verbunden, Stimme lokal
+    const importUrl = ziel === 'voice' ? TTS_URL : getComputeUrl();
+    const resp = await fetch(`${importUrl}/import/youtube`, { method:'POST', body:fd });
+    const data = await resp.json();
+    if(!resp.ok){ throw new Error(data.detail || 'Fehler'); }
+
+    if(ziel === 'voice'){
+      status.style.color = 'var(--green)';
+      status.textContent = `✅ Stimme gespeichert: ${data.datei}`;
+      addLog(`[YOUTUBE] Stimme gespeichert: ${data.datei}`, 'ok');
+      if(typeof loadVoicesFromServer === 'function') loadVoicesFromServer();
+    } else {
+      document.getElementById('transcribe-result').style.display = 'block';
+      document.getElementById('transcribe-text').value = data.text || '';
+      document.getElementById('transcribe-srt').value = data.srt || '';
+      _lastTranscribeBase = (data.txt_datei || 'transkript').replace(/\.txt$/, '');
+      status.style.color = 'var(--green)';
+      status.textContent = `✅ Fertig: ${data.woerter} Wörter · ${data.titel || ''}`;
+      addLog(`[YOUTUBE] Transkribiert: ${data.titel || ''}`, 'ok');
+      loadTranscriptionFiles();
+    }
+    document.getElementById('youtube-url').value = '';
+  } catch(e){
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ ' + e.message;
+    addLog('[YOUTUBE] Fehler: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-download"></i> Import';
+  }
+}
+
+// ── Mikrofon-Aufnahme ───────────────────────────────────────
+let _mediaRecorder = null;
+let _micChunks = [];
+let _micStream = null;
+
+async function toggleMicRecording(){
+  const btn = document.getElementById('mic-btn');
+  const status = document.getElementById('mic-status');
+
+  // Läuft gerade → stoppen
+  if(_mediaRecorder && _mediaRecorder.state === 'recording'){
+    _mediaRecorder.stop();
+    return;
+  }
+
+  // Aufnahme starten
+  try {
+    _micStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+  } catch(e){
+    addLog('[MIKROFON] Kein Zugriff: ' + e.message, 'err');
+    status.textContent = '❌ Kein Mikrofon-Zugriff';
+    return;
+  }
+  _micChunks = [];
+  _mediaRecorder = new MediaRecorder(_micStream);
+  _mediaRecorder.ondataavailable = e => { if(e.data.size > 0) _micChunks.push(e.data); };
+  _mediaRecorder.onstop = () => {
+    if(_micStream){ _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+    const blob = new Blob(_micChunks, { type:'audio/webm' });
+    _processMicRecording(blob);
+    btn.innerHTML = '<i class="ti ti-microphone"></i> Aufnehmen';
+    btn.className = 'btn btn-secondary btn-sm';
+  };
+  _mediaRecorder.start();
+  btn.innerHTML = '<i class="ti ti-player-stop"></i> Stopp';
+  btn.className = 'btn btn-danger btn-sm';
+  const t0 = Date.now();
+  status.style.color = 'var(--red)';
+  const tick = setInterval(() => {
+    if(!_mediaRecorder || _mediaRecorder.state !== 'recording'){ clearInterval(tick); return; }
+    status.textContent = '🔴 Aufnahme... ' + Math.floor((Date.now()-t0)/1000) + 's';
+  }, 500);
+}
+
+async function _processMicRecording(blob){
+  const ziel = _getImportZiel();
+  const status = document.getElementById('mic-status');
+  const file = new File([blob], `mic_${Date.now()}.webm`, { type:'audio/webm' });
+  status.style.color = 'var(--amber)';
+  status.textContent = ziel === 'voice' ? '⏳ Speichere Stimme...' : '⏳ Transkribiere...';
+  addLog(`[MIKROFON] Aufnahme fertig (${ziel})`, 'info');
+
+  try {
+    if(ziel === 'voice'){
+      const fd = new FormData();
+      fd.append('file', file);
+      const resp = await fetch(`${TTS_URL}/tts/upload-voice`, { method:'POST', body:fd });
+      const data = await resp.json();
+      if(!resp.ok) throw new Error(data.detail || 'Fehler');
+      status.style.color = 'var(--green)';
+      status.textContent = `✅ Stimme: ${data.datei}`;
+      addLog(`[MIKROFON] Stimme gespeichert: ${data.datei}`, 'ok');
+      if(typeof loadVoicesFromServer === 'function') loadVoicesFromServer();
+    } else {
+      // Als Transkriptions-Datei setzen und direkt starten
+      document.getElementById('transcribe-btn')._file = file;
+      document.getElementById('transcribe-drop').innerHTML =
+        `<i class="ti ti-microphone" style="font-size:1.75rem;color:var(--green)"></i><div style="font-size:12px;margin-top:.35rem">${file.name}</div>`;
+      status.style.color = 'var(--green)';
+      status.textContent = '✅ Aufnahme bereit — starte Transkription...';
+      startTranscribe();
+    }
+  } catch(e){
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ ' + e.message;
+    addLog('[MIKROFON] Fehler: ' + e.message, 'err');
+  }
+}
+
 async function startTranscribe(){
   const btn = document.getElementById('transcribe-btn');
   const abortBtn = document.getElementById('transcribe-abort-btn');
@@ -2658,20 +2775,11 @@ async function startTranscribe(){
   const model = document.getElementById('transcribe-model').value;
   const project = document.getElementById('transcribe-project').value.trim() || file.name.replace(/\.[^.]+$/, '');
   const folder = document.getElementById('transcribe-folder-select')?.value || '';
-  const diarize = !!(document.getElementById('transcribe-diarize')?.checked && gpuConnected);
-  // Transkription laeuft generell auf der GPU-Engine wenn verbunden (schneller),
-  // sonst lokal (CPU). Diarization erfordert zwingend eine GPU-Engine.
-  const transcribeUrl = getComputeUrl();
-  if(diarize && !remoteEngineActive()){
-    addLog('Sprecher-Erkennung benötigt eine GPU-Engine (Colab/RunPod)!','err');
-    return;
-  }
-  const engineLabel = remoteEngineActive() ? `GPU (${_remoteEngineType})` : 'CPU lokal';
 
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Transkribiere...';
   abortBtn.style.display = 'flex';
-  status.textContent = `⏳ Job wird gestartet... · ${engineLabel}`;
+  status.textContent = '⏳ Job wird gestartet...';
   status.style.color = 'var(--amber)';
   document.getElementById('transcribe-result').style.display = 'none';
   document.getElementById('transcribe-srt').value = '';
@@ -2685,10 +2793,9 @@ async function startTranscribe(){
     fd.append('model_size', model);
     fd.append('project_name', project);
     fd.append('folder', folder);
-    fd.append('diarize', diarize ? 'true' : 'false');
 
     // Live-Transkription via SSE
-    const resp = await fetch(`${transcribeUrl}/transcribe/stream`, {
+    const resp = await fetch(`${TTS_URL}/transcribe/stream`, {
       method:'POST', body:fd, signal:_transcribeAbortCtrl.signal
     });
     if(!resp.ok) throw new Error(await resp.text());
@@ -2719,9 +2826,7 @@ async function startTranscribe(){
 
           } else if(data.typ === 'segment'){
             segCount++;
-            // Sprecher-Label voranstellen falls vorhanden (Diarization)
-            const sprecher = data.sprecher ? `[${data.sprecher}] ` : '';
-            textLines.push(sprecher + data.text);
+            textLines.push(data.text);
             srtLines.push(data.srt);
 
             // Panel beim ersten Segment einblenden
@@ -3159,16 +3264,6 @@ async function createTranscriptionFolder(){
 
 // ── Hörbuch Ordner ───────────────────────────────────────────
 
-// Hauptbereiche im Dateien-Tab auf-/zuklappen (Standard: zu)
-function toggleFilesSection(which){
-  const body = document.getElementById(which === 'hb' ? 'files-hb-body' : 'files-tr-body');
-  const chev = document.getElementById(which === 'hb' ? 'files-hb-chevron' : 'files-tr-chevron');
-  if(!body) return;
-  const hidden = body.style.display === 'none';
-  body.style.display = hidden ? 'block' : 'none';
-  if(chev) chev.className = 'ti ti-chevron-' + (hidden ? 'down' : 'right');
-}
-
 async function loadHoerbuchFolders(){
   const list = document.getElementById('hoerbuch-folder-list');
   if(!list) return;
@@ -3217,9 +3312,43 @@ function renderFilesHb(){
 }
 
 function openHoerbuchFolder(name){
-  // Veraltet — Hörbuch-Ordner sind jetzt klappbar (siehe _folderBlock/renderFilesHb).
-  // Beibehalten als no-op falls noch irgendwo referenziert.
-  loadHoerbuchFolders();
+  const list = document.getElementById('hoerbuch-folder-list');
+  list.innerHTML = '<div style="color:var(--text3);padding:.5rem">⏳ Lade...</div>';
+  fetch(`${TTS_URL}/tts/hoerbuch/folder/${name}`)
+    .then(r => r.json())
+    .then(data => {
+      let html = `<div style="padding:.35rem 0;margin-bottom:.35rem;border-bottom:1px solid var(--border)">
+        <button class="btn btn-secondary btn-sm" onclick="loadHoerbuchFolders()">
+          <i class="ti ti-arrow-left"></i> Zurück
+        </button>
+        <span style="margin-left:.5rem;font-size:11px;color:var(--text2)">📁 ${name}</span>
+      </div>`;
+      if(!data.dateien || data.dateien.length === 0){
+        html += '<div style="color:var(--text3);padding:.5rem">Ordner ist leer</div>';
+      } else {
+        html += data.dateien.map(f => {
+          const icon = f.name.endsWith('.mp3') ? '🎵' : f.name.endsWith('.m4b') ? '📱' : '🔊';
+          const pid = `hbplayer_${f.name.replace(/[^a-z0-9]/gi,'_')}`;
+          return `
+          <div style="padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <span>${icon}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+                <div style="font-size:10px;color:var(--text3)">${f.groesse_mb} MB · ${f.datum_str}</div>
+              </div>
+              <button onclick="togglePlayer('${pid}')" class="btn btn-secondary btn-sm">▶</button>
+              <a href="${TTS_URL}/tts/download/${f.name}" download class="btn btn-secondary btn-sm"><i class="ti ti-download"></i></a>
+              <button onclick="deleteAudioFile('${f.name}')" class="btn btn-danger btn-sm"><i class="ti ti-trash"></i></button>
+            </div>
+            <audio id="${pid}" controls style="display:none;width:100%;margin-top:.35rem;height:32px">
+              <source src="${TTS_URL}/tts/download/${f.name}">
+            </audio>
+          </div>`;
+        }).join('');
+      }
+      list.innerHTML = html;
+    }).catch(() => { list.innerHTML = '<div style="color:var(--red)">Fehler</div>'; });
 }
 
 async function updateHoerbuchFolderSelect(){

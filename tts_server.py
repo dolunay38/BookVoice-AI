@@ -1801,6 +1801,116 @@ async def transcribe_audio(
         if wav_path != tmp_path and wav_path.exists():
             wav_path.unlink()
 
+# ════════════════════════════════════════════════════════════════
+# YOUTUBE / URL IMPORT
+# ════════════════════════════════════════════════════════════════
+# Laedt Audio von einer URL (YouTube etc.) via yt-dlp und nutzt es
+# entweder als Stimm-Sample (voice) oder transkribiert es (transcribe).
+# Hinweis: yt-dlp muss installiert sein (Dockerfile). Manche Videos
+# (altersbeschraenkt) brauchen Cookies — Standard-Faelle gehen ohne.
+# ════════════════════════════════════════════════════════════════
+@app.post("/import/youtube")
+async def import_youtube(
+    url: str = Form(...),
+    ziel: str = Form("transcribe"),       # 'voice' | 'transcribe'
+    language: str = Form("auto"),
+    model_size: str = Form("small"),
+    project_name: str = Form(""),
+    folder: str = Form("")
+):
+    try:
+        import yt_dlp
+    except ImportError:
+        raise HTTPException(status_code=501, detail="yt-dlp nicht installiert (Dockerfile rebuild noetig).")
+
+    if not url.strip():
+        raise HTTPException(status_code=400, detail="Keine URL angegeben")
+
+    job_id = uuid.uuid4().hex
+    out_template = str(EINGABE_DIR / f"yt_{job_id}.%(ext)s")
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "outtmpl": out_template,
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}],
+    }
+
+    titel = "youtube"
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=True)
+            titel = info_dict.get("title", "youtube")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Download fehlgeschlagen: {str(e)[:300]}")
+
+    downloaded = list(EINGABE_DIR.glob(f"yt_{job_id}.*"))
+    if not downloaded:
+        raise HTTPException(status_code=500, detail="Heruntergeladene Datei nicht gefunden")
+    audio_path = downloaded[0]
+    safe_title = re.sub(r'[^\w\-_]', '_', titel)[:60] or "youtube"
+
+    # ── Ziel: Stimm-Sample ──────────────────────────────────────
+    if ziel == "voice":
+        voice_path = VOICE_DIR / f"yt_{safe_title}.wav"
+        # Auf 60s kuerzen (XTTS-Cloning braucht 6-60s) + 22050 Hz mono
+        subprocess.run([
+            "ffmpeg", "-i", str(audio_path), "-t", "60",
+            "-ar", "22050", "-ac", "1", "-y", str(voice_path)
+        ], capture_output=True)
+        audio_path.unlink(missing_ok=True)
+        if not voice_path.exists():
+            raise HTTPException(status_code=500, detail="Stimm-Sample konnte nicht erstellt werden")
+        return {"status": "ok", "ziel": "voice", "datei": voice_path.name, "titel": titel}
+
+    # ── Ziel: Transkribieren ────────────────────────────────────
+    wav_path = audio_path.with_suffix(".ytwav.wav")
+    subprocess.run([
+        "ffmpeg", "-i", str(audio_path), "-ar", "16000", "-ac", "1", "-y", str(wav_path)
+    ], capture_output=True)
+    if not wav_path.exists():
+        raise HTTPException(status_code=500, detail="Audio-Konvertierung fehlgeschlagen")
+
+    try:
+        model = get_whisper_model(model_size)
+        lang = None if language == "auto" else language
+        segments_list, info = model.transcribe(str(wav_path), language=lang, beam_size=5, vad_filter=True)
+        segments = list(segments_list)
+        merged = merge_short_segments(segments, min_words=5)
+        text_parts, srt_parts = [], []
+        for i, (text, start_t, end_t) in enumerate(merged, 1):
+            text_parts.append(text)
+            start = f"{int(start_t//3600):02d}:{int((start_t%3600)//60):02d}:{start_t%60:06.3f}".replace(".", ",")
+            end = f"{int(end_t//3600):02d}:{int((end_t%3600)//60):02d}:{end_t%60:06.3f}".replace(".", ",")
+            srt_parts.append(f"{i}\n{start} --> {end}\n{text}\n")
+        full_text = "\n".join(text_parts)
+        srt_text = "\n".join(srt_parts)
+
+        base_name = project_name.strip() if project_name.strip() else safe_title
+        base_name = re.sub(r'[^\w\-_]', '_', base_name)
+        if folder.strip():
+            save_dir = TRANSCRIPTION_DIR / re.sub(r'[^\w\-_]', '_', folder.strip())
+            save_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            save_dir = TRANSCRIPTION_DIR
+        (save_dir / f"{base_name}.txt").write_text(full_text, encoding="utf-8")
+        (save_dir / f"{base_name}.srt").write_text(srt_text, encoding="utf-8")
+
+        # Quelle archivieren (Audio/Video -> hoerbuch)
+        archiviere_quelle(audio_path, f"{safe_title}{audio_path.suffix}")
+
+        return {
+            "status": "ok", "ziel": "transcribe",
+            "text": full_text, "srt": srt_text,
+            "woerter": len(full_text.split()),
+            "titel": titel, "txt_datei": f"{base_name}.txt",
+            "sprache": info.language, "modell": model_size
+        }
+    finally:
+        wav_path.unlink(missing_ok=True)
+        audio_path.unlink(missing_ok=True)
+
 @app.get("/transcribe/files")
 def list_transcriptions():
     """Alle Transkriptionen + Ordner auflisten"""

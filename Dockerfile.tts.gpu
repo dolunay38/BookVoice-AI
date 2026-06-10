@@ -68,6 +68,7 @@ RUN pip install --no-cache-dir \
     python-pptx \
     xlrd \
     faster-whisper \
+    yt-dlp \
     httpx
 
 # Diarization (pyannote) — nur sinnvoll auf GPU.
