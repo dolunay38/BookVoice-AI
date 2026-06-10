@@ -278,6 +278,10 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
     <i class="ti ti-file-text"></i>
     <div class="sb-tooltip" data-i18n="nav_transcribe">Transkription</div>
   </div>
+  <div class="sb-item" onclick="showPanel('mediathek')" id="nav-mediathek">
+    <i class="ti ti-library-photo"></i>
+    <div class="sb-tooltip">Mediathek</div>
+  </div>
 
   <div class="sb-divider"></div>
   <div class="sb-item" onclick="showPanel('settings')" id="nav-settings">
@@ -1285,6 +1289,27 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
     </div>
 
     <!-- ══ Einstellungen ══ -->
+    <div class="panel" id="panel-mediathek">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><i class="ti ti-library-photo"></i> Mediathek</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadMediaCategory(_mediaActive)"><i class="ti ti-refresh"></i></button>
+        </div>
+        <div id="media-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;padding:0 2px">
+          <div id="media-count" style="font-size:12px;color:var(--text2)"></div>
+          <div style="display:flex;align-items:center;gap:.4rem">
+            <span style="font-size:12px;color:var(--text3)">Sortieren</span>
+            <select id="media-sort" onchange="loadMediaCategory(_mediaActive)" style="font-size:12px;padding:5px 8px;width:auto">
+              <option value="date">Datum</option>
+              <option value="name">Name</option>
+              <option value="size">Größe</option>
+            </select>
+          </div>
+        </div>
+        <div id="media-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div></div>
+      </div>
+    </div>
     <div class="panel" id="panel-settings">
       <div class="card">
         <div class="card-header"><span class="card-title">Server</span></div>
@@ -1370,7 +1395,7 @@ function showPanel(name){
   const nav = document.getElementById('nav-'+name);
   if(panel) panel.classList.add('active');
   if(nav) nav.classList.add('active');
-  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',archiv:'🗄️ Archiv',transcribe:'🎙️ Transkription',settings:'Einstellungen',admin:'🔧 Admin Panel'};
+  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',archiv:'🗄️ Archiv',transcribe:'🎙️ Transkription',mediathek:'📚 Mediathek',settings:'Einstellungen',admin:'🔧 Admin Panel'};
   document.getElementById('page-title').textContent = titles[name] || name;
   if(name==='files') { loadHoerbuchFolders(); updateHoerbuchFolderSelect(); }
   if(name==='archiv') loadArchivFolders();
@@ -1380,6 +1405,121 @@ function showPanel(name){
   if(name==='covers'){ loadCoversFromServer(); loadCoverAudioSelect(); }
   if(name==='transcribe') { loadTranscriptionFiles(); updateFolderSelect(); }
   if(name==='admin') { loadAdminStats(); loadAdminLogs(); }
+  if(name==='mediathek'){ renderMediaPills(); loadMediaCategory(_mediaActive); }
+}
+
+// ── Mediathek ───────────────────────────────────
+const MEDIA_REGISTRY = [
+  { id:'hoerbuch',   label:'Hörbücher',   icon:'ti-headphones', kind:'audio' },
+  { id:'transkript', label:'Transkripte', icon:'ti-file-text',  kind:'text'  },
+  { id:'stimmen',    label:'Stimmen',     icon:'ti-microphone', kind:'audio' },
+  { id:'downloads',  label:'Downloads',   icon:'ti-download',   kind:'audio' }
+];
+let _mediaActive = 'hoerbuch';
+let _mediaData = [];
+
+function _encPath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
+function _mediaFmtSize(kb){ return kb >= 1024 ? (kb/1024).toFixed(1)+' MB' : kb+' KB'; }
+
+function renderMediaPills(){
+  const cont = document.getElementById('media-pills');
+  if(!cont) return;
+  cont.innerHTML = MEDIA_REGISTRY.map(cat => {
+    const on = cat.id === _mediaActive;
+    return `<button onclick="setMediaCategory('${cat.id}')" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;padding:7px 13px;border-radius:8px;font-weight:${on?500:400};background:${on?'var(--green-dim)':'var(--surface2)'};color:${on?'var(--green)':'var(--text2)'};border:1px solid ${on?'var(--green-glow)':'var(--border)'}"><i class="ti ${cat.icon}"></i> ${cat.label}</button>`;
+  }).join('');
+}
+
+function setMediaCategory(id){
+  _mediaActive = id;
+  renderMediaPills();
+  loadMediaCategory(id);
+}
+
+async function loadMediaCategory(cat){
+  const list = document.getElementById('media-list');
+  const count = document.getElementById('media-count');
+  if(!list) return;
+  list.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div>';
+  try {
+    const resp = await fetch(`${TTS_URL}/files/${cat}`);
+    const data = await resp.json();
+    _mediaData = data.dateien || [];
+    const sort = document.getElementById('media-sort').value;
+    if(sort === 'name') _mediaData.sort((a,b)=>a.name.localeCompare(b.name));
+    else if(sort === 'size') _mediaData.sort((a,b)=>b.groesse_kb-a.groesse_kb);
+    else _mediaData.sort((a,b)=>b.datum-a.datum);
+    if(count) count.textContent = `${_mediaData.length} Dateien`;
+    renderMediaList(cat);
+  } catch(e){
+    list.innerHTML = '<div style="color:var(--red);padding:1rem;font-size:12px">Fehler beim Laden</div>';
+    addLog('[MEDIATHEK] Fehler: ' + e.message, 'err');
+  }
+}
+
+function renderMediaList(cat){
+  const reg = MEDIA_REGISTRY.find(r=>r.id===cat) || {icon:'ti-file', kind:'text'};
+  const list = document.getElementById('media-list');
+  if(!_mediaData.length){
+    list.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Keine Dateien</div>';
+    return;
+  }
+  list.innerHTML = _mediaData.map((f, i) => {
+    const enc = _encPath(f.relpath);
+    const playBtn = reg.kind === 'audio'
+      ? `<button class="btn btn-secondary btn-sm" title="Abspielen" onclick="mediaPlay('${cat}',${i})"><i class="ti ti-player-play"></i></button>`
+      : '';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border)">
+      <div style="width:34px;height:34px;flex-shrink:0;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text2)"><i class="ti ${reg.icon}" style="font-size:17px"></i></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.relpath}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:1px">${f.datum_str} · ${_mediaFmtSize(f.groesse_kb)}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        ${playBtn}
+        <a class="btn btn-secondary btn-sm" title="Download" href="${TTS_URL}/files/${cat}/${enc}?download=true"><i class="ti ti-download"></i></a>
+        <button class="btn btn-secondary btn-sm" title="Umbenennen" onclick="mediaRename('${cat}',${i})"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-danger btn-sm" title="Löschen" onclick="mediaDelete('${cat}',${i})"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('') + `<audio id="media-audio" controls style="display:none;width:100%;margin-top:.75rem"></audio>`;
+}
+
+function mediaPlay(cat, i){
+  const f = _mediaData[i]; if(!f) return;
+  const a = document.getElementById('media-audio'); if(!a) return;
+  a.src = `${TTS_URL}/files/${cat}/${_encPath(f.relpath)}`;
+  a.style.display = 'block';
+  a.play();
+}
+
+async function mediaRename(cat, i){
+  const f = _mediaData[i]; if(!f) return;
+  const cur = f.relpath.split('/').pop();
+  const neu = prompt('Neuer Name:', cur);
+  if(!neu || neu === cur) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/files/rename`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ kategorie:cat, alt:f.relpath, neu:neu })
+    });
+    const data = await resp.json();
+    if(!resp.ok) throw new Error(data.detail || 'Fehler');
+    addLog(`[MEDIATHEK] Umbenannt: ${cur} → ${data.neu}`, 'ok');
+    loadMediaCategory(cat);
+  } catch(e){ addLog('[MEDIATHEK] Fehler: ' + e.message, 'err'); }
+}
+
+async function mediaDelete(cat, i){
+  const f = _mediaData[i]; if(!f) return;
+  if(!confirm(`"${f.relpath}" wirklich löschen?`)) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/files/${cat}/${_encPath(f.relpath)}`, { method:'DELETE' });
+    const data = await resp.json();
+    if(!resp.ok) throw new Error(data.detail || 'Fehler');
+    addLog(`[MEDIATHEK] Gelöscht: ${f.relpath}`, 'ok');
+    loadMediaCategory(cat);
+  } catch(e){ addLog('[MEDIATHEK] Fehler: ' + e.message, 'err'); }
 }
 
 // ── Char Count ──────────────────────────────────

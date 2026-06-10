@@ -1921,6 +1921,86 @@ async def import_youtube(
         wav_path.unlink(missing_ok=True)
         audio_path.unlink(missing_ok=True)
 
+# ════════════ MEDIATHEK: generische Datei-Endpoints ════════════
+CATEGORY_DIRS = {
+    "hoerbuch":   OUTPUT_DIR,
+    "transkript": TRANSCRIPTION_DIR,
+    "stimmen":    VOICE_DIR,
+    "downloads":  DOWNLOAD_DIR,
+}
+
+def _cat_dir(cat: str) -> Path:
+    d = CATEGORY_DIRS.get(cat)
+    if d is None:
+        raise HTTPException(status_code=404, detail="Unbekannte Kategorie")
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+def _safe_path(base: Path, relpath: str) -> Path:
+    p = (base / relpath).resolve()
+    if not str(p).startswith(str(base.resolve())):
+        raise HTTPException(status_code=400, detail="Ungueltiger Pfad")
+    return p
+
+class _RenameReq(BaseModel):
+    kategorie: str
+    alt: str
+    neu: str
+
+@app.patch("/files/rename")
+def files_rename(req: _RenameReq):
+    d = _cat_dir(req.kategorie)
+    src = _safe_path(d, req.alt)
+    if not src.exists() or not src.is_file():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    neu_name = re.sub(r'[^\w\-_. ]', '_', req.neu).strip()
+    if not neu_name:
+        raise HTTPException(status_code=400, detail="Ungueltiger Name")
+    if not Path(neu_name).suffix:
+        neu_name += src.suffix
+    dst = src.parent / neu_name
+    if dst.exists():
+        raise HTTPException(status_code=409, detail="Name existiert bereits")
+    src.rename(dst)
+    return {"status": "ok", "neu": str(dst.relative_to(d))}
+
+@app.get("/files/{cat}")
+def files_list(cat: str):
+    import datetime
+    d = _cat_dir(cat)
+    files = []
+    for f in d.rglob("*"):
+        if f.is_file():
+            st = f.stat()
+            files.append({
+                "name": f.name,
+                "relpath": str(f.relative_to(d)),
+                "groesse_kb": round(st.st_size / 1024, 1),
+                "datum": st.st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(st.st_mtime).strftime("%d.%m.%Y %H:%M"),
+            })
+    files.sort(key=lambda x: x["datum"], reverse=True)
+    return {"kategorie": cat, "dateien": files, "anzahl": len(files)}
+
+@app.get("/files/{cat}/{relpath:path}")
+def files_get(cat: str, relpath: str, download: bool = False):
+    d = _cat_dir(cat)
+    p = _safe_path(d, relpath)
+    if not p.exists() or not p.is_file():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    if download:
+        return FileResponse(p, filename=p.name)
+    return FileResponse(p)
+
+@app.delete("/files/{cat}/{relpath:path}")
+def files_delete(cat: str, relpath: str):
+    d = _cat_dir(cat)
+    p = _safe_path(d, relpath)
+    if not p.exists() or not p.is_file():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    p.unlink()
+    return {"status": "ok", "geloescht": relpath}
+
 @app.get("/transcribe/files")
 def list_transcriptions():
     """Alle Transkriptionen + Ordner auflisten"""
