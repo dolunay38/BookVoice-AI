@@ -90,6 +90,23 @@ input[type=range]{width:100%;accent-color:var(--green);cursor:pointer}
 .btn-danger:hover{background:rgba(239,68,68,.1)}
 .btn-sm{padding:.3rem .65rem;font-size:11px}
 .btn-block{width:100%;justify-content:center;padding:.65rem}
+.seg-toggle{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:4px}
+.seg-toggle label{flex:1;cursor:pointer;margin:0}
+.seg-toggle input{position:absolute;opacity:0;pointer-events:none}
+.seg-toggle span{display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 6px;border-radius:6px;font-size:11.5px;color:var(--text2);transition:all .15s;white-space:nowrap}
+.seg-toggle input:checked + span{background:var(--green-dim);color:var(--green);font-weight:500}
+.seg-toggle label:hover span{color:var(--text)}
+.mic-circle{position:relative;width:64px;height:64px;border-radius:50%;cursor:pointer;background:var(--surface);border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s,border-color .2s}
+.mic-circle:hover{background:var(--border);color:var(--text)}
+.mic-circle .mic-ic-idle{font-size:26px}
+.mic-circle .mic-ic-rec{font-size:24px;display:none}
+.mic-circle .mic-ring{position:absolute;inset:-1px;border-radius:50%;border:2px solid transparent;pointer-events:none}
+.mic-circle.recording{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.45);color:var(--red)}
+.mic-circle.recording .mic-ic-idle{display:none}
+.mic-circle.recording .mic-ic-rec{display:block}
+.mic-circle.recording .mic-ring{border-color:var(--red);animation:micPulse 1.4s ease-out infinite}
+@keyframes micPulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.55);opacity:0}}
+#mic-recorder.disabled{opacity:.4;pointer-events:none}
 
 /* ── Upload Zone ── */
 .upload-zone{border:1px dashed var(--border2);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--surface2)}
@@ -1037,26 +1054,28 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
           </div>
 
           <!-- Import: YouTube / Mikrofon -->
-          <div style="margin-bottom:.75rem;padding:.6rem;background:var(--surface2);border-radius:8px">
-            <div style="font-size:11px;color:var(--text2);margin-bottom:.45rem;font-weight:600">🌐 URL-Import &middot; 🎤 Mikrofon</div>
-            <!-- Ziel-Auswahl -->
-            <div style="display:flex;gap:.6rem;margin-bottom:.55rem;font-size:11px">
-              <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer">
-                <input type="radio" name="import-ziel" value="transcribe" checked> Transkribieren
-              </label>
-              <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer">
-                <input type="radio" name="import-ziel" value="voice"> Als Stimme speichern
-              </label>
+          <div style="margin-bottom:.75rem;padding:.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.6rem;font-weight:500;display:flex;align-items:center;gap:.4rem"><i class="ti ti-world"></i> URL-Import <span style="color:var(--text3)">·</span> <i class="ti ti-microphone"></i> Mikrofon</div>
+            <!-- Ziel-Auswahl (3 Optionen) -->
+            <div class="seg-toggle" style="margin-bottom:.7rem">
+              <label><input type="radio" name="import-ziel" value="transcribe" checked onchange="updateImportZiel()"><span><i class="ti ti-file-text"></i> Transkribieren</span></label>
+              <label><input type="radio" name="import-ziel" value="voice" onchange="updateImportZiel()"><span><i class="ti ti-microphone"></i> Als Stimme</span></label>
+              <label><input type="radio" name="import-ziel" value="audio" onchange="updateImportZiel()"><span><i class="ti ti-download"></i> Komplettes Audio</span></label>
             </div>
             <!-- YouTube / URL -->
-            <div style="display:flex;gap:.4rem;margin-bottom:.5rem">
+            <div style="display:flex;gap:.5rem;margin-bottom:.7rem">
               <input type="text" id="youtube-url" placeholder="YouTube- oder Audio-URL einfügen..." style="flex:1">
-              <button class="btn btn-secondary btn-sm" id="youtube-btn" onclick="importYoutube()"><i class="ti ti-download"></i> Import</button>
+              <button class="btn btn-primary" id="youtube-btn" onclick="importYoutube()"><i class="ti ti-download"></i> Import</button>
             </div>
-            <!-- Mikrofon -->
-            <div style="display:flex;gap:.4rem;align-items:center">
-              <button class="btn btn-secondary btn-sm" id="mic-btn" onclick="toggleMicRecording()"><i class="ti ti-microphone"></i> Aufnehmen</button>
-              <span id="mic-status" style="font-size:11px;color:var(--text3)"></span>
+            <!-- Mikrofon-Recorder -->
+            <div id="mic-recorder" style="display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:.5rem 0">
+              <button id="mic-btn" class="mic-circle" onclick="toggleMicRecording()" aria-label="Aufnehmen">
+                <span class="mic-ring"></span>
+                <i class="ti ti-microphone mic-ic-idle"></i>
+                <i class="ti ti-player-stop mic-ic-rec"></i>
+              </button>
+              <div id="mic-timer" style="font-size:14px;font-weight:500;color:var(--text2);font-variant-numeric:tabular-nums">0:00</div>
+              <span id="mic-status" style="font-size:11px;color:var(--text3)">Tippen zum Aufnehmen</span>
             </div>
           </div>
 
@@ -2629,6 +2648,20 @@ function _getImportZiel(){
   return r ? r.value : 'transcribe';
 }
 
+function updateImportZiel(){
+  const ziel = _getImportZiel();
+  const rec = document.getElementById('mic-recorder');
+  const st = document.getElementById('mic-status');
+  if(!rec) return;
+  if(ziel === 'audio'){
+    rec.classList.add('disabled');
+    if(st) st.textContent = 'Komplettes Audio → URL benutzen';
+  } else {
+    rec.classList.remove('disabled');
+    if(st && !(_mediaRecorder && _mediaRecorder.state === 'recording')) st.textContent = 'Tippen zum Aufnehmen';
+  }
+}
+
 // ── YouTube / URL Import ────────────────────────────────────
 async function importYoutube(){
   const url = document.getElementById('youtube-url').value.trim();
@@ -2639,7 +2672,7 @@ async function importYoutube(){
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Lädt...';
   status.style.color = 'var(--amber)';
-  status.textContent = ziel === 'voice' ? '⏳ Lade Audio für Stimme...' : '⏳ Lade & transkribiere...';
+  status.textContent = ziel === 'voice' ? '⏳ Lade Audio für Stimme...' : (ziel === 'audio' ? '⏳ Lade komplettes Audio...' : '⏳ Lade & transkribiere...');
   addLog(`[YOUTUBE] Import (${ziel}): ${url}`, 'info');
 
   try {
@@ -2651,7 +2684,7 @@ async function importYoutube(){
     fd.append('project_name', document.getElementById('transcribe-project').value.trim());
     fd.append('folder', document.getElementById('transcribe-folder-select')?.value || '');
     // Transkription auf GPU-Engine wenn verbunden, Stimme lokal
-    const importUrl = ziel === 'voice' ? TTS_URL : getComputeUrl();
+    const importUrl = ziel === 'transcribe' ? getActiveUrl() : TTS_URL;
     const resp = await fetch(`${importUrl}/import/youtube`, { method:'POST', body:fd });
     const data = await resp.json();
     if(!resp.ok){ throw new Error(data.detail || 'Fehler'); }
@@ -2661,6 +2694,10 @@ async function importYoutube(){
       status.textContent = `✅ Stimme gespeichert: ${data.datei}`;
       addLog(`[YOUTUBE] Stimme gespeichert: ${data.datei}`, 'ok');
       if(typeof loadVoicesFromServer === 'function') loadVoicesFromServer();
+    } else if(ziel === 'audio'){
+      status.style.color = 'var(--green)';
+      status.textContent = `✅ Audio gespeichert: ${data.datei}`;
+      addLog(`[YOUTUBE] Audio gespeichert: ${data.datei} (Ordner DOWNLOADS)`, 'ok');
     } else {
       document.getElementById('transcribe-result').style.display = 'block';
       document.getElementById('transcribe-text').value = data.text || '';
@@ -2690,8 +2727,9 @@ let _micStream = null;
 async function toggleMicRecording(){
   const btn = document.getElementById('mic-btn');
   const status = document.getElementById('mic-status');
+  const timer = document.getElementById('mic-timer');
 
-  // Läuft gerade → stoppen
+  // Läuft gerade -> stoppen
   if(_mediaRecorder && _mediaRecorder.state === 'recording'){
     _mediaRecorder.stop();
     return;
@@ -2702,6 +2740,7 @@ async function toggleMicRecording(){
     _micStream = await navigator.mediaDevices.getUserMedia({ audio:true });
   } catch(e){
     addLog('[MIKROFON] Kein Zugriff: ' + e.message, 'err');
+    status.style.color = 'var(--red)';
     status.textContent = '❌ Kein Mikrofon-Zugriff';
     return;
   }
@@ -2710,20 +2749,21 @@ async function toggleMicRecording(){
   _mediaRecorder.ondataavailable = e => { if(e.data.size > 0) _micChunks.push(e.data); };
   _mediaRecorder.onstop = () => {
     if(_micStream){ _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+    btn.classList.remove('recording');
+    if(timer) timer.textContent = '0:00';
     const blob = new Blob(_micChunks, { type:'audio/webm' });
     _processMicRecording(blob);
-    btn.innerHTML = '<i class="ti ti-microphone"></i> Aufnehmen';
-    btn.className = 'btn btn-secondary btn-sm';
   };
   _mediaRecorder.start();
-  btn.innerHTML = '<i class="ti ti-player-stop"></i> Stopp';
-  btn.className = 'btn btn-danger btn-sm';
+  btn.classList.add('recording');
   const t0 = Date.now();
   status.style.color = 'var(--red)';
+  status.textContent = '🔴 Aufnahme läuft — tippen zum Stoppen';
   const tick = setInterval(() => {
     if(!_mediaRecorder || _mediaRecorder.state !== 'recording'){ clearInterval(tick); return; }
-    status.textContent = '🔴 Aufnahme... ' + Math.floor((Date.now()-t0)/1000) + 's';
-  }, 500);
+    const s = Math.floor((Date.now()-t0)/1000);
+    if(timer) timer.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+  }, 250);
 }
 
 async function _processMicRecording(blob){

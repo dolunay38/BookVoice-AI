@@ -22,6 +22,8 @@ TRANSCRIPTION_DIR = Path("/app/TRANSKRIPTIONEN")
 TRANSCRIPTION_DIR.mkdir(parents=True, exist_ok=True)
 EINGABE_DIR = Path("/app/EINGABE")
 EINGABE_DIR.mkdir(parents=True, exist_ok=True)
+DOWNLOAD_DIR = Path("/app/DOWNLOADS")
+DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 ARCHIV_DIR = Path("/app/ARCHIV")
 ARCHIV_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -1812,7 +1814,7 @@ async def transcribe_audio(
 @app.post("/import/youtube")
 async def import_youtube(
     url: str = Form(...),
-    ziel: str = Form("transcribe"),       # 'voice' | 'transcribe'
+    ziel: str = Form("transcribe"),       # 'voice' | 'transcribe' | 'audio'
     language: str = Form("auto"),
     model_size: str = Form("small"),
     project_name: str = Form(""),
@@ -1850,6 +1852,14 @@ async def import_youtube(
         raise HTTPException(status_code=500, detail="Heruntergeladene Datei nicht gefunden")
     audio_path = downloaded[0]
     safe_title = re.sub(r'[^\w\-_]', '_', titel)[:60] or "youtube"
+
+    # ── Ziel: Komplettes Audio (Download) ───────────────────────
+    if ziel == "audio":
+        target = DOWNLOAD_DIR / f"{safe_title}{audio_path.suffix}"
+        if target.exists():
+            target = DOWNLOAD_DIR / f"{safe_title}_{job_id[:6]}{audio_path.suffix}"
+        shutil.move(str(audio_path), str(target))
+        return {"status": "ok", "ziel": "audio", "datei": target.name, "titel": titel}
 
     # ── Ziel: Stimm-Sample ──────────────────────────────────────
     if ziel == "voice":
