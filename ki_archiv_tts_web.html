@@ -176,9 +176,10 @@ audio{width:100%;margin-top:.5rem;filter:invert(1) hue-rotate(100deg);display:no
 
 /* ── Action Banner ── */
 .action-banner{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem}
-.action-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;display:flex;align-items:flex-start;gap:.75rem;cursor:pointer;transition:border-color .15s}
-.action-card:hover{border-color:var(--border2)}
-.action-icon{width:36px;height:36px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.action-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.35rem;display:flex;align-items:flex-start;gap:.9rem;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.action-card:hover{border-color:var(--green);transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.28),0 0 0 1px var(--green-glow)}
+.action-icon{width:44px;height:44px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;transition:transform .18s ease}
+.action-card:hover .action-icon{transform:scale(1.1)}
 .action-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
 .action-sub{font-size:11px;color:var(--text3);line-height:1.4}
 
@@ -397,11 +398,11 @@ body.light-mode .btn-primary{color:#fff}
             <div class="action-sub">11 Standard-Stimmen · Eigene Stimme hochladen · Vorschau anhören</div>
           </div>
         </div>
-        <div class="action-card" onclick="showPanel('musik')">
-          <div class="action-icon" style="background:rgba(245,158,11,.1)">🎼</div>
+        <div class="action-card" onclick="showPanel('transcribe')">
+          <div class="action-icon" style="background:rgba(245,158,11,.1)">🎙️</div>
           <div>
-            <div class="action-title">Hintergrundmusik</div>
-            <div class="action-sub">Musik hochladen und mit Hörbuch mischen</div>
+            <div class="action-title">Transkribieren</div>
+            <div class="action-sub">Audio oder Video in Text umwandeln (FastWhisper)</div>
           </div>
         </div>
         <div class="action-card" onclick="showPanel('mediathek')">
@@ -1046,11 +1047,11 @@ body.light-mode .btn-primary{color:#fff}
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
               <div>
                 <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projektname</div>
-                <input type="text" id="transcribe-project" placeholder="z.B. rafet_interview" style="width:100%">
+                <input type="text" id="transcribe-project" placeholder="z.B. rafet_interview" style="width:100%" oninput="updateTranscribeReady()">
               </div>
               <div>
                 <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">In Ordner speichern</div>
-                <select id="transcribe-folder-select" style="width:100%">
+                <select id="transcribe-folder-select" style="width:100%" onchange="updateTranscribeReady()">
                   <option value="">— Root (kein Ordner) —</option>
                 </select>
               </div>
@@ -1163,6 +1164,7 @@ body.light-mode .btn-primary{color:#fff}
             <i class="ti ti-square"></i> ABBRECHEN
           </button>
         </div>
+        <div id="transcribe-hint" style="display:none;font-size:11px;color:var(--amber);margin-bottom:.5rem"><i class="ti ti-info-circle"></i> Projektname + Ordner wählen, um zu starten</div>
 
         <!-- Status -->
         <div id="transcribe-status" style="font-size:11px;color:var(--text3);margin-bottom:.5rem"></div>
@@ -1527,7 +1529,7 @@ function toggleMediaGroup(g){
 function renderMediaList(cat){
   const reg = MEDIA_REGISTRY.find(r=>r.id===cat) || {icon:'ti-file', kind:'text'};
   const list = document.getElementById('media-list');
-  const audio = '<div id="media-wave" style="display:none;margin-top:.75rem"></div><audio id="media-audio" controls style="display:none;width:100%;margin-top:.75rem"></audio>';
+  const audio = '<div id="media-player-bar" style="display:none;margin-top:.75rem"><div style="display:flex;justify-content:flex-end;margin-bottom:.4rem"><button class="btn btn-secondary btn-sm" onclick="mediaStop()"><i class="ti ti-player-stop"></i> Stop</button></div><div id="media-wave" style="display:none"></div><audio id="media-audio" controls style="display:none;width:100%"></audio></div>';
   if(!_mediaData.length){
     list.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Keine Dateien</div>';
     return;
@@ -1569,6 +1571,7 @@ function mediaPlay(cat, i){
   const url = `${TTS_URL}/files/${cat}/${_encPath(f.relpath)}`;
   const a = document.getElementById('media-audio');
   const wrap = document.getElementById('media-wave');
+  const bar = document.getElementById('media-player-bar'); if(bar) bar.style.display = 'block';
   const useWave = (typeof WaveSurfer !== 'undefined' && wrap && f.groesse_kb < 8000);
   if(useWave){
     try {
@@ -1584,6 +1587,14 @@ function mediaPlay(cat, i){
   }
   if(wrap) wrap.style.display = 'none';
   if(a){ a.src = url; a.style.display = 'block'; a.play(); }
+}
+
+function mediaStop(){
+  try { if(typeof _ws !== 'undefined' && _ws){ _ws.stop(); } } catch(e){}
+  const a = document.getElementById('media-audio');
+  if(a){ try{ a.pause(); a.currentTime = 0; }catch(e){} }
+  const bar = document.getElementById('media-player-bar'); if(bar) bar.style.display = 'none';
+  const wrap = document.getElementById('media-wave'); if(wrap) wrap.style.display = 'none';
 }
 
 async function mediaPreview(cat, i){
@@ -1707,6 +1718,27 @@ function requireTranscribeTarget(){
   }
   return true;
 }
+
+function updateTranscribeReady(){
+  const btn = document.getElementById('transcribe-btn');
+  const hint = document.getElementById('transcribe-hint');
+  if(!btn) return;
+  if(_transcribeMode === 'ocr'){
+    btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = '';
+    if(hint) hint.style.display = 'none';
+    return;
+  }
+  const pe = document.getElementById('transcribe-project');
+  const fe = document.getElementById('transcribe-folder-select');
+  const proj = (pe ? pe.value : '').trim();
+  const folder = (fe ? fe.value : '') || '';
+  const ready = !!proj && !!folder;
+  btn.disabled = !ready;
+  btn.style.opacity = ready ? '' : '0.5';
+  btn.style.cursor = ready ? '' : 'not-allowed';
+  if(hint) hint.style.display = ready ? 'none' : 'block';
+}
+window.addEventListener('DOMContentLoaded', function(){ try{ updateTranscribeReady(); }catch(e){} });
 
 function resetTranscribeUpload(){
   const btn = document.getElementById('transcribe-btn');
@@ -2973,6 +3005,7 @@ function setTranscribeMode(mode){
   document.getElementById('tab-audio-btn').style.cssText += ';flex:1;justify-content:center';
   document.getElementById('tab-ocr-btn').style.cssText += ';flex:1;justify-content:center';
   document.getElementById('transcribe-result').style.display = 'none';
+  updateTranscribeReady();
 }
 
 function handleTranscribeDrop(e){
@@ -2989,6 +3022,7 @@ function uploadTranscribeFile(file){
   document.getElementById('transcribe-btn')._file = file;
   const proj = document.getElementById('transcribe-project');
   if(!proj.value) proj.value = file.name.replace(/\.[^.]+$/, '');
+  updateTranscribeReady();
 }
 
 function uploadOCRFile(file){
