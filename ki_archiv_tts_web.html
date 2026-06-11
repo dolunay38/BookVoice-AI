@@ -290,6 +290,10 @@ body.light-mode .btn-primary{color:#fff}
     <i class="ti ti-file-text"></i>
     <div class="sb-tooltip" data-i18n="nav_transcribe">Transkription</div>
   </div>
+  <div class="sb-item" onclick="showPanel('training')" id="nav-training">
+    <i class="ti ti-school"></i>
+    <div class="sb-tooltip">Trainingsraum</div>
+  </div>
   <div class="sb-item" onclick="showPanel('mediathek')" id="nav-mediathek">
     <i class="ti ti-library-photo"></i>
     <div class="sb-tooltip">Mediathek</div>
@@ -329,9 +333,6 @@ body.light-mode .btn-primary{color:#fff}
       <div class="server-info">
         <span id="server-status-text">Verbinde…</span>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="showPanel('studio')">
-        <i class="ti ti-plus"></i> Neues Hörbuch
-      </button>
     </div>
   </div>
 
@@ -351,7 +352,7 @@ body.light-mode .btn-primary{color:#fff}
             </div>
           </div>
           <div style="font-size:13px;color:var(--text2);max-width:500px;line-height:1.6">
-            Dein selbst-gehostetes KI-Hörbuch-Studio. Wandle Texte, eBooks und Fotos in hochwertige Hörbücher um — mit eigener Stimme, in Türkisch, Deutsch und Englisch.
+            Dein selbst-gehostetes KI-Studio für Hörbücher & Transkription. Verwandle Texte, eBooks, Fotos, Audio und Videos in hochwertige Ergebnisse — mit eigener Stimme (XTTS-v2 Voice Cloning) und FastWhisper, in Türkisch, Deutsch und Englisch.
           </div>
           <div style="display:flex;gap:.5rem;margin-top:1rem">
             <button class="btn btn-primary" onclick="showPanel('studio')"><i class="ti ti-wand"></i> Neues Hörbuch</button>
@@ -1326,6 +1327,87 @@ body.light-mode .btn-primary{color:#fff}
         <div id="media-list"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Wird geladen...</div></div>
       </div>
     </div>
+    <!-- ====================== KI-TRAININGSRAUM ====================== -->
+    <div class="panel" id="panel-training">
+
+      <!-- Projekt-Auswahl -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎓 KI-Trainingsraum</span>
+          <span class="badge badge-green">XTTS-v2 Fine-tuning</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.5">
+          Daten-Werkstatt für eigene Stimmen: Audio hochladen → automatisch in Sätze schneiden → mit FastWhisper transkribieren → korrigieren → als Trainings-Dataset exportieren. Das eigentliche Training läuft extern auf Colab&nbsp;T4.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:.5rem;align-items:end">
+          <div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Projekt</div>
+            <select id="tr-project" style="width:100%" onchange="trSelectProject(this.value)">
+              <option value="">— Projekt wählen —</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="trCreateProject()"><i class="ti ti-plus"></i> Neu</button>
+          <button class="btn btn-secondary btn-sm" id="tr-del-project" onclick="trDeleteProject()" style="display:none"><i class="ti ti-trash"></i></button>
+        </div>
+        <div id="tr-status" style="font-size:11px;color:var(--text3);margin-top:.6rem"></div>
+      </div>
+
+      <!-- 1 · Pipeline -->
+      <div class="card" id="tr-pipeline-card" style="display:none">
+        <div class="card-header"><span class="card-title">1 · Audio verarbeiten</span></div>
+        <div style="margin-bottom:.75rem">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Whisper-Modell</div>
+          <select id="tr-model" style="width:100%">
+            <option value="small">small (schnell)</option>
+            <option value="medium">medium</option>
+            <option value="large-v3">large-v3 (genau, langsam)</option>
+          </select>
+        </div>
+        <div class="drop-zone" id="tr-drop" onclick="document.getElementById('tr-file').click()"
+             ondragover="event.preventDefault()" ondrop="trHandleDrop(event)"
+             style="padding:1.25rem;text-align:center;cursor:pointer;border:2px dashed var(--border);border-radius:8px">
+          <i class="ti ti-upload" style="font-size:1.75rem;color:var(--text3)"></i>
+          <div style="font-size:12px;color:var(--text2);margin-top:.35rem" id="tr-drop-label">MP3, WAV, M4A, OGG, MP4 hochladen (30–60 Min ruhige Aufnahme ideal)</div>
+        </div>
+        <input type="file" id="tr-file" accept=".mp3,.wav,.m4a,.ogg,.mp4,.mkv,.webm,.flac" style="display:none" onchange="trHandleUpload(this)">
+        <button class="btn btn-primary" id="tr-process-btn" onclick="trProcess()" style="width:100%;margin-top:.75rem;justify-content:center" disabled><i class="ti ti-scissors"></i> Schneiden &amp; Transkribieren</button>
+        <div id="tr-prog-wrap" style="display:none;margin-top:.75rem">
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden"><div class="progress-fill" id="tr-prog-fill" style="width:0%;height:100%;background:var(--green);transition:width .4s"></div></div>
+          <div id="tr-prog-text" style="font-size:11px;color:var(--text2);margin-top:.4rem">…</div>
+        </div>
+      </div>
+
+      <!-- 2 · Review -->
+      <div class="card" id="tr-review-card" style="display:none">
+        <div class="card-header">
+          <span class="card-title">2 · Review &amp; Korrektur</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadTrClips()"><i class="ti ti-refresh"></i> Aktualisieren</button>
+        </div>
+        <div id="tr-clips" style="display:flex;flex-direction:column;gap:.6rem"></div>
+      </div>
+
+      <!-- 3 · Export -->
+      <div class="card" id="tr-export-card" style="display:none">
+        <div class="card-header"><span class="card-title">3 · Export für Colab</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:.85rem">
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:12px;color:var(--text2);cursor:pointer">
+            <input type="checkbox" id="tr-cleaner" style="accent-color:var(--green)"> Text bereinigen (Cleaner)
+          </label>
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:12px;color:var(--text2)">
+            Eval-Anteil
+            <input type="number" id="tr-evalpct" value="0.15" min="0" max="0.5" step="0.05" style="width:70px">
+          </label>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="trExport()"><i class="ti ti-package"></i> Dataset bauen</button>
+          <button class="btn btn-secondary" id="tr-zip-btn" onclick="trDownloadZip()" style="display:none"><i class="ti ti-download"></i> ZIP herunterladen</button>
+        </div>
+        <div id="tr-export-info" style="font-size:11px;color:var(--text3);margin-top:.6rem"></div>
+      </div>
+
+    </div>
+
+
     <div class="panel" id="panel-settings">
       <div class="card">
         <div class="card-header"><span class="card-title">Erscheinungsbild</span></div>
@@ -1421,7 +1503,7 @@ function showPanel(name){
   const nav = document.getElementById('nav-'+name);
   if(panel) panel.classList.add('active');
   if(nav) nav.classList.add('active');
-  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',archiv:'🗄️ Archiv',transcribe:'🎙️ Transkription',mediathek:'📚 Mediathek',settings:'Einstellungen',admin:'🔧 Admin Panel'};
+  const titles = {dashboard:'Dashboard',studio:'Studio',voices:'Stimmen',musik:'Musik',covers:'Cover',files:'Dateien',archiv:'🗄️ Archiv',transcribe:'🎙️ Transkription',mediathek:'📚 Mediathek',training:'🎓 Trainingsraum',settings:'Einstellungen',admin:'🔧 Admin Panel'};
   document.getElementById('page-title').textContent = titles[name] || name;
   if(name==='files') { loadHoerbuchFolders(); updateHoerbuchFolderSelect(); }
   if(name==='archiv') loadArchivFolders();
@@ -1432,6 +1514,7 @@ function showPanel(name){
   if(name==='transcribe') { loadTranscriptionFiles(); updateFolderSelect(); }
   if(name==='admin') { loadAdminStats(); loadAdminLogs(); }
   if(name==='mediathek'){ renderMediaPills(); loadMediaCategory(_mediaActive); }
+  if(name==='training') loadTrainingPanel();
 }
 
 // ── Mediathek ───────────────────────────────────
@@ -1562,7 +1645,7 @@ function renderMediaList(cat){
     items.forEach(function(m){ html += _mediaRow(cat, reg, m.f, m.i, m.f.relpath.split('/').slice(1).join('/')); });
     html += '</div>';
   });
-  list.innerHTML = html + audio;
+  list.innerHTML = audio + html;
 }
 
 let _ws = null;
@@ -3002,6 +3085,8 @@ function setTranscribeMode(mode){
   document.getElementById('transcribe-ocr-mode').style.display = mode === 'ocr' ? 'block' : 'none';
   document.getElementById('tab-audio-btn').className = mode === 'audio' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
   document.getElementById('tab-ocr-btn').className = mode === 'ocr' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  const _tb = document.getElementById('transcribe-btn');
+  if(_tb) _tb.innerHTML = mode === 'ocr' ? '<i class="ti ti-wand"></i> TEXT ERKENNEN' : '<i class="ti ti-wand"></i> TRANSKRIBIEREN';
   document.getElementById('tab-audio-btn').style.cssText += ';flex:1;justify-content:center';
   document.getElementById('tab-ocr-btn').style.cssText += ';flex:1;justify-content:center';
   document.getElementById('transcribe-result').style.display = 'none';
@@ -4210,6 +4295,239 @@ function toggleLogAutoRefresh(){
     _logRefreshTimer = null;
   }
 }
+
+// ====================== KI-TRAININGSRAUM ======================
+let trState = { project: null, file: null, exported: false };
+
+function loadTrainingPanel(){ loadTrProjects(); }
+
+async function loadTrProjects(){
+  const sel = document.getElementById('tr-project');
+  if(!sel) return;
+  const cur = trState.project || '';
+  try {
+    const r = await fetch(`${TTS_URL}/training/projects`);
+    const d = await r.json();
+    const opts = (d.projekte||[]).map(p =>
+      `<option value="${p.name}">${p.name} — ${p.clips} Clips${p.dataset_bereit?' · Dataset ✓':''}</option>`).join('');
+    sel.innerHTML = '<option value="">— Projekt wählen —</option>' + opts;
+    sel.value = cur;
+    trToggleSections();
+  } catch(e){ showToast('Projekte konnten nicht geladen werden','err'); }
+}
+
+async function trCreateProject(){
+  const name = await showModal({ title:'Neues Trainings-Projekt', icon:'ti-plus', message:'Name (z.B. sufi_rumi):', prompt:true, default:'', okText:'Anlegen', cancelText:'Abbrechen' });
+  if(!name) return;
+  try {
+    const r = await fetch(`${TTS_URL}/training/projects`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name: name, sprache:'tr', speaker_name:'' })
+    });
+    const d = await r.json();
+    if(!r.ok){ showToast(d.detail||'Fehler','err'); return; }
+    showToast('Projekt angelegt: '+d.projekt.name,'ok');
+    trState.project = d.projekt.name;
+    await loadTrProjects();
+    const sel = document.getElementById('tr-project'); if(sel) sel.value = trState.project;
+    trSelectProject(trState.project);
+  } catch(e){ showToast('Anlegen fehlgeschlagen','err'); }
+}
+
+function trSelectProject(name){
+  trState.project = name || null;
+  trState.file = null; trState.exported = false;
+  const pb = document.getElementById('tr-process-btn'); if(pb) pb.disabled = true;
+  const dl = document.getElementById('tr-drop-label'); if(dl) dl.textContent = 'MP3, WAV, M4A, OGG, MP4 hochladen (30–60 Min ruhige Aufnahme ideal)';
+  const zb = document.getElementById('tr-zip-btn'); if(zb) zb.style.display='none';
+  const inf = document.getElementById('tr-export-info'); if(inf) inf.textContent = '';
+  trToggleSections();
+  if(trState.project){ trProjectStatus(); loadTrClips(); }
+  else { const c = document.getElementById('tr-clips'); if(c) c.innerHTML=''; const s = document.getElementById('tr-status'); if(s) s.innerHTML=''; }
+}
+
+function trToggleSections(){
+  const on = !!trState.project;
+  ['tr-pipeline-card','tr-review-card','tr-export-card'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none';
+  });
+  const del = document.getElementById('tr-del-project'); if(del) del.style.display = on ? '' : 'none';
+}
+
+async function trProjectStatus(){
+  if(!trState.project) return;
+  try {
+    const r = await fetch(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}`);
+    const d = await r.json();
+    if(!r.ok) return;
+    const el = document.getElementById('tr-status');
+    if(el) el.innerHTML = `Sprache <b>${d.sprache||'?'}</b> · Speaker <b>${d.speaker_name||'?'}</b> · ${d.raw} Audio · ${d.clips} Clips · Dataset ${d.dataset_bereit?'<span style="color:var(--green)">bereit ✓</span>':'noch nicht'}`;
+  } catch(e){}
+}
+
+async function trDeleteProject(){
+  if(!trState.project) return;
+  const ok = await showModal({ title:'Projekt löschen', icon:'ti-trash', iconColor:'var(--red)', message:`Projekt "${trState.project}" mit allen Clips wirklich löschen?`, okText:'Löschen', cancelText:'Abbrechen' });
+  if(!ok) return;
+  try {
+    const r = await fetch(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}`, {method:'DELETE'});
+    if(!r.ok){ showToast('Löschen fehlgeschlagen','err'); return; }
+    showToast('Projekt gelöscht','ok');
+    trState.project = null;
+    await loadTrProjects();
+    const c = document.getElementById('tr-clips'); if(c) c.innerHTML='';
+    const s = document.getElementById('tr-status'); if(s) s.innerHTML='';
+    trToggleSections();
+  } catch(e){ showToast('Löschen fehlgeschlagen','err'); }
+}
+
+function trHandleDrop(ev){
+  ev.preventDefault();
+  const inp = document.getElementById('tr-file');
+  if(ev.dataTransfer.files && ev.dataTransfer.files[0]){ inp.files = ev.dataTransfer.files; trHandleUpload(inp); }
+}
+
+function trHandleUpload(input){
+  const f = input.files[0];
+  if(!f) return;
+  trState.file = f;
+  document.getElementById('tr-drop-label').textContent = '📎 ' + f.name;
+  document.getElementById('tr-process-btn').disabled = false;
+}
+
+async function trProcess(){
+  if(!trState.project || !trState.file){ showToast('Projekt + Datei nötig','err'); return; }
+  const btn = document.getElementById('tr-process-btn'); btn.disabled = true;
+  const wrap = document.getElementById('tr-prog-wrap'); wrap.style.display='';
+  const fill = document.getElementById('tr-prog-fill'); fill.style.width='0%';
+  const txt = document.getElementById('tr-prog-text'); txt.textContent = 'Upload läuft…';
+  const fd = new FormData();
+  fd.append('file', trState.file);
+  fd.append('model_size', document.getElementById('tr-model').value);
+  try {
+    const r = await fetch(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}/process`, {method:'POST', body:fd});
+    const d = await r.json();
+    if(!r.ok || !d.job_id){ showToast(d.detail||'Start fehlgeschlagen','err'); btn.disabled=false; return; }
+    txt.textContent = 'Verarbeite… (Schneiden & Transkribieren)';
+    trPollProcess(d.job_id);
+  } catch(e){ showToast('Verarbeitung fehlgeschlagen','err'); btn.disabled=false; }
+}
+
+function trPollProcess(jobId){
+  const fill = document.getElementById('tr-prog-fill');
+  const txt = document.getElementById('tr-prog-text');
+  const btn = document.getElementById('tr-process-btn');
+  const iv = setInterval(async () => {
+    try {
+      const r = await fetch(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}/process/status/${jobId}`);
+      const d = await r.json();
+      if(!r.ok){ clearInterval(iv); return; }
+      fill.style.width = (d.fortschritt||0) + '%';
+      if(d.status === 'fertig'){
+        clearInterval(iv);
+        fill.style.width='100%';
+        txt.textContent = `Fertig — ${d.clips_erstellt} Clips erstellt`;
+        showToast(`${d.clips_erstellt} Clips erstellt`,'ok');
+        btn.disabled = false; trState.file = null;
+        const fi = document.getElementById('tr-file'); if(fi) fi.value='';
+        document.getElementById('tr-drop-label').textContent='MP3, WAV, M4A, OGG, MP4 hochladen (30–60 Min ruhige Aufnahme ideal)';
+        loadTrClips(); trProjectStatus();
+      } else if(d.status === 'fehler'){
+        clearInterval(iv);
+        txt.textContent = 'Fehler: ' + (d.fehler||'');
+        showToast('Verarbeitung fehlgeschlagen','err');
+        btn.disabled = false;
+      }
+    } catch(e){ clearInterval(iv); btn.disabled=false; }
+  }, 1500);
+}
+
+async function loadTrClips(){
+  if(!trState.project) return;
+  const cont = document.getElementById('tr-clips');
+  if(!cont) return;
+  cont.innerHTML = '<div style="font-size:12px;color:var(--text3)">Lade Clips…</div>';
+  try {
+    const r = await fetch(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}/clips`);
+    const d = await r.json();
+    if(!d.clips || !d.clips.length){ cont.innerHTML = '<div style="font-size:12px;color:var(--text3)">Noch keine Clips. Oben Audio verarbeiten.</div>'; return; }
+    cont.innerHTML = d.clips.map(c => trClipRow(c)).join('');
+  } catch(e){ cont.innerHTML = '<div style="font-size:12px;color:var(--red)">Clips konnten nicht geladen werden</div>'; }
+}
+
+function trFlagBadge(f){
+  const map = { zu_lang:['>11s','var(--amber)'], kurz:['kurz','var(--text3)'], leer:['leer','var(--red)'] };
+  const m = map[f] || [f,'var(--text3)'];
+  return `<span style="font-size:10px;padding:.1rem .4rem;border-radius:99px;background:var(--surface2);color:${m[1]};border:1px solid var(--border)">${m[0]}</span>`;
+}
+
+function trClipRow(c){
+  const url = `${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}/clips/${encodeURIComponent(c.stem)}/audio`;
+  const flags = (c.flags||[]).map(trFlagBadge).join(' ');
+  const esc = (c.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return `<div style="border:1px solid var(--border);border-radius:8px;padding:.6rem;background:var(--surface2)">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${c.stem}</span>
+      <span style="font-size:10px;color:var(--text2)">${c.dauer}s</span>
+      ${flags}
+      <div style="flex:1"></div>
+      <button class="btn btn-secondary btn-sm" title="Speichern" onclick="trSaveClip('${c.stem}')"><i class="ti ti-check"></i></button>
+      <button class="btn btn-secondary btn-sm" title="Löschen" onclick="trDeleteClip('${c.stem}')"><i class="ti ti-trash"></i></button>
+    </div>
+    <audio controls preload="none" src="${url}" style="width:100%;height:32px;margin-bottom:.4rem"></audio>
+    <textarea id="tr-txt-${c.stem}" rows="2" style="width:100%;font-size:13px;resize:vertical">${esc}</textarea>
+  </div>`;
+}
+
+async function trSaveClip(stem){
+  const ta = document.getElementById('tr-txt-'+stem);
+  if(!ta) return;
+  try {
+    const r = await fetch(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}/clips/${encodeURIComponent(stem)}`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text: ta.value })
+    });
+    if(!r.ok){ showToast('Speichern fehlgeschlagen','err'); return; }
+    showToast('Gespeichert','ok');
+  } catch(e){ showToast('Speichern fehlgeschlagen','err'); }
+}
+
+async function trDeleteClip(stem){
+  const ok = await showModal({ title:'Clip löschen', icon:'ti-trash', iconColor:'var(--red)', message:`Clip ${stem} löschen?`, okText:'Löschen', cancelText:'Abbrechen' });
+  if(!ok) return;
+  try {
+    const r = await fetch(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}/clips/${encodeURIComponent(stem)}`, {method:'DELETE'});
+    if(!r.ok){ showToast('Löschen fehlgeschlagen','err'); return; }
+    showToast('Clip gelöscht','ok');
+    loadTrClips(); trProjectStatus();
+  } catch(e){ showToast('Löschen fehlgeschlagen','err'); }
+}
+
+async function trExport(){
+  if(!trState.project) return;
+  const cleaner = document.getElementById('tr-cleaner').checked;
+  const pct = parseFloat(document.getElementById('tr-evalpct').value) || 0.15;
+  const info = document.getElementById('tr-export-info');
+  info.textContent = 'Baue Dataset…';
+  try {
+    const r = await fetch(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}/export`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ apply_cleaner: cleaner, eval_percentage: pct })
+    });
+    const d = await r.json();
+    if(!r.ok){ info.textContent=''; showToast(d.detail||'Export fehlgeschlagen','err'); return; }
+    info.innerHTML = `Dataset bereit ✓ — ${d.train} Train / ${d.eval} Eval (Speaker: ${d.speaker_name}, Sprache: ${d.sprache})`;
+    trState.exported = true;
+    const zb = document.getElementById('tr-zip-btn'); if(zb) zb.style.display='';
+    showToast('Dataset exportiert','ok');
+    trProjectStatus();
+  } catch(e){ info.textContent=''; showToast('Export fehlgeschlagen','err'); }
+}
+
+function trDownloadZip(){
+  if(!trState.project) return;
+  window.open(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}/export/download`,'_blank');
+}
+
 
 </script>
 <div id="app-modal"><div class="am-box">
