@@ -1927,6 +1927,7 @@ CATEGORY_DIRS = {
     "transkript": TRANSCRIPTION_DIR,
     "stimmen":    VOICE_DIR,
     "downloads":  DOWNLOAD_DIR,
+    "archiv":     ARCHIV_DIR,
 }
 
 def _cat_dir(cat: str) -> Path:
