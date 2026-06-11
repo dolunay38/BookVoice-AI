@@ -285,14 +285,6 @@ body.light-mode .btn-primary{color:#fff}
     <i class="ti ti-photo"></i>
     <div class="sb-tooltip">Cover</div>
   </div>
-  <div class="sb-item" onclick="showPanel('files')" id="nav-files">
-    <i class="ti ti-folder"></i>
-    <div class="sb-tooltip">Dateien</div>
-  </div>
-  <div class="sb-item" onclick="showPanel('archiv')" id="nav-archiv">
-    <i class="ti ti-archive"></i>
-    <div class="sb-tooltip">Archiv</div>
-  </div>
   <div class="sb-item" onclick="showPanel('transcribe')" id="nav-transcribe">
     <i class="ti ti-file-text"></i>
     <div class="sb-tooltip" data-i18n="nav_transcribe">Transkription</div>
@@ -363,7 +355,7 @@ body.light-mode .btn-primary{color:#fff}
           <div style="display:flex;gap:.5rem;margin-top:1rem">
             <button class="btn btn-primary" onclick="showPanel('studio')"><i class="ti ti-wand"></i> Neues Hörbuch</button>
             <button class="btn btn-secondary" onclick="showPanel('voices')"><i class="ti ti-microphone"></i> Stimmen</button>
-            <button class="btn btn-secondary" onclick="showPanel('files')"><i class="ti ti-folder"></i> Bibliothek</button>
+            <button class="btn btn-secondary" onclick="showPanel('mediathek')"><i class="ti ti-folder"></i> Bibliothek</button>
           </div>
         </div>
         <div style="font-size:64px;opacity:.15">🎙️</div>
@@ -412,7 +404,7 @@ body.light-mode .btn-primary{color:#fff}
             <div class="action-sub">Musik hochladen und mit Hörbuch mischen</div>
           </div>
         </div>
-        <div class="action-card" onclick="showPanel('files')">
+        <div class="action-card" onclick="showPanel('mediathek')">
           <div class="action-icon" style="background:rgba(59,130,246,.1)">📂</div>
           <div>
             <div class="action-title">Bibliothek</div>
@@ -1504,6 +1496,9 @@ function _mediaRow(cat, reg, f, i, name){
   const playBtn = _isAudio(f.name)
     ? `<button class="btn btn-secondary btn-sm" title="Abspielen" onclick="mediaPlay('${cat}',${i})"><i class="ti ti-player-play"></i></button>`
     : '';
+  const prevBtn = /\.(txt|srt|vtt|md|json|csv)$/i.test(f.name)
+    ? `<button class="btn btn-secondary btn-sm" title="Vorschau" onclick="mediaPreview('${cat}',${i})"><i class="ti ti-eye"></i></button>`
+    : '';
   return `<div style="display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border)">
       <div style="width:34px;height:34px;flex-shrink:0;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text2)"><i class="ti ${reg.icon}" style="font-size:17px"></i></div>
       <div style="flex:1;min-width:0">
@@ -1512,6 +1507,7 @@ function _mediaRow(cat, reg, f, i, name){
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0">
         ${playBtn}
+        ${prevBtn}
         <a class="btn btn-secondary btn-sm" title="Download" href="${TTS_URL}/files/${cat}/${enc}?download=true"><i class="ti ti-download"></i></a>
         <button class="btn btn-secondary btn-sm" title="Umbenennen" onclick="mediaRename('${cat}',${i})"><i class="ti ti-edit"></i></button>
         <button class="btn btn-danger btn-sm" title="Löschen" onclick="mediaDelete('${cat}',${i})"><i class="ti ti-trash"></i></button>
@@ -1588,6 +1584,26 @@ function mediaPlay(cat, i){
   }
   if(wrap) wrap.style.display = 'none';
   if(a){ a.src = url; a.style.display = 'block'; a.play(); }
+}
+
+async function mediaPreview(cat, i){
+  const f = _mediaData[i]; if(!f) return;
+  try {
+    const resp = await fetch(`${TTS_URL}/files/${cat}/${_encPath(f.relpath)}`);
+    const txt = await resp.text();
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:1rem';
+    ov.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:640px;width:100%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.1rem;border-bottom:1px solid var(--border)"><div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.relpath + '</div><button id="media-prev-close" class="btn btn-secondary btn-sm" style="margin-left:1rem"><i class="ti ti-x"></i></button></div>'
+      + '<pre id="media-prev-pre" style="margin:0;padding:1.1rem;overflow:auto;font-size:12px;line-height:1.5;color:var(--text2);white-space:pre-wrap;word-break:break-word;font-family:monospace"></pre></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#media-prev-pre').textContent = txt;
+    ov.querySelector('#media-prev-close').addEventListener('click', function(){ ov.remove(); });
+    ov.addEventListener('click', function(e){ if(e.target === ov) ov.remove(); });
+  } catch(e){
+    addLog('[MEDIATHEK] Vorschau-Fehler: ' + e.message, 'err');
+    if(typeof showToast === 'function') showToast('Vorschau fehlgeschlagen', 'err');
+  }
 }
 
 async function mediaRename(cat, i){
