@@ -73,6 +73,7 @@ services:
       - /mnt/data/docker-data/ki-archiv/HOERBUCH:/app/HOERBUCH
       - /mnt/data/docker-data/ki-archiv/TRANSKRIPTIONEN:/app/TRANSKRIPTIONEN
       - /mnt/data/docker-data/ki-archiv/ARCHIV:/app/ARCHIV
+      - /mnt/data/docker-data/ki-archiv/TRAINING:/app/TRAINING
     environment:
       - TTS_OUTPUT=/app/HOERBUCH
       - TTS_LANG=tr
