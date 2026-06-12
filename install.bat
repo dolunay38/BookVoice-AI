@@ -106,7 +106,7 @@ echo.
 echo [6/7] Kopiere Dateien...
 
 set FILES_OK=1
-for %%F in (tts_server.py ki_archiv_tts_web.html Dockerfile.tts nginx-bookvoice.conf) do (
+for %%F in (tts_server.py ki_archiv_tts_web.html Dockerfile.tts) do (
     if not exist "%~dp0%%F" (
         echo  FEHLER: %%F nicht gefunden!
         set FILES_OK=0
@@ -128,7 +128,6 @@ if "%FILES_OK%"=="0" (
 copy /Y "%~dp0tts_server.py"          "%INSTALL_DIR%\" > nul
 copy /Y "%~dp0ki_archiv_tts_web.html" "%INSTALL_DIR%\" > nul
 copy /Y "%~dp0Dockerfile.tts"         "%INSTALL_DIR%\" > nul
-copy /Y "%~dp0nginx-bookvoice.conf"   "%INSTALL_DIR%\" > nul
 copy /Y "%~dp0version.txt"            "%INSTALL_DIR%\" > nul
 if "%USE_GPU%"=="1" (
     copy /Y "%~dp0Dockerfile.tts.gpu"  "%INSTALL_DIR%\" > nul
