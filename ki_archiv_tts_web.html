@@ -648,20 +648,6 @@ Dein selbst-gehostetes KI-Studio: Texte, eBooks, PDFs & Fotos → Hörbücher (X
             </div>
           </div>
 
-          <!-- Aktive Stimme -->
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Aktive Stimme</span>
-              <button class="btn btn-secondary btn-sm" onclick="showPanel('voices')">Wechseln</button>
-            </div>
-            <div style="display:flex;align-items:center;gap:.75rem">
-              <div class="vc-avatar" id="active-avatar" style="background:rgba(34,197,94,.15);color:var(--green);width:36px;height:36px;font-size:12px;font-weight:600;border-radius:50%;display:flex;align-items:center;justify-content:center">SM</div>
-              <div>
-                <div style="font-size:12px;font-weight:500;color:var(--text)" id="active-voice-name">stimme.wav</div>
-                <div style="font-size:11px;color:var(--text3)" id="active-voice-meta">TR · XTTS-v2</div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- RIGHT -->
@@ -720,6 +706,19 @@ Dein selbst-gehostetes KI-Studio: Texte, eBooks, PDFs & Fotos → Hörbücher (X
             </div>
           </div>
 
+          <!-- Aktive Stimme (kompakt, über Ausgabe) -->
+          <div class="card" style="padding:.65rem .9rem">
+            <div style="display:flex;align-items:center;gap:.6rem">
+              <div class="vc-avatar" id="active-avatar" style="background:rgba(34,197,94,.15);color:var(--green);width:32px;height:32px;font-size:11px;font-weight:600;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">SM</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;color:var(--text3);margin-bottom:1px">Aktive Stimme</div>
+                <div style="font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="active-voice-name">stimme.wav</div>
+              </div>
+              <div id="active-voice-meta" style="font-size:10px;color:var(--text3);flex-shrink:0">TR · XTTS-v2</div>
+              <button class="btn btn-secondary btn-sm" onclick="showPanel('voices')" style="flex-shrink:0">Wechseln</button>
+            </div>
+          </div>
+
           <!-- Test + Generate -->
           <div class="card">
             <div class="card-header"><span class="card-title">Ausgabe</span></div>
@@ -739,6 +738,10 @@ Dein selbst-gehostetes KI-Studio: Texte, eBooks, PDFs & Fotos → Hörbücher (X
             <button class="btn btn-primary btn-block" id="gen-btn" onclick="startSynthesis()" style="margin-top:.75rem">
               <i class="ti ti-wand"></i> HÖRBUCH GENERIEREN
             </button>
+            <div id="gen-voice-badge" style="display:flex;align-items:center;gap:.4rem;margin-top:.4rem;font-size:11px;color:var(--text3);justify-content:center">
+              <i class="ti ti-microphone" style="color:var(--green)"></i>
+              <span id="gen-voice-label">stimme.wav</span>
+            </div>
             <button class="btn btn-danger btn-block" id="stop-btn" onclick="cancelJob()" style="margin-top:.4rem;display:none">
               <i class="ti ti-player-stop"></i> <span data-i18n="btn_stop">GENERIERUNG STOPPEN</span>
             </button>
@@ -1125,6 +1128,10 @@ Dein selbst-gehostetes KI-Studio: Texte, eBooks, PDFs & Fotos → Hörbücher (X
               <button class="btn btn-primary" id="youtube-btn" onclick="importYoutube()"><i class="ti ti-download"></i> Import</button>
             </div>
             <!-- Mikrofon-Recorder -->
+            <div id="mic-name-row" style="display:none;margin-bottom:.5rem">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:.3rem">Name für Stimme</div>
+              <input type="text" id="mic-voice-name" placeholder="z.B. rumi_sufi" style="width:100%" oninput="this.value=this.value.replace(/[^\w\-]/g,'_')">
+            </div>
             <div id="mic-recorder" style="display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:.5rem 0">
               <button id="mic-btn" class="mic-circle" onclick="toggleMicRecording()" aria-label="Aufnehmen">
                 <span class="mic-ring"></span>
@@ -2784,6 +2791,7 @@ function updateActiveVoiceDisplay(){
   document.getElementById('active-avatar').style.color = v.fg;
   document.getElementById('active-voice-name').textContent = v.name;
   document.getElementById('active-voice-meta').textContent = 'TR/DE/EN · XTTS-v2';
+  const _gvl = document.getElementById('gen-voice-label'); if(_gvl) _gvl.textContent = v.name;
 }
 
 async function previewVoice(id){
@@ -3265,9 +3273,10 @@ function updateImportZiel(){
   const ziel = _getImportZiel();
   const tb = document.getElementById('transcribe-btn');
   if(tb && !tb.disabled){
-    const labels = { transcribe:'TRANSKRIBIEREN', voice:'ALS STIMME SPEICHERN', audio:'AUDIO HERUNTERLADEN' };
-    tb.innerHTML = '<i class="ti ti-wand"></i> ' + (labels[ziel] || 'START');
+    tb.innerHTML = '<i class="ti ti-wand"></i> START';
   }
+  const mnr = document.getElementById('mic-name-row');
+  if(mnr) mnr.style.display = (ziel === 'voice') ? '' : 'none';
   const rec = document.getElementById('mic-recorder');
   const st = document.getElementById('mic-status');
   if(!rec) return;
@@ -3403,7 +3412,9 @@ async function _processMicRecording(blob){
     if(typeof showToast==='function') showToast('Aufnahme leer — Mikrofon prüfen', 'err');
     return;
   }
-  const file = new File([blob], `mic_${Date.now()}.webm`, { type:'audio/webm' });
+  const _micRaw = (document.getElementById('mic-voice-name')||{}).value || '';
+  const _micSafeName = _micRaw.trim().replace(/[^\w\-]/g,'_') || ('mic_'+Date.now());
+  const file = new File([blob], _micSafeName + '.wav', { type:'audio/webm' });
   status.style.color = 'var(--amber)';
   status.textContent = ziel === 'voice' ? '⏳ Speichere Stimme...' : '⏳ Transkribiere...';
   addLog(`[MIKROFON] Aufnahme fertig (${ziel})`, 'info');
@@ -4493,6 +4504,27 @@ function saveVoiceMeta(){
   document.getElementById('voice-edit-modal').style.display = 'none';
   showToast('Stimme aktualisiert', 'ok');
   loadVoicesFromServer();
+}
+
+
+// ── blinkFolder (#4) ─────────────────────────────────────────────────────
+function blinkFolder(cat, folder){
+  if(_mediaActive === cat && folder){
+    setTimeout(function(){ _doBlinkGroup(folder); }, 800);
+  } else {
+    const label = folder ? '"'+folder+'"' : 'Mediathek';
+    showToast('Gespeichert in ' + label + ' — Mediathek öffnen', 'ok');
+  }
+}
+function _doBlinkGroup(folder){
+  document.querySelectorAll('#media-list div[style*="font-weight:500"]').forEach(function(el){
+    if(el.textContent.includes(folder)){
+      let t=0;
+      const blink=function(){ el.style.background=(t%2===0)?'var(--green-dim)':'var(--surface2)'; if(++t<6) setTimeout(blink,220); else el.style.background=''; };
+      blink();
+      el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+  });
 }
 
 function toggleLogAutoRefresh(){

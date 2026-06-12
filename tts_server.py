@@ -1970,6 +1970,16 @@ def files_rename(req: _RenameReq):
     src.rename(dst)
     return {"status": "ok", "neu": str(dst.relative_to(d))}
 
+# #3: Mediathek-Ordner löschen
+@app.delete("/files/{cat}/folder/{folder_name}")
+def files_delete_folder(cat: str, folder_name: str):
+    d = _cat_dir(cat)
+    folder = _safe_path(d, folder_name)
+    if not folder.exists() or not folder.is_dir():
+        raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    shutil.rmtree(folder)
+    return {"status": "ok", "geloescht": folder_name}
+
 @app.get("/files/{cat}")
 def files_list(cat: str):
     import datetime
@@ -2412,6 +2422,123 @@ def training_export_download(name: str):
             if f.is_file():
                 z.write(f, arcname=str(f.relative_to(ds)))
     return FileResponse(zip_path, filename=f"{pdir.name}_dataset.zip", media_type="application/zip")
+
+# ============================================================
+# KI-TRAININGSRAUM — Stufe 3: Passwort-Gate
+# ============================================================
+TRAINING_PASSWORD = os.environ.get("TRAINING_PASSWORD", "sufi2026")
+
+class _TrainAuthReq(BaseModel):
+    password: str = ""
+
+@app.post("/training/auth")
+def training_auth(req: _TrainAuthReq):
+    if req.password and req.password == TRAINING_PASSWORD:
+        return {"status": "ok"}
+    raise HTTPException(status_code=401, detail="Falsches Passwort")
+
+
+# ============================================================
+# KI-TRAININGSRAUM — Stufe 4: Modell-Registrierung
+# ============================================================
+TTS_MODELS_DIR = Path("/app/tts_models")
+_active_model_name = "base"
+_MODEL_REQUIRED = ["config.json", "model.pth"]
+_MODEL_ASSETS = ["vocab.json", "dvae.pth", "mel_stats.pth", "speakers_xtts.pth"]
+
+def _ensure_model_assets(mdir: Path):
+    for asset in _MODEL_ASSETS:
+        tgt = mdir / asset
+        base = MODEL_DIR / asset
+        if not tgt.exists() and base.exists():
+            try:
+                shutil.copy2(base, tgt)
+            except Exception:
+                pass
+
+def _load_tts_engine_from(checkpoint_dir: Path):
+    from TTS.tts.configs.xtts_config import XttsConfig
+    from TTS.tts.models.xtts import Xtts
+    cfg = XttsConfig()
+    cfg.load_json(str(Path(checkpoint_dir) / "config.json"))
+    eng = Xtts.init_from_config(cfg)
+    eng.load_checkpoint(cfg, checkpoint_dir=str(checkpoint_dir), eval=True)
+    if DEVICE == "cuda":
+        eng = eng.cuda()
+    return eng
+
+@app.get("/training/models")
+def training_models_list():
+    TTS_MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    modelle = []
+    for d in sorted(TTS_MODELS_DIR.iterdir()):
+        if not d.is_dir() or d.name.startswith("tts_models--"):
+            continue
+        vollstaendig = all((d / r).exists() for r in _MODEL_REQUIRED)
+        if not vollstaendig:
+            continue
+        modelle.append({"name": d.name, "vollstaendig": vollstaendig, "aktiv": d.name == _active_model_name})
+    return {"modelle": modelle, "aktiv": _active_model_name}
+
+@app.post("/training/models/upload")
+async def training_model_upload(name: str = Form(...), file: UploadFile = File(...)):
+    import zipfile as _zip, io as _io
+    safe = re.sub(r"[^\w\-]", "_", name.strip()) or "xtts_v2_sufi"
+    mdir = _safe_path(TTS_MODELS_DIR, safe)
+    mdir.mkdir(parents=True, exist_ok=True)
+    content = await file.read()
+    try:
+        zf = _zip.ZipFile(_io.BytesIO(content))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Keine gültige ZIP-Datei")
+    erlaubt = set(_MODEL_REQUIRED + _MODEL_ASSETS + ["reference.wav"])
+    geschrieben = []
+    for member in zf.namelist():
+        if member.endswith("/"):
+            continue
+        base = Path(member).name
+        if base in erlaubt:
+            with zf.open(member) as src, open(mdir / base, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+            geschrieben.append(base)
+    vollstaendig = all((mdir / r).exists() for r in _MODEL_REQUIRED)
+    if not vollstaendig:
+        raise HTTPException(status_code=400, detail="ZIP enthält nicht model.pth + config.json")
+    return {"status": "ok", "name": safe, "dateien": geschrieben, "vollstaendig": vollstaendig}
+
+class _TrainModelReq(BaseModel):
+    name: str = "base"
+
+@app.post("/training/models/activate")
+def training_model_activate(req: _TrainModelReq):
+    global tts_engine, _active_model_name
+    name = (req.name or "base").strip()
+    if name in ("base", "xtts_v2", ""):
+        mdir = MODEL_DIR
+        ziel = "base"
+    else:
+        mdir = _safe_path(TTS_MODELS_DIR, name)
+        if not all((mdir / r).exists() for r in _MODEL_REQUIRED):
+            raise HTTPException(status_code=400, detail="Modell unvollständig")
+        _ensure_model_assets(mdir)
+        ziel = name
+    try:
+        eng = _load_tts_engine_from(mdir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Modell laden fehlgeschlagen: {str(e)[:200]}")
+    tts_engine = eng
+    _active_model_name = ziel
+    return {"status": "ok", "aktiv": _active_model_name}
+
+@app.delete("/training/models/{name}")
+def training_model_delete(name: str):
+    if name == _active_model_name:
+        raise HTTPException(status_code=400, detail="Aktives Modell — erst Basis aktivieren")
+    mdir = _safe_path(TTS_MODELS_DIR, name)
+    if not mdir.exists() or not mdir.is_dir():
+        raise HTTPException(status_code=404, detail="Modell nicht gefunden")
+    shutil.rmtree(mdir)
+    return {"status": "ok", "geloescht": name}
 
 
 @app.get("/transcribe/files")
