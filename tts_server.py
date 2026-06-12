@@ -22,8 +22,14 @@ TRANSCRIPTION_DIR = Path("/app/TRANSKRIPTIONEN")
 TRANSCRIPTION_DIR.mkdir(parents=True, exist_ok=True)
 EINGABE_DIR = Path("/app/EINGABE")
 EINGABE_DIR.mkdir(parents=True, exist_ok=True)
+DOWNLOAD_DIR = Path("/app/DOWNLOADS")
+DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 ARCHIV_DIR = Path("/app/ARCHIV")
 ARCHIV_DIR.mkdir(parents=True, exist_ok=True)
+
+# KI-Trainingsraum (XTTS-v2 Fine-tuning Daten-Werkstatt)
+TRAINING_DIR = Path("/app/TRAINING")
+TRAINING_DIR.mkdir(parents=True, exist_ok=True)
 
 # Archiv-Routing nach Dateityp
 AUDIO_VIDEO_EXT = {
@@ -1575,9 +1581,12 @@ async def transcribe_stream(
     language: str = Form("auto"),
     model_size: str = Form("small"),
     project_name: str = Form(""),
-    folder: str = Form("")
+    folder: str = Form(""),
+    diarize: str = Form("false")
 ):
-    """Live-Transkription mit Server-Sent Events — Satz für Satz"""
+    """Live-Transkription mit Server-Sent Events — Satz für Satz.
+    diarize: Sprecher-Erkennung. Nur auf Remote-GPU-Engine (Colab/RunPod) verfuegbar,
+    da lokal kein VRAM. Lokal wird der Parameter ignoriert (siehe DIARIZATION-Block)."""
     content = await file.read()
     suffix = Path(file.filename).suffix.lower()
     filename = file.filename
@@ -1616,6 +1625,13 @@ async def transcribe_stream(
             import json
             yield f"data: {json.dumps({'typ': 'info', 'sprache': info.language, 'modell': model_size})}\n\n"
 
+            # Diarization (nur wenn angefragt UND GPU+Token verfuegbar)
+            diar_turns = []
+            want_diarize = str(diarize).lower() == "true"
+            if want_diarize and diarization_enabled():
+                yield f"data: {json.dumps({'typ': 'info', 'sprache': info.language, 'modell': model_size, 'diarize': 'laeuft'})}\n\n"
+                diar_turns = diarize_audio(wav_path)
+
             # Live streamen UND sammeln für Merge
             raw_segments = []
             all_text_live = []
@@ -1626,12 +1642,17 @@ async def transcribe_stream(
                 raw_segments.append(seg)
                 seg_num_live += 1
                 text = seg.text.strip()
+                sprecher = sprecher_fuer_segment(seg.start, seg.end, diar_turns) if diar_turns else None
                 start = f"{int(seg.start//3600):02d}:{int((seg.start%3600)//60):02d}:{seg.start%60:06.3f}".replace(".", ",")
                 end = f"{int(seg.end//3600):02d}:{int((seg.end%3600)//60):02d}:{seg.end%60:06.3f}".replace(".", ",")
-                srt_zeile = f"{seg_num_live}\n{start} --> {end}\n{text}"
+                prefix = f"[{sprecher}] " if sprecher else ""
+                srt_zeile = f"{seg_num_live}\n{start} --> {end}\n{prefix}{text}"
                 all_text_live.append(text)
                 all_srt_live.append(srt_zeile)
-                yield f"data: {json.dumps({'typ': 'segment', 'nr': seg_num_live, 'text': text, 'start': start, 'end': end, 'srt': srt_zeile})}\n\n"
+                seg_payload = {'typ': 'segment', 'nr': seg_num_live, 'text': text, 'start': start, 'end': end, 'srt': srt_zeile}
+                if sprecher:
+                    seg_payload['sprecher'] = sprecher
+                yield f"data: {json.dumps(seg_payload)}\n\n"
 
             # Nach dem Stream: Segmente mergen für Speicherung
             merged = merge_short_segments(raw_segments, min_words=5)
@@ -1786,6 +1807,613 @@ async def transcribe_audio(
         if wav_path != tmp_path and wav_path.exists():
             wav_path.unlink()
 
+# ════════════════════════════════════════════════════════════════
+# YOUTUBE / URL IMPORT
+# ════════════════════════════════════════════════════════════════
+# Laedt Audio von einer URL (YouTube etc.) via yt-dlp und nutzt es
+# entweder als Stimm-Sample (voice) oder transkribiert es (transcribe).
+# Hinweis: yt-dlp muss installiert sein (Dockerfile). Manche Videos
+# (altersbeschraenkt) brauchen Cookies — Standard-Faelle gehen ohne.
+# ════════════════════════════════════════════════════════════════
+@app.post("/import/youtube")
+async def import_youtube(
+    url: str = Form(...),
+    ziel: str = Form("transcribe"),       # 'voice' | 'transcribe' | 'audio'
+    language: str = Form("auto"),
+    model_size: str = Form("small"),
+    project_name: str = Form(""),
+    folder: str = Form("")
+):
+    try:
+        import yt_dlp
+    except ImportError:
+        raise HTTPException(status_code=501, detail="yt-dlp nicht installiert (Dockerfile rebuild noetig).")
+
+    if not url.strip():
+        raise HTTPException(status_code=400, detail="Keine URL angegeben")
+
+    job_id = uuid.uuid4().hex
+    out_template = str(EINGABE_DIR / f"yt_{job_id}.%(ext)s")
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "outtmpl": out_template,
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}],
+    }
+
+    titel = "youtube"
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=True)
+            titel = info_dict.get("title", "youtube")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Download fehlgeschlagen: {str(e)[:300]}")
+
+    downloaded = list(EINGABE_DIR.glob(f"yt_{job_id}.*"))
+    if not downloaded:
+        raise HTTPException(status_code=500, detail="Heruntergeladene Datei nicht gefunden")
+    audio_path = downloaded[0]
+    safe_title = re.sub(r'[^\w\-_]', '_', titel)[:60] or "youtube"
+
+    # ── Ziel: Komplettes Audio (Download) ───────────────────────
+    if ziel == "audio":
+        target = DOWNLOAD_DIR / f"{safe_title}{audio_path.suffix}"
+        if target.exists():
+            target = DOWNLOAD_DIR / f"{safe_title}_{job_id[:6]}{audio_path.suffix}"
+        shutil.move(str(audio_path), str(target))
+        return {"status": "ok", "ziel": "audio", "datei": target.name, "titel": titel}
+
+    # ── Ziel: Stimm-Sample ──────────────────────────────────────
+    if ziel == "voice":
+        voice_path = VOICE_DIR / f"yt_{safe_title}.wav"
+        # Auf 60s kuerzen (XTTS-Cloning braucht 6-60s) + 22050 Hz mono
+        subprocess.run([
+            "ffmpeg", "-i", str(audio_path), "-t", "60",
+            "-ar", "22050", "-ac", "1", "-y", str(voice_path)
+        ], capture_output=True)
+        audio_path.unlink(missing_ok=True)
+        if not voice_path.exists():
+            raise HTTPException(status_code=500, detail="Stimm-Sample konnte nicht erstellt werden")
+        return {"status": "ok", "ziel": "voice", "datei": voice_path.name, "titel": titel}
+
+    # ── Ziel: Transkribieren ────────────────────────────────────
+    wav_path = audio_path.with_suffix(".ytwav.wav")
+    subprocess.run([
+        "ffmpeg", "-i", str(audio_path), "-ar", "16000", "-ac", "1", "-y", str(wav_path)
+    ], capture_output=True)
+    if not wav_path.exists():
+        raise HTTPException(status_code=500, detail="Audio-Konvertierung fehlgeschlagen")
+
+    try:
+        model = get_whisper_model(model_size)
+        lang = None if language == "auto" else language
+        segments_list, info = model.transcribe(str(wav_path), language=lang, beam_size=5, vad_filter=True)
+        segments = list(segments_list)
+        merged = merge_short_segments(segments, min_words=5)
+        text_parts, srt_parts = [], []
+        for i, (text, start_t, end_t) in enumerate(merged, 1):
+            text_parts.append(text)
+            start = f"{int(start_t//3600):02d}:{int((start_t%3600)//60):02d}:{start_t%60:06.3f}".replace(".", ",")
+            end = f"{int(end_t//3600):02d}:{int((end_t%3600)//60):02d}:{end_t%60:06.3f}".replace(".", ",")
+            srt_parts.append(f"{i}\n{start} --> {end}\n{text}\n")
+        full_text = "\n".join(text_parts)
+        srt_text = "\n".join(srt_parts)
+
+        base_name = project_name.strip() if project_name.strip() else safe_title
+        base_name = re.sub(r'[^\w\-_]', '_', base_name)
+        if folder.strip():
+            save_dir = TRANSCRIPTION_DIR / re.sub(r'[^\w\-_]', '_', folder.strip())
+            save_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            save_dir = TRANSCRIPTION_DIR
+        (save_dir / f"{base_name}.txt").write_text(full_text, encoding="utf-8")
+        (save_dir / f"{base_name}.srt").write_text(srt_text, encoding="utf-8")
+
+        # Quelle archivieren (Audio/Video -> hoerbuch)
+        archiviere_quelle(audio_path, f"{safe_title}{audio_path.suffix}")
+
+        return {
+            "status": "ok", "ziel": "transcribe",
+            "text": full_text, "srt": srt_text,
+            "woerter": len(full_text.split()),
+            "titel": titel, "txt_datei": f"{base_name}.txt",
+            "sprache": info.language, "modell": model_size
+        }
+    finally:
+        wav_path.unlink(missing_ok=True)
+        audio_path.unlink(missing_ok=True)
+
+# ════════════ MEDIATHEK: generische Datei-Endpoints ════════════
+CATEGORY_DIRS = {
+    "hoerbuch":   OUTPUT_DIR,
+    "transkript": TRANSCRIPTION_DIR,
+    "stimmen":    VOICE_DIR,
+    "downloads":  DOWNLOAD_DIR,
+    "archiv":     ARCHIV_DIR,
+    "training":   TRAINING_DIR,
+}
+
+def _cat_dir(cat: str) -> Path:
+    d = CATEGORY_DIRS.get(cat)
+    if d is None:
+        raise HTTPException(status_code=404, detail="Unbekannte Kategorie")
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+def _safe_path(base: Path, relpath: str) -> Path:
+    p = (base / relpath).resolve()
+    if not str(p).startswith(str(base.resolve())):
+        raise HTTPException(status_code=400, detail="Ungueltiger Pfad")
+    return p
+
+class _RenameReq(BaseModel):
+    kategorie: str
+    alt: str
+    neu: str
+
+@app.patch("/files/rename")
+def files_rename(req: _RenameReq):
+    d = _cat_dir(req.kategorie)
+    src = _safe_path(d, req.alt)
+    if not src.exists() or not src.is_file():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    neu_name = re.sub(r'[^\w\-_. ]', '_', req.neu).strip()
+    if not neu_name:
+        raise HTTPException(status_code=400, detail="Ungueltiger Name")
+    if not Path(neu_name).suffix:
+        neu_name += src.suffix
+    dst = src.parent / neu_name
+    if dst.exists():
+        raise HTTPException(status_code=409, detail="Name existiert bereits")
+    src.rename(dst)
+    return {"status": "ok", "neu": str(dst.relative_to(d))}
+
+@app.get("/files/{cat}")
+def files_list(cat: str):
+    import datetime
+    d = _cat_dir(cat)
+    files = []
+    for f in d.rglob("*"):
+        if f.is_file():
+            st = f.stat()
+            files.append({
+                "name": f.name,
+                "relpath": str(f.relative_to(d)),
+                "groesse_kb": round(st.st_size / 1024, 1),
+                "datum": st.st_mtime,
+                "datum_str": datetime.datetime.fromtimestamp(st.st_mtime).strftime("%d.%m.%Y %H:%M"),
+            })
+    files.sort(key=lambda x: x["datum"], reverse=True)
+    return {"kategorie": cat, "dateien": files, "anzahl": len(files)}
+
+@app.get("/files/{cat}/{relpath:path}")
+def files_get(cat: str, relpath: str, download: bool = False):
+    d = _cat_dir(cat)
+    p = _safe_path(d, relpath)
+    if not p.exists() or not p.is_file():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    if download:
+        return FileResponse(p, filename=p.name)
+    return FileResponse(p)
+
+@app.delete("/files/{cat}/{relpath:path}")
+def files_delete(cat: str, relpath: str):
+    d = _cat_dir(cat)
+    p = _safe_path(d, relpath)
+    if not p.exists() or not p.is_file():
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    p.unlink()
+    return {"status": "ok", "geloescht": relpath}
+
+
+# ============================================================
+# KI-TRAININGSRAUM — Stufe 1: Struktur + Projekt-Endpoints
+# Daten-Werkstatt fuer XTTS-v2 Fine-tuning. Training selbst laeuft
+# extern auf Colab T4. Dataset-Format kompatibel zu
+# daswer123/xtts-finetune-webui:
+#   <projekt>/dataset/{wavs/, metadata_train.csv, metadata_eval.csv, lang.txt}
+# Stufe 2 = Auto-Pipeline (Clip-Split + FastWhisper). Stufe 3 = Passwort.
+# ============================================================
+
+def _train_project_dir(name: str) -> Path:
+    """Sicheren Projekt-Pfad unter TRAINING_DIR liefern (gegen ../)."""
+    safe = re.sub(r'[^\w\-]', '_', name.strip())
+    if not safe:
+        raise HTTPException(status_code=400, detail="Ungueltiger Projektname")
+    return _safe_path(TRAINING_DIR, safe)
+
+def _train_project_status(pdir: Path) -> dict:
+    """Status/Zaehler eines Trainings-Projekts sammeln."""
+    import datetime as _dt, json as _json
+    ds     = pdir / "dataset"
+    wavs   = ds / "wavs"
+    raw    = pdir / "raw"
+    review = pdir / "review"
+    lang = ""
+    lang_file = ds / "lang.txt"
+    if lang_file.exists():
+        lang = lang_file.read_text(encoding="utf-8").strip()
+    speaker = ""
+    meta_file = pdir / "project.json"
+    if meta_file.exists():
+        try:
+            speaker = _json.loads(meta_file.read_text(encoding="utf-8")).get("speaker_name", "")
+        except Exception:
+            pass
+    n_raw    = len([f for f in raw.glob("*")    if f.is_file()]) if raw.exists()    else 0
+    n_clips  = len(list(wavs.glob("*.wav")))                      if wavs.exists()   else 0
+    n_review = len(list(review.glob("*.txt")))                    if review.exists() else 0
+    dataset_bereit = (ds / "metadata_train.csv").exists() and (ds / "metadata_eval.csv").exists()
+    return {
+        "name": pdir.name,
+        "sprache": lang,
+        "speaker_name": speaker,
+        "raw": n_raw,
+        "clips": n_clips,
+        "review_paare": n_review,
+        "dataset_bereit": dataset_bereit,
+        "erstellt": _dt.datetime.fromtimestamp(pdir.stat().st_mtime).strftime("%d.%m.%Y %H:%M"),
+        "erstellt_ts": pdir.stat().st_mtime,
+    }
+
+class _TrainProjectReq(BaseModel):
+    name: str
+    sprache: str = "tr"
+    speaker_name: str = ""
+
+@app.get("/training/projects")
+def training_projects_list():
+    TRAINING_DIR.mkdir(parents=True, exist_ok=True)
+    projekte = [_train_project_status(p) for p in TRAINING_DIR.iterdir() if p.is_dir()]
+    projekte.sort(key=lambda x: x["erstellt_ts"], reverse=True)
+    return {"projekte": projekte, "anzahl": len(projekte)}
+
+@app.post("/training/projects")
+def training_project_create(req: _TrainProjectReq):
+    import json as _json, datetime as _dt
+    pdir = _train_project_dir(req.name)
+    if pdir.exists():
+        raise HTTPException(status_code=409, detail="Projekt existiert bereits")
+    (pdir / "raw").mkdir(parents=True, exist_ok=True)
+    (pdir / "dataset" / "wavs").mkdir(parents=True, exist_ok=True)
+    (pdir / "review").mkdir(parents=True, exist_ok=True)
+    sprache = re.sub(r'[^a-zA-Z]', '', req.sprache.strip())[:5] or "tr"
+    (pdir / "dataset" / "lang.txt").write_text(sprache + "\n", encoding="utf-8")
+    speaker = re.sub(r'[^\w\-]', '_', (req.speaker_name or pdir.name).strip()) or "sufi"
+    (pdir / "project.json").write_text(_json.dumps({
+        "name": pdir.name,
+        "sprache": sprache,
+        "speaker_name": speaker,
+        "erstellt": _dt.datetime.now().isoformat(timespec="seconds"),
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"status": "ok", "projekt": _train_project_status(pdir)}
+
+@app.get("/training/projects/{name}")
+def training_project_detail(name: str):
+    pdir = _train_project_dir(name)
+    if not pdir.exists() or not pdir.is_dir():
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    return _train_project_status(pdir)
+
+@app.delete("/training/projects/{name}")
+def training_project_delete(name: str):
+    pdir = _train_project_dir(name)
+    if not pdir.exists() or not pdir.is_dir():
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    shutil.rmtree(pdir)
+    return {"status": "ok", "geloescht": pdir.name}
+
+# ============================================================
+# KI-TRAININGSRAUM — Stufe 2: Auto-Pipeline + Review + Export
+# 2a Pipeline : Audio -> 22050 mono -> FastWhisper (word_timestamps)
+#               -> Satz-Splitting (1:1 daswer123) -> review/<stem>.wav+.txt
+# 2b Review   : Clips listen/anhoeren/Text korrigieren/loeschen
+# 2c Export   : review -> dataset/ (metadata_train|eval.csv, 85/15) + ZIP
+# Kein neues pip-Paket (ffmpeg, faster-whisper, csv/zipfile/random stdlib).
+# ============================================================
+
+_training_jobs: dict = {}
+_training_jobs_lock = threading.Lock()
+
+
+def _audio_duration(p: Path) -> float:
+    """Dauer einer Audiodatei in Sekunden via ffprobe."""
+    try:
+        out = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", str(p)],
+            capture_output=True, text=True
+        )
+        return float(out.stdout.strip())
+    except Exception:
+        return 0.0
+
+
+# ── 2a: Pipeline ─────────────────────────────────────────────
+def _run_training_process(name, job_id, content, filename, language, model_size):
+    try:
+        pdir = _train_project_dir(name)
+        raw_dir = pdir / "raw"
+        review_dir = pdir / "review"
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        review_dir.mkdir(parents=True, exist_ok=True)
+
+        stem = re.sub(r'[^\w\-]', '_', Path(filename).stem).strip('_') or "audio"
+
+        # Original archivieren
+        orig_path = raw_dir / (stem + Path(filename).suffix.lower())
+        with open(orig_path, "wb") as f:
+            f.write(content)
+
+        # Normalisieren -> 22050 Hz mono
+        norm = EINGABE_DIR / f"_train_{uuid.uuid4().hex}.wav"
+        r = subprocess.run(
+            ["ffmpeg", "-i", str(orig_path), "-ar", "22050", "-ac", "1", "-y", str(norm)],
+            capture_output=True
+        )
+        if r.returncode != 0 or not norm.exists():
+            raise Exception("FFmpeg Normalisierung fehlgeschlagen: " + r.stderr.decode()[:200])
+
+        total_dur = _audio_duration(norm)
+
+        # FastWhisper mit Wort-Zeitstempeln
+        model = get_whisper_model(model_size)
+        lang = None if (not language or language == "auto") else language
+        segments, info = model.transcribe(str(norm), language=lang, vad_filter=True, word_timestamps=True)
+
+        words_list = []
+        for seg in segments:
+            if seg.words:
+                words_list.extend(list(seg.words))
+
+        # Startindex aus bereits vorhandenen Clips dieses Stems
+        i = len(list(review_dir.glob(f"{stem}_*.wav")))
+        buffer = 0.2
+        n_words = len(words_list) or 1
+        sentence = ""
+        sentence_start = None
+        first_word = True
+        created = 0
+
+        for idx, word in enumerate(words_list):
+            if first_word:
+                sentence_start = word.start
+                if idx == 0:
+                    sentence_start = max(sentence_start - buffer, 0)
+                else:
+                    prev_end = words_list[idx - 1].end
+                    sentence_start = max(sentence_start - buffer, (prev_end + sentence_start) / 2)
+                sentence = word.word
+                first_word = False
+            else:
+                sentence += word.word
+
+            if word.word and word.word[-1] in ["!", "。", ".", "?"]:
+                next_start = words_list[idx + 1].start if (idx + 1 < len(words_list)) else total_dur
+                word_end = min((word.end + next_start) / 2, word.end + buffer)
+                dur = word_end - sentence_start
+                if dur >= (1.0 / 3.0) and word_end > sentence_start:
+                    clip_name = f"{stem}_{str(i).zfill(8)}"
+                    clip_wav = review_dir / f"{clip_name}.wav"
+                    cut = subprocess.run(
+                        ["ffmpeg", "-i", str(norm), "-ss", f"{sentence_start:.3f}",
+                         "-t", f"{dur:.3f}", "-ar", "22050", "-ac", "1", "-y", str(clip_wav)],
+                        capture_output=True
+                    )
+                    if cut.returncode == 0 and clip_wav.exists():
+                        txt = sentence[1:] if sentence.startswith(" ") else sentence
+                        (review_dir / f"{clip_name}.txt").write_text(txt.strip(), encoding="utf-8")
+                        i += 1
+                        created += 1
+                first_word = True
+
+            with _training_jobs_lock:
+                if job_id in _training_jobs:
+                    _training_jobs[job_id]["fortschritt"] = int((idx + 1) / n_words * 100)
+
+        try:
+            norm.unlink()
+        except Exception:
+            pass
+
+        with _training_jobs_lock:
+            _training_jobs[job_id] = {
+                "status": "fertig", "fortschritt": 100, "clips_erstellt": created,
+                "sprache": (info.language if info else (lang or "")), "fehler": ""
+            }
+    except Exception as e:
+        with _training_jobs_lock:
+            _training_jobs[job_id] = {
+                "status": "fehler", "fortschritt": 0, "clips_erstellt": 0, "fehler": str(e)[:300]
+            }
+
+
+@app.post("/training/projects/{name}/process")
+async def training_process(
+    name: str,
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    language: str = Form(""),
+    model_size: str = Form("small")
+):
+    pdir = _train_project_dir(name)
+    if not pdir.exists() or not pdir.is_dir():
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    if not language:
+        lf = pdir / "dataset" / "lang.txt"
+        language = lf.read_text(encoding="utf-8").strip() if lf.exists() else "tr"
+    content = await file.read()
+    job_id = uuid.uuid4().hex[:12]
+    with _training_jobs_lock:
+        _training_jobs[job_id] = {"status": "laeuft", "fortschritt": 0, "clips_erstellt": 0, "fehler": ""}
+    background_tasks.add_task(_run_training_process, name, job_id, content, file.filename, language, model_size)
+    return {"job_id": job_id, "status": "gestartet"}
+
+
+@app.get("/training/projects/{name}/process/status/{job_id}")
+def training_process_status(name: str, job_id: str):
+    with _training_jobs_lock:
+        job = _training_jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job nicht gefunden")
+    return job
+
+
+# ── 2b: Review / Korrektur ───────────────────────────────────
+@app.get("/training/projects/{name}/clips")
+def training_clips_list(name: str):
+    pdir = _train_project_dir(name)
+    if not pdir.exists() or not pdir.is_dir():
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    review_dir = pdir / "review"
+    clips = []
+    if review_dir.exists():
+        for wav in sorted(review_dir.glob("*.wav")):
+            stem = wav.stem
+            txt_file = review_dir / f"{stem}.txt"
+            text = txt_file.read_text(encoding="utf-8").strip() if txt_file.exists() else ""
+            dur = _audio_duration(wav)
+            flags = []
+            if dur > 11.0:
+                flags.append("zu_lang")
+            if dur < 0.5:
+                flags.append("kurz")
+            if not text:
+                flags.append("leer")
+            clips.append({"stem": stem, "text": text, "dauer": round(dur, 2), "flags": flags})
+    return {"projekt": pdir.name, "clips": clips, "anzahl": len(clips)}
+
+
+@app.get("/training/projects/{name}/clips/{stem}/audio")
+def training_clip_audio(name: str, stem: str):
+    pdir = _train_project_dir(name)
+    wav = _safe_path(pdir / "review", stem + ".wav")
+    if not wav.exists() or not wav.is_file():
+        raise HTTPException(status_code=404, detail="Clip nicht gefunden")
+    return FileResponse(wav)
+
+
+class _ClipTextReq(BaseModel):
+    text: str
+
+
+@app.patch("/training/projects/{name}/clips/{stem}")
+def training_clip_update(name: str, stem: str, req: _ClipTextReq):
+    pdir = _train_project_dir(name)
+    review_dir = pdir / "review"
+    wav = _safe_path(review_dir, stem + ".wav")
+    if not wav.exists():
+        raise HTTPException(status_code=404, detail="Clip nicht gefunden")
+    _safe_path(review_dir, stem + ".txt").write_text(req.text.strip(), encoding="utf-8")
+    return {"status": "ok", "stem": stem}
+
+
+@app.delete("/training/projects/{name}/clips/{stem}")
+def training_clip_delete(name: str, stem: str):
+    pdir = _train_project_dir(name)
+    review_dir = pdir / "review"
+    wav = _safe_path(review_dir, stem + ".wav")
+    txt = _safe_path(review_dir, stem + ".txt")
+    geloescht = False
+    if wav.exists():
+        wav.unlink()
+        geloescht = True
+    if txt.exists():
+        txt.unlink()
+    if not geloescht:
+        raise HTTPException(status_code=404, detail="Clip nicht gefunden")
+    return {"status": "ok", "geloescht": stem}
+
+
+# ── 2c: Export -> daswer123-Dataset + ZIP ────────────────────
+class _TrainExportReq(BaseModel):
+    apply_cleaner: bool = False
+    eval_percentage: float = 0.15
+
+
+@app.post("/training/projects/{name}/export")
+def training_export(name: str, req: _TrainExportReq):
+    import csv as _csv, random as _random, json as _json
+    pdir = _train_project_dir(name)
+    if not pdir.exists() or not pdir.is_dir():
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    review_dir = pdir / "review"
+    ds = pdir / "dataset"
+    wavs_out = ds / "wavs"
+    wavs_out.mkdir(parents=True, exist_ok=True)
+
+    speaker = "sufi"
+    sprache = "tr"
+    meta_file = pdir / "project.json"
+    if meta_file.exists():
+        try:
+            m = _json.loads(meta_file.read_text(encoding="utf-8"))
+            speaker = m.get("speaker_name") or speaker
+            sprache = m.get("sprache") or sprache
+        except Exception:
+            pass
+
+    cleaner = None
+    if req.apply_cleaner:
+        try:
+            from TTS.tts.layers.xtts.tokenizer import multilingual_cleaners as cleaner
+        except Exception:
+            cleaner = None
+
+    rows = []
+    for wav in sorted(review_dir.glob("*.wav")):
+        stem = wav.stem
+        txt_file = review_dir / f"{stem}.txt"
+        text = txt_file.read_text(encoding="utf-8").strip() if txt_file.exists() else ""
+        if not text:
+            continue
+        if cleaner:
+            try:
+                text = cleaner(text, sprache)
+            except Exception:
+                pass
+        shutil.copy2(wav, wavs_out / wav.name)
+        rows.append([f"wavs/{wav.name}", text, speaker])
+
+    if not rows:
+        raise HTTPException(status_code=400, detail="Keine gueltigen Clips zum Export")
+
+    _random.shuffle(rows)
+    pct = max(0.0, min(0.9, req.eval_percentage))
+    n_eval = int(len(rows) * pct)
+    eval_rows = sorted(rows[:n_eval], key=lambda x: x[0])
+    train_rows = sorted(rows[n_eval:], key=lambda x: x[0])
+
+    for path_, data in [(ds / "metadata_train.csv", train_rows), (ds / "metadata_eval.csv", eval_rows)]:
+        with open(path_, "w", encoding="utf-8", newline="") as f:
+            w = _csv.writer(f, delimiter="|")
+            w.writerow(["audio_file", "text", "speaker_name"])
+            w.writerows(data)
+
+    (ds / "lang.txt").write_text(sprache + "\n", encoding="utf-8")
+    return {
+        "status": "ok", "train": len(train_rows), "eval": len(eval_rows),
+        "gesamt": len(rows), "speaker_name": speaker, "sprache": sprache, "dataset_bereit": True
+    }
+
+
+@app.get("/training/projects/{name}/export/download")
+def training_export_download(name: str):
+    import zipfile as _zip
+    pdir = _train_project_dir(name)
+    ds = pdir / "dataset"
+    if not (ds / "metadata_train.csv").exists():
+        raise HTTPException(status_code=400, detail="Kein fertiges Dataset — erst exportieren")
+    zip_path = Path(tempfile.gettempdir()) / f"{pdir.name}_dataset_{uuid.uuid4().hex[:6]}.zip"
+    with _zip.ZipFile(zip_path, "w", _zip.ZIP_DEFLATED) as z:
+        for f in ds.rglob("*"):
+            if f.is_file():
+                z.write(f, arcname=str(f.relative_to(ds)))
+    return FileResponse(zip_path, filename=f"{pdir.name}_dataset.zip", media_type="application/zip")
+
+
 @app.get("/transcribe/files")
 def list_transcriptions():
     """Alle Transkriptionen + Ordner auflisten"""
@@ -1879,8 +2507,93 @@ def delete_transcription_folder(folder_name: str):
     return {"status": "ok", "geloescht": folder_name}
 
 # ════════════════════════════════════════════════════════════════
-
+# DIARIZATION (Sprecher-Erkennung)
 # ════════════════════════════════════════════════════════════════
+# Laeuft NUR auf GPU + mit HuggingFace-Token + installiertem pyannote.
+# Auf dem lokalen CPU-Server ist diarization_enabled() == False ->
+# kein Import, kein Crash, normale Transkription ohne Sprecher.
+#
+# Aktivierung (GPU-Image / Colab):
+#   1. pip install pyannote.audio
+#   2. HF_TOKEN env setzen (https://huggingface.co/settings/tokens)
+#   3. Lizenz akzeptieren: huggingface.co/pyannote/speaker-diarization-3.1
+# ════════════════════════════════════════════════════════════════
+
+HF_TOKEN = os.environ.get("HF_TOKEN", "").strip()
+_diarize_pipeline = None
+
+def remote_engine_url() -> str:
+    """Konfigurierte Remote-GPU-Engine URL (Colab/RunPod), sonst ''."""
+    try:
+        with open("/tmp/colab_url.txt", "r") as f:
+            return f.read().strip()
+    except Exception:
+        return ""
+
+def diarization_enabled() -> bool:
+    """True nur wenn CUDA + HF_TOKEN + pyannote installiert."""
+    if not HF_TOKEN:
+        return False
+    if not torch.cuda.is_available():
+        return False
+    try:
+        import pyannote.audio  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+def _get_diarize_pipeline():
+    global _diarize_pipeline
+    if _diarize_pipeline is None:
+        from pyannote.audio import Pipeline
+        _diarize_pipeline = Pipeline.from_pretrained(
+            "pyannote/speaker-diarization-3.1",
+            use_auth_token=HF_TOKEN
+        )
+        if torch.cuda.is_available():
+            _diarize_pipeline.to(torch.device("cuda"))
+    return _diarize_pipeline
+
+def diarize_audio(wav_path):
+    """Liefert [(start, end, 'Sprecher N'), ...] oder [] bei Fehler."""
+    try:
+        pipeline = _get_diarize_pipeline()
+        diar = pipeline(str(wav_path))
+        sprecher_map, naechste = {}, [1]
+        turns = []
+        for turn, _, raw in diar.itertracks(yield_label=True):
+            if raw not in sprecher_map:
+                sprecher_map[raw] = f"Sprecher {naechste[0]}"
+                naechste[0] += 1
+            turns.append((turn.start, turn.end, sprecher_map[raw]))
+        return turns
+    except Exception as e:
+        print(f"[DIARIZE] Fehler: {e}")
+        return []
+
+def sprecher_fuer_segment(seg_start, seg_end, turns):
+    """Dominanten Sprecher fuer ein Whisper-Segment finden (max. Ueberlappung)."""
+    if not turns:
+        return None
+    best, best_overlap = None, 0.0
+    for (d_start, d_end, sprecher) in turns:
+        overlap = min(seg_end, d_end) - max(seg_start, d_start)
+        if overlap > best_overlap:
+            best_overlap, best = overlap, sprecher
+    return best
+
+@app.get("/transcribe/diarize/status")
+def diarize_status():
+    """Frontend fragt ab, ob Sprecher-Erkennung moeglich ist."""
+    local_gpu = diarization_enabled()
+    return {
+        "verfuegbar": local_gpu,
+        "engine": "local-gpu" if local_gpu else "none",
+        "cuda": torch.cuda.is_available(),
+        "hf_token": bool(HF_TOKEN),
+        "hinweis": "GPU + Token bereit." if local_gpu
+                   else "Sprecher-Erkennung benoetigt CUDA-GPU + HF_TOKEN + pyannote."
+    }
 
 # ════════════════════════════════════════════════════════════════
 # Hörbuch Ordner-Struktur

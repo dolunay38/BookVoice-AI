@@ -1,202 +1,141 @@
 @echo off
-title BookVoice-AI Installer v2.3
+title BookVoice-AI Installer
 color 0A
-setlocal enabledelayedexpansion
 
 echo.
 echo ==========================================
-echo  BookVoice-AI v2.3 - Installation
-echo  KI Audiobook Studio
+echo  BookVoice-AI - One Click Install v1.0
 echo ==========================================
 echo.
 
-set INSTALL_DIR=%USERPROFILE%\BookVoice-AI
-set REPO=https://raw.githubusercontent.com/dolunay38/BookVoice-AI/main
-set USE_GPU=0
-set COMPOSE_FILE=compose.yaml
-
-REM ── [1/7] WSL2 ──────────────────────────────────────────
-echo [1/7] Pruefe WSL2...
+REM WSL2 pruefen
+echo [1/6] Pruefe WSL2...
 wsl --status > nul 2>&1
 if %errorlevel% neq 0 (
-    echo  WSL2 nicht gefunden - installiere WSL2...
+    echo WSL2 nicht gefunden - installiere WSL2...
+    echo Bitte warten...
     wsl --install
     echo.
-    echo  WSL2 installiert! Bitte PC neu starten
-    echo  und install.bat erneut ausfuehren.
+    echo WSL2 wurde installiert!
+    echo Bitte PC neu starten und install.bat erneut ausfuehren!
     pause
     exit /b 0
 )
-echo  OK: WSL2 vorhanden
+echo OK: WSL2 vorhanden!
 
-REM ── [2/7] Docker ─────────────────────────────────────────
+REM Docker pruefen
 echo.
-echo [2/7] Pruefe Docker...
+echo [2/6] Pruefe Docker...
 docker --version > nul 2>&1
 if %errorlevel% neq 0 (
-    echo  FEHLER: Docker nicht installiert!
-    echo  Bitte installieren: https://www.docker.com/products/docker-desktop
+    echo FEHLER: Docker nicht installiert!
+    echo Bitte installieren: https://www.docker.com/products/docker-desktop
     start https://www.docker.com/products/docker-desktop
     pause
     exit /b 1
 )
-echo  OK: Docker gefunden
+echo OK: Docker gefunden!
 
-REM ── [3/7] Docker starten ─────────────────────────────────
+REM Docker starten falls noetig
 echo.
-echo [3/7] Pruefe ob Docker laeuft...
+echo [3/6] Pruefe ob Docker laeuft...
 docker ps > nul 2>&1
 if %errorlevel% neq 0 (
-    echo  Docker laeuft nicht - starte Docker Desktop...
+    echo Docker laeuft nicht - starte Docker Desktop...
     start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-    echo  Warte 30 Sekunden...
+    echo Warte 30 Sekunden...
     timeout /t 30 /nobreak > nul
     docker ps > nul 2>&1
     if %errorlevel% neq 0 (
-        echo  FEHLER: Docker konnte nicht gestartet werden!
-        echo  Bitte Docker Desktop manuell starten und erneut versuchen.
+        echo FEHLER: Docker konnte nicht gestartet werden!
+        echo Bitte Docker Desktop manuell starten und erneut versuchen.
         pause
         exit /b 1
     )
 )
-echo  OK: Docker laeuft
+echo OK: Docker laeuft!
 
-REM ── [4/7] GPU erkennen ───────────────────────────────────
+REM Nginx Config erstellen
 echo.
-echo [4/7] Erkenne Hardware...
-nvidia-smi > nul 2>&1
-if %errorlevel% equ 0 (
-    set USE_GPU=1
-    set COMPOSE_FILE=compose.gpu.yaml
-    echo  GPU gefunden: NVIDIA - GPU-Modus aktiv (10x schneller!)
-) else (
-    echo  Kein NVIDIA-GPU - CPU-Modus (funktioniert, etwas langsamer)
-)
-
-REM ── [5/7] Ordner + Konfiguration ─────────────────────────
-echo.
-echo [5/7] Erstelle Ordner und Konfiguration...
+echo [4/6] Erstelle Konfiguration...
+set INSTALL_DIR=%USERPROFILE%\BookVoice-AI
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
+if not exist "%INSTALL_DIR%\HOERBUCH" mkdir "%INSTALL_DIR%\HOERBUCH"
+if not exist "%INSTALL_DIR%\tts_models" mkdir "%INSTALL_DIR%\tts_models"
+if not exist "%INSTALL_DIR%\musik" mkdir "%INSTALL_DIR%\musik"
 
-REM nginx-bookvoice.conf schreiben
+REM Nginx Config schreiben
 (
 echo server {
 echo     listen 80;
 echo     server_name _;
-echo     client_max_body_size 500M;
 echo     location / {
 echo         root /usr/share/nginx/html;
 echo         index index.html;
-echo         try_files $uri $uri/ /index.html;
 echo     }
 echo     location /api/ {
 echo         rewrite ^/api/^(.*^) /$1 break;
 echo         proxy_pass http://bookvoice-tts:7500;
 echo         proxy_read_timeout 300s;
-echo         proxy_send_timeout 300s;
-echo         proxy_buffering off;
-echo         client_max_body_size 500M;
+echo         client_max_body_size 100M;
 echo     }
 echo }
 ) > "%INSTALL_DIR%\nginx-bookvoice.conf"
-echo  OK: nginx-bookvoice.conf erstellt
 
-REM ── [6/7] Dateien kopieren ───────────────────────────────
+echo OK: Konfiguration erstellt!
+
+REM Dateien kopieren
 echo.
-echo [6/7] Kopiere Dateien...
+echo [5/6] Kopiere Dateien...
+copy /Y "%~dp0compose.yaml" "%INSTALL_DIR%\" > nul
+copy /Y "%~dp0tts_server.py" "%INSTALL_DIR%\" > nul
+copy /Y "%~dp0Dockerfile.tts" "%INSTALL_DIR%\" > nul
+copy /Y "%~dp0ki_archiv_tts_web.html" "%INSTALL_DIR%\" > nul
+copy /Y "%~dp0nginx-bookvoice.conf" "%INSTALL_DIR%\" > nul
 
-set FILES_OK=1
-for %%F in (tts_server.py ki_archiv_tts_web.html Dockerfile.tts nginx-bookvoice.conf) do (
-    if not exist "%~dp0%%F" (
-        echo  FEHLER: %%F nicht gefunden!
-        set FILES_OK=0
-    )
-)
-if "%USE_GPU%"=="1" (
-    if not exist "%~dp0Dockerfile.tts.gpu" (
-        echo  FEHLER: Dockerfile.tts.gpu nicht gefunden!
-        set FILES_OK=0
-    )
-)
-if "%FILES_OK%"=="0" (
-    echo.
-    echo  Bitte alle Dateien im gleichen Ordner wie install.bat haben!
+if not exist "%INSTALL_DIR%\compose.yaml" (
+    echo FEHLER: Dateien nicht gefunden!
+    echo Bitte alle Dateien im gleichen Ordner wie install.bat haben!
     pause
     exit /b 1
 )
+echo OK: Dateien kopiert!
 
-copy /Y "%~dp0tts_server.py"          "%INSTALL_DIR%\" > nul
-copy /Y "%~dp0ki_archiv_tts_web.html" "%INSTALL_DIR%\" > nul
-copy /Y "%~dp0Dockerfile.tts"         "%INSTALL_DIR%\" > nul
-copy /Y "%~dp0nginx-bookvoice.conf"   "%INSTALL_DIR%\" > nul
-copy /Y "%~dp0version.txt"            "%INSTALL_DIR%\" > nul
-if "%USE_GPU%"=="1" (
-    copy /Y "%~dp0Dockerfile.tts.gpu"  "%INSTALL_DIR%\" > nul
-    copy /Y "%~dp0compose.gpu.yaml"    "%INSTALL_DIR%\" > nul
-) else (
-    copy /Y "%~dp0compose.yaml"        "%INSTALL_DIR%\" > nul
-)
-echo  OK: Alle Dateien kopiert
-
-REM ── [7/7] Container starten ──────────────────────────────
+REM Container starten
 echo.
-echo [7/7] Starte BookVoice-AI...
-echo  Erster Start laedt ca. 2GB KI-Modell - bitte warten!
-echo  (kann 5-15 Minuten dauern je nach Internetgeschwindigkeit)
+echo [6/6] Starte BookVoice-AI...
+echo Erster Start laedt ca. 2GB Modell - bitte warten!
 echo.
 cd /d "%INSTALL_DIR%"
-
-if "%USE_GPU%"=="1" (
-    docker compose -f compose.gpu.yaml up -d --build
-) else (
-    docker compose up -d --build
-)
+docker compose down > nul 2>&1
+docker compose up -d --build
 
 if %errorlevel% neq 0 (
-    echo.
-    echo  FEHLER: Container konnten nicht gestartet werden!
-    echo  Bitte debug.bat ausfuehren und Log an Support schicken.
+    echo FEHLER: Container konnten nicht gestartet werden!
     pause
     exit /b 1
 )
-echo  OK: Container gestartet
+echo OK: Container gestartet!
 
-REM ── Warten bis bereit ────────────────────────────────────
+REM Warten bis bereit
 echo.
-echo  Warte auf Server (max. 5 Minuten)...
+echo Warte auf Server...
 set COUNTER=0
 :WAIT
 set /a COUNTER+=1
-if %COUNTER% gtr 60 goto TIMEOUT
-curl -s http://localhost:7500/health > nul 2>&1
-if %errorlevel% equ 0 goto READY
-timeout /t 5 /nobreak > nul
-if %COUNTER% equ 1  echo  Lade KI-Modell... (kann einige Minuten dauern)
-if %COUNTER% equ 12 echo  Noch da - grosse Modelle brauchen Zeit...
-if %COUNTER% equ 24 echo  Fast fertig...
-goto WAIT
+if %COUNTER% gtr 60 goto DONE
+curl -s http://localhost:7502 > nul 2>&1
+if %errorlevel% neq 0 (
+    timeout /t 5 /nobreak > nul
+    echo Warte... (%COUNTER%/60)
+    goto WAIT
+)
 
-:TIMEOUT
-echo.
-echo  Hinweis: Server braucht laenger als erwartet.
-echo  Warte noch 2 Minuten und oeffne dann http://localhost:7502
-echo  Bei Problemen: debug.bat ausfuehren
-goto OPEN
-
-:READY
-echo  OK: Server bereit!
-
-:OPEN
+:DONE
 echo.
 echo ==========================================
-if "%USE_GPU%"=="1" (
-echo   Modus: GPU-beschleunigt (NVIDIA) ^^^!
-) else (
-echo   Modus: CPU
-)
-echo.
-echo   BookVoice-AI ist bereit!
-echo   Browser: http://localhost:7502
+echo  BookVoice-AI ist bereit!
+echo  Browser: http://localhost:7502
 echo ==========================================
 echo.
 start http://localhost:7502

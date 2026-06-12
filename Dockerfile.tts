@@ -43,6 +43,7 @@ RUN pip install --no-cache-dir \
     python-pptx \
     xlrd \
     faster-whisper \
+    yt-dlp \
     httpx
 
 COPY tts_server.py /app/tts_server.py

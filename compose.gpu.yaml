@@ -1,18 +1,14 @@
 # ============================================================
-# BookVoice-AI — compose.gpu.yaml
-# ⚡ LOKAL · GPU-User (NVIDIA-GPU erforderlich)
+# BookVoice-AI — GPU Compose (fuer User mit lokaler NVIDIA-GPU)
 #
-# Start (Erstinstallation): install.bat  (erkennt GPU automatisch)
-# Starten:                  start.bat
-# Update:                   update.bat
+# Start:  docker compose -f compose.gpu.yaml up -d --build
 #
 # Voraussetzung:
 #   - NVIDIA-Treiber installiert
 #   - nvidia-container-toolkit installiert
-#     https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/
+#     (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/)
 #
-# CPU-User: siehe compose.yaml
-# Server:   siehe compose.server.yaml
+# Standard-User OHNE GPU nehmen weiterhin: docker compose up -d
 # ============================================================
 
 services:
@@ -29,7 +25,6 @@ services:
       - bookvoice-hoerbuch:/app/HOERBUCH
       - bookvoice-transkriptionen:/app/TRANSKRIPTIONEN
       - bookvoice-archiv:/app/ARCHIV
-      - bookvoice-training:/app/TRAINING
       - bookvoice-musik:/app/musik
       - ./tts_server.py:/app/tts_server.py
     environment:
@@ -37,7 +32,11 @@ services:
       - TTS_LANG=tr
       - COQUI_TOS_AGREED=1
       - DEVICE=auto
+      # Fuer Diarization: HuggingFace Token hier eintragen (sonst aus).
+      # Token: https://huggingface.co/settings/tokens
+      # + Lizenz akzeptieren: https://huggingface.co/pyannote/speaker-diarization-3.1
       - HF_TOKEN=${HF_TOKEN:-}
+    # GPU-Zugriff
     deploy:
       resources:
         reservations:
@@ -45,7 +44,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    restart: unless-stopped
+    restart: always
 
   bookvoice-proxy:
     image: nginx:alpine
@@ -64,5 +63,4 @@ volumes:
   bookvoice-hoerbuch:
   bookvoice-transkriptionen:
   bookvoice-archiv:
-  bookvoice-training:
   bookvoice-musik:
