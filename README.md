@@ -82,10 +82,19 @@ Alles lokal — kein Abo, keine Cloud.
 
 ### Danach
 
+> **Wann welche Datei?**
+> - Täglicher Start → `start.bat`
+> - HTML/Backend aktualisiert → `update.bat` (schnell, kein Rebuild)
+> - Dockerfile oder neue Pakete → `rebuild.bat` (einmalig, ~5-10 Min)
+> - Erstinstallation → `install.bat`
+
+### Danach
+
 | Aktion | Datei |
 |---|---|
 | BookVoice-AI starten | `start.bat` |
 | Update installieren | `update.bat` |
+| Rebuild (neues Dockerfile/Paket) | `rebuild.bat` |
 | Fehler diagnostizieren | `debug.bat` |
 | Deinstallieren | `uninstall.bat` |
 
@@ -107,8 +116,10 @@ Alles lokal — kein Abo, keine Cloud.
 | `install.bat` | 🖥️ Erstinstallation (Windows) |
 | `start.bat` | 🖥️ Starten (Windows) |
 | `update.bat` | 🖥️ Update mit Versions-Check (Windows) |
+| `rebuild.bat` | 🖥️ Einmaliger Rebuild bei Dockerfile-Änderungen (Windows) |
 | `debug.bat` | 🖥️ Fehlerdiagnose (Windows) |
 | `uninstall.bat` | 🖥️ Deinstallation (Windows) |
+| `start.sh` | 🐧 Container-Startskript (yt-dlp Auto-Update) |
 | `install.sh` | 🐧 Installation (Linux/Mac) |
 
 ---
