@@ -1,3 +1,15 @@
+# ============================================================
+# BookVoice-AI — compose.yaml
+# 🖥️ LOKAL · CPU-User (kein NVIDIA-GPU)
+#
+# Start (Erstinstallation): install.bat
+# Starten:                  start.bat
+# Update:                   update.bat
+#
+# GPU-User: siehe compose.gpu.yaml
+# Server:   siehe compose.server.yaml
+# ============================================================
+
 services:
   bookvoice-tts:
     build:
@@ -10,13 +22,17 @@ services:
       - bookvoice-tts-models:/root/.local/share/tts
       - bookvoice-tts-models:/app/tts_models
       - bookvoice-hoerbuch:/app/HOERBUCH
+      - bookvoice-transkriptionen:/app/TRANSKRIPTIONEN
+      - bookvoice-archiv:/app/ARCHIV
+      - bookvoice-training:/app/TRAINING
       - bookvoice-musik:/app/musik
       - ./tts_server.py:/app/tts_server.py
     environment:
       - TTS_OUTPUT=/app/HOERBUCH
       - TTS_LANG=tr
       - COQUI_TOS_AGREED=1
-    restart: always
+      - DEVICE=cpu
+    restart: unless-stopped
 
   bookvoice-proxy:
     image: nginx:alpine
@@ -33,4 +49,7 @@ services:
 volumes:
   bookvoice-tts-models:
   bookvoice-hoerbuch:
+  bookvoice-transkriptionen:
+  bookvoice-archiv:
+  bookvoice-training:
   bookvoice-musik:
