@@ -47,9 +47,11 @@ RUN pip install --no-cache-dir \
     httpx
 
 COPY tts_server.py /app/tts_server.py
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 EXPOSE 7500
 ENV COQUI_TOS_AGREED=1
 ENV DEVICE=auto
 
-CMD ["uvicorn", "tts_server:app", "--host", "0.0.0.0", "--port", "7500"]
+CMD ["/app/start.sh"]
