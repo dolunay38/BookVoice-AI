@@ -1,75 +1,127 @@
 @echo off
 title BookVoice-AI Update
 color 0A
-
-echo.
-echo ==========================================
-echo  BookVoice-AI - Auto Update
-echo  github.com/dolunay38/BookVoice-AI
-echo ==========================================
-echo.
+setlocal enabledelayedexpansion
 
 set INSTALL_DIR=%USERPROFILE%\BookVoice-AI
-set GITHUB=https://raw.githubusercontent.com/dolunay38/BookVoice-AI/main
+set GITHUB_RAW=https://raw.githubusercontent.com/dolunay38/BookVoice-AI/main
+set COMPOSE_FILE=compose.yaml
 
-REM Docker pruefen
-echo [1/4] Pruefe Docker...
-docker ps > nul 2>&1
-if %errorlevel% neq 0 (
-    echo Docker laeuft nicht - starte Docker Desktop...
-    start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-    timeout /t 30 /nobreak > nul
-    docker ps > nul 2>&1
-    if %errorlevel% neq 0 (
-        echo FEHLER: Docker konnte nicht gestartet werden!
-        pause
-        exit /b 1
-    )
-)
-echo OK: Docker laeuft!
-
-REM Neue Dateien laden
 echo.
-echo [2/4] Lade neue Dateien von GitHub...
-curl -s -o "%INSTALL_DIR%\compose.yaml" "%GITHUB%/compose.yaml"
-curl -s -o "%INSTALL_DIR%\tts_server.py" "%GITHUB%/tts_server.py"
-curl -s -o "%INSTALL_DIR%\ki_archiv_tts_web.html" "%GITHUB%/ki_archiv_tts_web.html"
-curl -s -o "%INSTALL_DIR%\nginx-bookvoice.conf" "%GITHUB%/nginx-bookvoice.conf"
-curl -s -o "%INSTALL_DIR%\Dockerfile.tts" "%GITHUB%/Dockerfile.tts"
-echo OK: Dateien aktualisiert!
-
-REM Container neu starten
+echo ==========================================
+echo  BookVoice-AI - Update
+echo ==========================================
 echo.
-echo [3/4] Starte Container neu...
-cd /d "%INSTALL_DIR%"
-docker compose down > nul 2>&1
-docker compose up -d --build
 
-if %errorlevel% neq 0 (
-    echo FEHLER: Container konnten nicht gestartet werden!
+REM ── Installiert? ─────────────────────────────────────────
+if not exist "%INSTALL_DIR%\tts_server.py" (
+    echo  FEHLER: BookVoice-AI nicht gefunden.
+    echo  Bitte zuerst install.bat ausfuehren.
     pause
     exit /b 1
 )
-echo OK: Container gestartet!
 
-REM Warten
-echo.
-echo [4/4] Warte auf Server...
-set COUNTER=0
-:WAIT
-set /a COUNTER+=1
-if %COUNTER% gtr 60 goto DONE
-curl -s http://localhost:7502 > nul 2>&1
-if %errorlevel% neq 0 (
-    timeout /t 5 /nobreak > nul
-    echo Warte... (%COUNTER%/60)
-    goto WAIT
+REM ── GPU-Modus ────────────────────────────────────────────
+if exist "%INSTALL_DIR%\compose.gpu.yaml" (
+    nvidia-smi > nul 2>&1
+    if !errorlevel! equ 0 set COMPOSE_FILE=compose.gpu.yaml
 )
 
-:DONE
+REM ── [1/4] Versions-Check ─────────────────────────────────
+echo [1/4] Pruefe Version...
+
+set LOCAL_VERSION=unbekannt
+if exist "%INSTALL_DIR%\version.txt" (
+    set /p LOCAL_VERSION=<"%INSTALL_DIR%\version.txt"
+)
+
+set REMOTE_VERSION=unbekannt
+curl -sf "%GITHUB_RAW%/version.txt" -o "%TEMP%\bv_version_check.txt" > nul 2>&1
+if exist "%TEMP%\bv_version_check.txt" (
+    set /p REMOTE_VERSION=<"%TEMP%\bv_version_check.txt"
+    del "%TEMP%\bv_version_check.txt" > nul 2>&1
+)
+
+echo  Installiert: v!LOCAL_VERSION!
+echo  GitHub:      v!REMOTE_VERSION!
+
+if "!LOCAL_VERSION!"=="!REMOTE_VERSION!" (
+    echo.
+    echo  Bereits aktuell (v!LOCAL_VERSION!)
+    echo  Trotzdem aktualisieren?
+    set /p FORCE=  (j = ja, n = abbrechen): 
+    if /i "!FORCE!" neq "j" (
+        echo  Abgebrochen.
+        pause
+        exit /b 0
+    )
+) else (
+    echo.
+    echo  Update verfuegbar: v!LOCAL_VERSION! -> v!REMOTE_VERSION!
+)
+
+REM ── [2/4] Dateien holen ──────────────────────────────────
+echo.
+echo [2/4] Hole neue Dateien von GitHub...
+
+REM git pull wenn vorhanden
+if exist "%INSTALL_DIR%\.git" (
+    cd /d "%INSTALL_DIR%"
+    git pull
+    if !errorlevel! neq 0 (
+        echo  FEHLER: git pull fehlgeschlagen!
+        echo  Versuche manuellen Download...
+        goto MANUAL_DOWNLOAD
+    )
+    goto BUILD
+)
+
+REM Manueller Download (kein git)
+:MANUAL_DOWNLOAD
+echo  Lade Dateien direkt von GitHub...
+curl -sf "%GITHUB_RAW%/tts_server.py"          -o "%INSTALL_DIR%\tts_server.py"
+curl -sf "%GITHUB_RAW%/ki_archiv_tts_web.html" -o "%INSTALL_DIR%\ki_archiv_tts_web.html"
+curl -sf "%GITHUB_RAW%/version.txt"            -o "%INSTALL_DIR%\version.txt"
+if "!COMPOSE_FILE!"=="compose.gpu.yaml" (
+    curl -sf "%GITHUB_RAW%/compose.gpu.yaml" -o "%INSTALL_DIR%\compose.gpu.yaml"
+) else (
+    curl -sf "%GITHUB_RAW%/compose.yaml" -o "%INSTALL_DIR%\compose.yaml"
+)
+echo  OK: Dateien aktualisiert
+
+REM ── [3/4] Rebuild ────────────────────────────────────────
+:BUILD
+echo.
+echo [3/4] Aktualisiere Container...
+cd /d "%INSTALL_DIR%"
+
+REM Nur rebuild wenn Dockerfile oder requirements sich geaendert haben
+echo  Starte Container neu (ohne Rebuild - schnell)...
+if "!COMPOSE_FILE!"=="compose.gpu.yaml" (
+    docker compose -f compose.gpu.yaml up -d
+) else (
+    docker compose up -d
+)
+
+if !errorlevel! neq 0 (
+    echo.
+    echo  FEHLER! Versuche kompletten Rebuild...
+    if "!COMPOSE_FILE!"=="compose.gpu.yaml" (
+        docker compose -f compose.gpu.yaml up -d --build
+    ) else (
+        docker compose up -d --build
+    )
+)
+
+REM ── [4/4] Status ─────────────────────────────────────────
+echo.
+echo [4/4] Status:
+docker ps --filter "name=bookvoice" --format "  {{.Names}} - {{.Status}}"
+
 echo.
 echo ==========================================
-echo  Update erfolgreich!
+echo  Update abgeschlossen!
+echo  Version: v!REMOTE_VERSION!
 echo  Browser: http://localhost:7502
 echo ==========================================
 echo.

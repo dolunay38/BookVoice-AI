@@ -1,12 +1,17 @@
 # ============================================================
-# BookVoice-AI — compose.yaml
-# 🖥️ LOKAL · CPU-User (kein NVIDIA-GPU)
+# BookVoice-AI — compose.gpu.yaml
+# ⚡ LOKAL · GPU-User (NVIDIA-GPU erforderlich)
 #
-# Start (Erstinstallation): install.bat
+# Start (Erstinstallation): install.bat  (erkennt GPU automatisch)
 # Starten:                  start.bat
 # Update:                   update.bat
 #
-# GPU-User: siehe compose.gpu.yaml
+# Voraussetzung:
+#   - NVIDIA-Treiber installiert
+#   - nvidia-container-toolkit installiert
+#     https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/
+#
+# CPU-User: siehe compose.yaml
 # Server:   siehe compose.server.yaml
 # ============================================================
 
@@ -14,7 +19,7 @@ services:
   bookvoice-tts:
     build:
       context: .
-      dockerfile: Dockerfile.tts
+      dockerfile: Dockerfile.tts.gpu
     container_name: bookvoice-tts
     ports:
       - "7500:7500"
@@ -31,7 +36,15 @@ services:
       - TTS_OUTPUT=/app/HOERBUCH
       - TTS_LANG=tr
       - COQUI_TOS_AGREED=1
-      - DEVICE=cpu
+      - DEVICE=auto
+      - HF_TOKEN=${HF_TOKEN:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     restart: unless-stopped
 
   bookvoice-proxy:
