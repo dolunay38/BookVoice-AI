@@ -4993,6 +4993,49 @@ async function pickMediaFile(i){
     <button id="app-modal-ok" class="btn btn-primary"></button>
   </div>
 </div></div>
+<div id="voice-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:1.25rem;width:100%;max-width:380px">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
+      <i class="ti ti-edit" style="color:var(--green)"></i>
+      <strong style="font-size:14px">Stimme bearbeiten</strong>
+      <div style="flex:1"></div>
+      <button onclick="document.getElementById('voice-edit-modal').style.display='none'"
+        style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.1rem"><i class="ti ti-x"></i></button>
+    </div>
+    <input type="hidden" id="vem-filename">
+    <div style="margin-bottom:.6rem">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:.3rem">Anzeigename</div>
+      <input type="text" id="vem-name" placeholder="z.B. Rumi Sufi" style="width:100%">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem">
+      <div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:.3rem">Sprache</div>
+        <select id="vem-lang" style="width:100%">
+          <option value="TR">🇹🇷 Türkisch (TR)</option>
+          <option value="DE">🇩🇪 Deutsch (DE)</option>
+          <option value="EN">🇬🇧 Englisch (EN)</option>
+          <option value="AR">🇸🇦 Arabisch (AR)</option>
+          <option value="OTHER">🌐 Sonstige</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:.3rem">Geschlecht</div>
+        <select id="vem-gender" style="width:100%">
+          <option value="M">♂ Mann</option>
+          <option value="F">♀ Frau</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:.85rem">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:.3rem">Stil</div>
+      <input type="text" id="vem-style" placeholder="z.B. Sufi, Warm, Neutral…" style="width:100%">
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn btn-primary" onclick="saveVoiceMeta()" style="flex:1;justify-content:center"><i class="ti ti-check"></i> Speichern</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('voice-edit-modal').style.display='none'">Abbrechen</button>
+    </div>
+  </div>
+</div>
 <div id="app-toasts"></div>
 </body>
 </html>
