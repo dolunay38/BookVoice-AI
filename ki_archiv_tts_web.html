@@ -290,7 +290,7 @@ body.light-mode .btn-primary{color:#fff}
     <i class="ti ti-file-text"></i>
     <div class="sb-tooltip" data-i18n="nav_transcribe">Transkription</div>
   </div>
-  <div class="sb-item" onclick="showPanel('training')" id="nav-training">
+  <div class="sb-item" onclick="trGate()" id="nav-training">
     <i class="ti ti-school"></i>
     <div class="sb-tooltip">Trainingsraum</div>
   </div>
@@ -1070,6 +1070,23 @@ body.light-mode .btn-primary{color:#fff}
             <input type="file" id="transcribe-file" accept=".mp3,.wav,.m4a,.ogg,.mp4,.mkv,.webm"
                    style="display:none" onchange="handleTranscribeUpload(this)">
           </div>
+          <!-- #6 Mediathek-Quelle + #13 Stapel-Transkription -->
+          <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="openMediaPicker()"><i class="ti ti-library-photo"></i> Aus Mediathek wählen</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('batch-files').click()"><i class="ti ti-stack-2"></i> Stapel hinzufügen</button>
+            <input type="file" id="batch-files" accept=".mp3,.wav,.m4a,.ogg,.mp4,.mkv,.webm,.flac" multiple style="display:none" onchange="batchAddFiles(this)">
+          </div>
+          <div id="batch-queue" style="display:none;margin-bottom:.75rem;border:1px solid var(--border);border-radius:8px;padding:.6rem;background:var(--surface2)">
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+              <span style="font-size:12px;font-weight:500;color:var(--text2)"><i class="ti ti-stack-2"></i> Stapel-Warteschlange</span>
+              <span id="batch-count" style="font-size:10px;color:var(--green)"></span>
+              <div style="flex:1"></div>
+              <button class="btn btn-primary btn-sm" id="batch-start-btn" onclick="startBatchTranscribe()"><i class="ti ti-player-play"></i> Stapel starten</button>
+              <button class="btn btn-secondary btn-sm" onclick="batchClear()"><i class="ti ti-x"></i></button>
+            </div>
+            <div id="batch-list" style="display:flex;flex-direction:column;gap:.35rem"></div>
+          </div>
+
 
           <!-- Import: YouTube / Mikrofon -->
           <div style="margin-bottom:.75rem;padding:.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
@@ -1403,6 +1420,29 @@ body.light-mode .btn-primary{color:#fff}
           <button class="btn btn-secondary" id="tr-zip-btn" onclick="trDownloadZip()" style="display:none"><i class="ti ti-download"></i> ZIP herunterladen</button>
         </div>
         <div id="tr-export-info" style="font-size:11px;color:var(--text3);margin-top:.6rem"></div>
+      </div>
+
+      <!-- 4 · Trainiertes Modell -->
+      <div class="card" id="tr-model-card" style="display:none">
+        <div class="card-header">
+          <span class="card-title">4 · Trainiertes Modell</span>
+          <span class="badge badge-green" id="tr-active-model">Basis aktiv</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem;line-height:1.5">
+          Fertig trainiertes Modell aus Colab (ZIP mit <code>model.pth</code> + <code>config.json</code> + <code>vocab.json</code>) hochladen, registrieren und aktivieren. Das aktivierte Modell wird sofort für alle TTS-Ausgaben genutzt.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:end;margin-bottom:.6rem">
+          <div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Modellname</div>
+            <input type="text" id="tr-model-name" placeholder="z.B. xtts_v2_sufi" style="width:100%">
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('tr-model-file').click()"><i class="ti ti-upload"></i> ZIP wählen</button>
+        </div>
+        <input type="file" id="tr-model-file" accept=".zip" style="display:none" onchange="trModelUpload(this)">
+        <div id="tr-model-list" style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem"></div>
+        <div style="margin-top:.6rem">
+          <button class="btn btn-secondary btn-sm" onclick="trModelActivate('base')"><i class="ti ti-rotate"></i> Basis-Modell aktivieren</button>
+        </div>
       </div>
 
     </div>
@@ -4299,7 +4339,7 @@ function toggleLogAutoRefresh(){
 // ====================== KI-TRAININGSRAUM ======================
 let trState = { project: null, file: null, exported: false };
 
-function loadTrainingPanel(){ loadTrProjects(); }
+function loadTrainingPanel(){ loadTrProjects(); const _mc=document.getElementById('tr-model-card'); if(_mc) _mc.style.display=''; loadTrModels(); }
 
 async function loadTrProjects(){
   const sel = document.getElementById('tr-project');
@@ -4527,6 +4567,248 @@ function trDownloadZip(){
   if(!trState.project) return;
   window.open(`${TTS_URL}/training/projects/${encodeURIComponent(trState.project)}/export/download`,'_blank');
 }
+
+// ── Stufe 3: Passwort-Gate (backend-geprüft) ──
+let trUnlocked = false;
+async function trGate(){
+  if(trUnlocked){ showPanel('training'); return; }
+  const pw = await showModal({ title:'🎓 Trainingsraum', icon:'ti-lock', message:'Passwort:', prompt:true, default:'', okText:'Öffnen', cancelText:'Abbrechen' });
+  if(!pw) return;
+  try {
+    const r = await fetch(`${TTS_URL}/training/auth`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: pw }) });
+    if(!r.ok){ showToast('Falsches Passwort','err'); return; }
+    trUnlocked = true;
+    showPanel('training');
+  } catch(e){ showToast('Login fehlgeschlagen','err'); }
+}
+
+// ── Stufe 4: Modell-Registrierung ──
+async function loadTrModels(){
+  const cont = document.getElementById('tr-model-list');
+  const badge = document.getElementById('tr-active-model');
+  if(!cont) return;
+  try {
+    const r = await fetch(`${TTS_URL}/training/models`);
+    const d = await r.json();
+    if(badge) badge.textContent = (d.aktiv && d.aktiv!=='base') ? (d.aktiv+' aktiv') : 'Basis aktiv';
+    if(!d.modelle || !d.modelle.length){ cont.innerHTML = '<div style="font-size:11px;color:var(--text3)">Noch kein eigenes Modell registriert.</div>'; return; }
+    cont.innerHTML = d.modelle.map(m => `
+      <div style="display:flex;align-items:center;gap:.5rem;border:1px solid var(--border);border-radius:8px;padding:.5rem .6rem;background:var(--surface2)">
+        <i class="ti ti-microphone-2" style="color:${m.aktiv?'var(--green)':'var(--text3)'}"></i>
+        <span style="font-size:12px;font-family:var(--mono)">${m.name}</span>
+        ${m.aktiv?'<span style="font-size:10px;color:var(--green)">● aktiv</span>':''}
+        <div style="flex:1"></div>
+        ${m.aktiv?'':`<button class="btn btn-primary btn-sm" onclick="trModelActivate('${m.name}')">Aktivieren</button>`}
+        <button class="btn btn-secondary btn-sm" title="Löschen" onclick="trModelDelete('${m.name}')"><i class="ti ti-trash"></i></button>
+      </div>`).join('');
+  } catch(e){ cont.innerHTML = '<div style="font-size:11px;color:var(--red)">Modelle konnten nicht geladen werden</div>'; }
+}
+
+async function trModelUpload(input){
+  const f = input.files[0]; if(!f) return;
+  let name = (document.getElementById('tr-model-name').value||'').trim();
+  if(!name) name = f.name.replace(/\.zip$/i,'');
+  const fd = new FormData(); fd.append('name', name); fd.append('file', f);
+  showToast('Lade Modell hoch…','info');
+  try {
+    const r = await fetch(`${TTS_URL}/training/models/upload`, {method:'POST', body:fd});
+    const d = await r.json();
+    if(!r.ok){ showToast(d.detail||'Upload fehlgeschlagen','err'); input.value=''; return; }
+    showToast('Modell registriert: '+d.name,'ok');
+    loadTrModels();
+  } catch(e){ showToast('Upload fehlgeschlagen','err'); }
+  input.value='';
+}
+
+async function trModelActivate(name){
+  showToast('Aktiviere Modell… (lädt ~1–2 Min)','info');
+  try {
+    const r = await fetch(`${TTS_URL}/training/models/activate`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: name })});
+    const d = await r.json();
+    if(!r.ok){ showToast(d.detail||'Aktivierung fehlgeschlagen','err'); return; }
+    showToast('Aktiv: '+d.aktiv,'ok');
+    loadTrModels();
+  } catch(e){ showToast('Aktivierung fehlgeschlagen','err'); }
+}
+
+async function trModelDelete(name){
+  const ok = await showModal({ title:'Modell löschen', icon:'ti-trash', iconColor:'var(--red)', message:`Modell "${name}" löschen?`, okText:'Löschen', cancelText:'Abbrechen' });
+  if(!ok) return;
+  try {
+    const r = await fetch(`${TTS_URL}/training/models/${encodeURIComponent(name)}`, {method:'DELETE'});
+    const d = await r.json();
+    if(!r.ok){ showToast(d.detail||'Löschen fehlgeschlagen','err'); return; }
+    showToast('Modell gelöscht','ok');
+    loadTrModels();
+  } catch(e){ showToast('Löschen fehlgeschlagen','err'); }
+}
+
+// ====================== P1 #13: Stapel-Transkription ======================
+let batchQueue = []; // {file, name, status}
+
+function batchAddFiles(input){
+  for(const f of input.files){ batchQueue.push({ file:f, name:f.name, status:'wartet' }); }
+  input.value = '';
+  renderBatchQueue();
+}
+
+function batchClear(){ batchQueue = []; renderBatchQueue(); }
+function batchRemove(i){ batchQueue.splice(i,1); renderBatchQueue(); }
+
+function renderBatchQueue(){
+  const wrap = document.getElementById('batch-queue');
+  const list = document.getElementById('batch-list');
+  const count = document.getElementById('batch-count');
+  if(!wrap || !list) return;
+  if(!batchQueue.length){ wrap.style.display='none'; return; }
+  wrap.style.display = '';
+  if(count) count.textContent = batchQueue.length + ' Dateien';
+  const icon = { wartet:'ti-clock', laeuft:'ti-loader ti-spin', fertig:'ti-check', fehler:'ti-x' };
+  const col  = { wartet:'var(--text3)', laeuft:'var(--amber)', fertig:'var(--green)', fehler:'var(--red)' };
+  list.innerHTML = batchQueue.map((q,i) => `
+    <div style="display:flex;align-items:center;gap:.5rem;font-size:12px">
+      <i class="ti ${icon[q.status]||'ti-clock'}" style="color:${col[q.status]||'var(--text3)'}"></i>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.name}</span>
+      <span style="font-size:10px;color:${col[q.status]||'var(--text3)'}">${q.status}</span>
+      ${q.status==='wartet'?`<button class="btn btn-secondary btn-sm" style="padding:1px 6px" onclick="batchRemove(${i})"><i class="ti ti-x"></i></button>`:''}
+    </div>`).join('');
+}
+
+async function startBatchTranscribe(){
+  if(!batchQueue.length){ showToast('Stapel leer','err'); return; }
+  const lang = document.getElementById('transcribe-lang').value;
+  const model = document.getElementById('transcribe-model').value;
+  const folder = (document.getElementById('transcribe-folder-select')||{}).value || '';
+  const startBtn = document.getElementById('batch-start-btn');
+  if(startBtn) startBtn.disabled = true;
+  let ok = 0, err = 0;
+  for(const q of batchQueue){
+    if(q.status === 'fertig') continue;
+    q.status = 'laeuft'; renderBatchQueue();
+    try { await _transcribeOneBatch(q.file, lang, model, folder); q.status='fertig'; ok++; }
+    catch(e){ q.status='fehler'; err++; }
+    renderBatchQueue();
+  }
+  if(startBtn) startBtn.disabled = false;
+  showToast(`Stapel fertig — ${ok} ok${err?', '+err+' Fehler':''}`, err?'err':'ok');
+  if(typeof loadTranscriptionFiles === 'function') loadTranscriptionFiles();
+}
+
+function _transcribeOneBatch(file, lang, model, folder){
+  return new Promise(async (resolve, reject) => {
+    try {
+      const project = file.name.replace(/\.[^.]+$/, '');
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('language', lang);
+      fd.append('model_size', model);
+      fd.append('project_name', project);
+      fd.append('folder', folder);
+      const resp = await fetch(`${TTS_URL}/transcribe/stream`, { method:'POST', body:fd });
+      if(!resp.ok){ reject(new Error('http '+resp.status)); return; }
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+      while(true){
+        const { done, value } = await reader.read();
+        if(done) break;
+        for(const line of dec.decode(value).split('\n')){
+          if(!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if(data.typ === 'fehler'){ reject(new Error(data.fehler||'Fehler')); return; }
+            if(data.typ === 'fertig'){ resolve(); return; }
+          } catch(e){}
+        }
+      }
+      resolve();
+    } catch(e){ reject(e); }
+  });
+}
+
+// ====================== P1 #6: Mediathek als Upload-Quelle ======================
+let _mediaPickerVisible = [];
+
+async function openMediaPicker(){
+  showToast('Lade Mediathek…','info');
+  const cats = ['hoerbuch','stimmen','downloads','archiv'];
+  const items = [];
+  for(const cat of cats){
+    try {
+      const r = await fetch(`${TTS_URL}/files/${cat}`);
+      const d = await r.json();
+      (d.dateien||[]).forEach(f => {
+        if(/\.(mp3|wav|m4a|ogg|mp4|mkv|webm|flac)$/i.test(f.relpath)){
+          items.push({ cat, relpath:f.relpath, name:f.relpath.split('/').pop() });
+        }
+      });
+    } catch(e){}
+  }
+  if(!items.length){ showToast('Keine Audio-Dateien in der Mediathek','err'); return; }
+  showMediaPickerModal(items);
+}
+
+function showMediaPickerModal(items){
+  let ov = document.getElementById('media-picker-overlay');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'media-picker-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem';
+    ov.onclick = (e)=>{ if(e.target===ov) ov.style.display='none'; };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:1.25rem;width:100%;max-width:460px;max-height:70vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+      <i class="ti ti-library-photo" style="color:var(--green)"></i>
+      <strong style="font-size:14px">Audio aus Mediathek wählen</strong>
+      <div style="flex:1"></div>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('media-picker-overlay').style.display='none'"><i class="ti ti-x"></i></button>
+    </div>
+    <input type="text" placeholder="Suchen…" oninput="filterMediaPicker(this.value)" style="width:100%;margin-bottom:.5rem">
+    <div id="media-picker-list" style="overflow-y:auto;display:flex;flex-direction:column;gap:.35rem"></div>
+  </div>`;
+  ov.style.display = 'flex';
+  _mediaPickerAll = items;
+  renderMediaPicker(items);
+}
+
+let _mediaPickerAll = [];
+function filterMediaPicker(q){
+  q = (q||'').toLowerCase();
+  renderMediaPicker(_mediaPickerAll.filter(it => it.name.toLowerCase().includes(q)));
+}
+
+function renderMediaPicker(items){
+  _mediaPickerVisible = items;
+  const list = document.getElementById('media-picker-list');
+  if(!list) return;
+  if(!items.length){ list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:.5rem">Nichts gefunden.</div>'; return; }
+  list.innerHTML = items.map((it,i) => `
+    <div onclick="pickMediaFile(${i})" style="display:flex;align-items:center;gap:.5rem;padding:.5rem .6rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--surface2)" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+      <i class="ti ti-music" style="color:var(--green)"></i>
+      <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.name}</span>
+      <span style="font-size:10px;color:var(--text3)">${it.cat}</span>
+    </div>`).join('');
+}
+
+async function pickMediaFile(i){
+  const it = _mediaPickerVisible[i];
+  if(!it) return;
+  const ov = document.getElementById('media-picker-overlay'); if(ov) ov.style.display='none';
+  showToast('Lade „'+it.name+'"…','info');
+  try {
+    const enc = it.relpath.split('/').map(encodeURIComponent).join('/');
+    const resp = await fetch(`${TTS_URL}/files/${it.cat}/${enc}`);
+    if(!resp.ok){ showToast('Datei konnte nicht geladen werden','err'); return; }
+    const blob = await resp.blob();
+    const file = new File([blob], it.name, { type: blob.type || 'audio/mpeg' });
+    if(typeof uploadTranscribeFile === 'function'){
+      uploadTranscribeFile(file);
+      showToast('Geladen — bereit zum Transkribieren','ok');
+    }
+  } catch(e){ showToast('Laden fehlgeschlagen','err'); }
+}
+
+
 
 
 </script>
