@@ -336,6 +336,15 @@ body.light-mode .btn-primary{color:#fff}
     </div>
   </div>
 
+  <!-- #2: Floating Player Bar (on-top beim Abspielen) -->
+  <div id="floating-player" style="display:none;position:sticky;top:0;z-index:200;background:var(--surface);border-bottom:1px solid var(--border2);padding:.5rem 1rem;display:none;align-items:center;gap:.75rem">
+    <i class="ti ti-music" style="color:var(--green);font-size:1.1rem;flex-shrink:0"></i>
+    <div style="flex:1;min-width:0">
+      <div id="fp-title" style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)"></div>
+      <audio id="fp-audio" controls preload="none" style="width:100%;height:28px;accent-color:var(--green)"></audio>
+    </div>
+    <button onclick="floatingPlayerClose()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.1rem;flex-shrink:0"><i class="ti ti-x"></i></button>
+  </div>
   <div class="content">
 
     <!-- ══ Dashboard ══ -->
@@ -348,14 +357,14 @@ body.light-mode .btn-primary{color:#fff}
             <div style="width:40px;height:40px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#000;font-weight:700">B</div>
             <div>
               <div style="font-size:20px;font-weight:600;color:var(--text)">BookVoice-AI</div>
-              <div style="font-size:11px;color:var(--text3)">v1.1 · Aksoy-Net · XTTS-v2</div>
+              <div style="font-size:11px;color:var(--text3)">v2.1 · Aksoy-Net · XTTS-v2 · FastWhisper · KI-Trainingsraum</div>
             </div>
           </div>
           <div style="font-size:13px;color:var(--text2);max-width:500px;line-height:1.6">
-            Dein selbst-gehostetes KI-Studio für Hörbücher & Transkription. Verwandle Texte, eBooks, Fotos, Audio und Videos in hochwertige Ergebnisse — mit eigener Stimme (XTTS-v2 Voice Cloning) und FastWhisper, in Türkisch, Deutsch und Englisch.
+Dein selbst-gehostetes KI-Studio: Texte, eBooks, PDFs & Fotos → Hörbücher (XTTS-v2 Voice Cloning). Audio/Video → Text (FastWhisper, live). Stimme trainieren (KI-Trainingsraum). Stapel-Transkription, Mediathek, Cover, Musik. Läuft lokal — kein Abo, keine Cloud.
           </div>
           <div style="display:flex;gap:.5rem;margin-top:1rem">
-            <button class="btn btn-primary" onclick="showPanel('studio')"><i class="ti ti-wand"></i> Neues Hörbuch</button>
+            <button class="btn btn-primary" onclick="showPanel('studio')"><i class="ti ti-wand"></i> Hörbuch erstellen</button>
             <button class="btn btn-secondary" onclick="showPanel('voices')"><i class="ti ti-microphone"></i> Stimmen</button>
             <button class="btn btn-secondary" onclick="showPanel('mediathek')"><i class="ti ti-folder"></i> Bibliothek</button>
           </div>
@@ -420,14 +429,17 @@ body.light-mode .btn-primary{color:#fff}
         <div class="card-header"><span class="card-title">Features</span></div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;font-size:12px">
           <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> XTTS-v2 Voice Cloning</div>
-          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> EPUB / PDF / MOBI</div>
-          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> OCR Foto-Upload</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> EPUB / PDF / MOBI / eBook</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> OCR Foto &amp; Dokument</div>
           <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> MP3 / M4B / WAV Export</div>
-          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Hintergrundmusik</div>
-          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Buchcover in M4B</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Hintergrundmusik &amp; Cover</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Stapel-Transkription</div>
           <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> TR / DE / EN / AR</div>
-          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Stil-Presets</div>
-          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> CPU / GPU Auto</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> KI-Trainingsraum (XTTS Fine-tuning)</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Mediathek als Upload-Quelle</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> CPU / Colab GPU / Edge TTS</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Diarization (Sprecher-Erkennung)</div>
+          <div style="display:flex;align-items:center;gap:.5rem;color:var(--text2)"><span style="color:var(--green)">✓</span> Light / Dark Mode</div>
         </div>
       </div>
 
@@ -753,7 +765,17 @@ body.light-mode .btn-primary{color:#fff}
               <span class="card-title">Stimm-Bibliothek</span>
               <span class="char-count" id="voice-count">0 Stimmen</span>
             </div>
-            <div class="voice-grid" id="voice-grid"></div>
+            <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.65rem;align-items:center">
+              <input type="text" id="voice-search" placeholder="Suche…" oninput="renderVoiceGrid()" style="flex:1;min-width:120px;font-size:12px;padding:5px 9px">
+              <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                <button class="archiv-sort-btn active" id="vf-all"    onclick="setVoiceFilter('all')">Alle</button>
+                <button class="archiv-sort-btn"        id="vf-TR"     onclick="setVoiceFilter('TR')">🇹🇷 TR</button>
+                <button class="archiv-sort-btn"        id="vf-DE"     onclick="setVoiceFilter('DE')">🇩🇪 DE</button>
+                <button class="archiv-sort-btn"        id="vf-EN"     onclick="setVoiceFilter('EN')">🇬🇧 EN</button>
+                <button class="archiv-sort-btn"        id="vf-custom" onclick="setVoiceFilter('custom')">⬆ Eigene</button>
+              </div>
+            </div>
+            <div id="voice-grid"></div>
           </div>
         </div>
         <div>
@@ -1218,20 +1240,16 @@ body.light-mode .btn-primary{color:#fff}
         </div>
       </div>
 
-      <!-- Gespeicherte Transkriptionen -->
+      <!-- #8: Zuletzt gespeichert (nur neueste Datei) -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title">📄 Gespeicherte Transkriptionen</span>
+          <span class="card-title">📄 Zuletzt gespeichert</span>
           <div style="display:flex;gap:.35rem">
-            <button class="btn btn-secondary btn-sm" onclick="showNewFolderDialog()" title="Neuer Ordner">
-              <i class="ti ti-folder-plus"></i>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFiles()">
-              <i class="ti ti-refresh"></i>
-            </button>
+            <button class="btn btn-secondary btn-sm" onclick="showNewFolderDialog()" title="Neuer Ordner"><i class="ti ti-folder-plus"></i></button>
+            <button class="btn btn-secondary btn-sm" onclick="loadTranscriptionFiles()"><i class="ti ti-refresh"></i></button>
+            <button class="btn btn-secondary btn-sm" onclick="showPanel('mediathek')" title="Alle anzeigen"><i class="ti ti-library-photo"></i></button>
           </div>
         </div>
-        <!-- Neuer Ordner Dialog -->
         <div id="new-folder-dialog" style="display:none;margin-bottom:.75rem;padding:.5rem;background:var(--surface2);border-radius:6px">
           <div style="font-size:11px;color:var(--text2);margin-bottom:.35rem">Ordnername</div>
           <div style="display:flex;gap:.5rem">
@@ -1513,6 +1531,8 @@ let voices = [
   {id:10, name:'en_maennlich_andrew.mp3', path:'/app/tts_models/en_maennlich_andrew.mp3', init:'EA', lang:'EN', gender:'M', style:'Deep',    bg:'rgba(34,197,94,.15)',  fg:'#22c55e', type:'builtin'},
   {id:11, name:'en_weiblich_ava.mp3',     path:'/app/tts_models/en_weiblich_ava.mp3',     init:'EV', lang:'EN', gender:'F', style:'Clear',   bg:'rgba(245,158,11,.15)', fg:'#f59e0b', type:'builtin'},
 ];
+let _voiceMeta = {};
+try { _voiceMeta = JSON.parse(localStorage.getItem('bv-voice-meta') || '{}'); } catch(e){}
 
 const PRESETS = {
   original:     {temp:0.1,  rep:10.0, topk:10, speed:1.0,  desc:'🎯 Original — maximale Treue zur Referenzstimme'},
@@ -1628,7 +1648,7 @@ function _mediaRow(cat, reg, f, i, name){
       <div style="width:34px;height:34px;flex-shrink:0;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text2)"><i class="ti ${reg.icon}" style="font-size:17px"></i></div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:1px">${f.datum_str} · ${_mediaFmtSize(f.groesse_kb)}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:1px">${_fmtDatumLocal(f.datum)||f.datum_str||''} · ${_mediaFmtSize(f.groesse_kb)}</div>
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0">
         ${playBtn}
@@ -1677,10 +1697,13 @@ function renderMediaList(cat){
   Object.keys(groups).sort().forEach(function(folder, g){
     const items = groups[folder];
     const open = !!_term;
-    html += '<div onclick="toggleMediaGroup(' + g + ')" style="display:flex;align-items:center;gap:8px;padding:9px 4px;cursor:pointer;color:var(--text2);font-size:12px;font-weight:500;border-bottom:1px solid var(--border)">'
+    html += '<div style="display:flex;align-items:center;border-bottom:1px solid var(--border)">'
+      + '<div onclick="toggleMediaGroup(' + g + ')" style="flex:1;display:flex;align-items:center;gap:8px;padding:9px 4px;cursor:pointer;color:var(--text2);font-size:12px;font-weight:500">'
       + '<i class="ti ' + (open?'ti-chevron-down':'ti-chevron-right') + '" id="grp-ic-' + g + '"></i>'
       + '<i class="ti ti-folder" style="color:var(--text2)"></i> ' + folder
-      + ' <span style="color:var(--text3);font-weight:400">(' + items.length + ')</span></div>';
+      + ' <span style="color:var(--text3);font-weight:400">(' + items.length + ')</span></div>'
+      + '<button class="btn btn-secondary btn-sm" title="Ordner löschen" onclick="event.stopPropagation();mediaDeleteFolder(\'' + cat + '\',\'' + folder + '\')" style="margin-right:4px;padding:2px 6px"><i class="ti ti-trash"></i></button>'
+      + '</div>';
     html += '<div id="media-grp-' + g + '" style="display:' + (open?'':'none') + '">';
     items.forEach(function(m){ html += _mediaRow(cat, reg, m.f, m.i, m.f.relpath.split('/').slice(1).join('/')); });
     html += '</div>';
@@ -2672,26 +2695,79 @@ async function loadVoicesFromServer(){
   } catch(e) { addLog('Stimmen konnten nicht geladen werden','err'); }
 }
 
+let _voiceFilter = 'all';
+function setVoiceFilter(f){
+  _voiceFilter = f;
+  document.querySelectorAll('[id^="vf-"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('vf-'+f); if(btn) btn.classList.add('active');
+  renderVoiceGrid();
+}
+
+function _voiceCard(v){
+  const dispName = v.displayName || v.name.replace(/\.(mp3|wav|m4a|ogg)$/i,'').replace(/_/g,' ');
+  return `<div class="voice-card${v.id===selectedVoiceId?' active':''}" onclick="selectVoice(${v.id})">
+    <div class="vc-avatar" style="background:${v.bg};color:${v.fg}">${dispName.slice(0,2).toUpperCase()}</div>
+    <div class="vc-name">${dispName}</div>
+    <div class="vc-meta" style="display:flex;gap:4px;margin-top:2px;flex-wrap:wrap">
+      <span style="background:${v.bg};color:${v.fg};padding:1px 6px;border-radius:4px;font-size:9px">${v.lang}</span>
+      <span style="background:var(--border);color:var(--text2);padding:1px 6px;border-radius:4px;font-size:9px">${v.gender==='M'?'♂ Mann':'♀ Frau'}</span>
+      <span style="background:var(--surface2);color:var(--text3);padding:1px 6px;border-radius:4px;font-size:9px">${v.style}</span>
+    </div>
+    <div class="vc-actions">
+      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();previewVoice(${v.id})" title="Vorschau">▶</button>
+      ${v.type!=='builtin'?`<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openVoiceEdit('${v.name}')" title="Bearbeiten" style="padding:2px 6px"><i class="ti ti-edit"></i></button>`:''}
+      ${v.type!=='builtin'?`<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteVoiceFromServer('${v.name}')" title="Löschen">🗑</button>`:''}
+    </div>
+  </div>`;
+}
+
 function renderVoiceGrid(){
   const grid = document.getElementById('voice-grid');
   if(!grid) return;
-  grid.innerHTML = voices.map(v=>`
-    <div class="voice-card${v.id===selectedVoiceId?' active':''}" onclick="selectVoice(${v.id})">
-      <div class="vc-avatar" style="background:${v.bg};color:${v.fg}">${v.init}</div>
-      <div class="vc-name">${v.name.replace('.mp3','').replace(/_/g,' ')}</div>
-      <div class="vc-meta" style="display:flex;gap:4px;margin-top:2px">
-        <span style="background:${v.bg};color:${v.fg};padding:1px 6px;border-radius:4px;font-size:9px">${v.lang}</span>
-        <span style="background:var(--border);color:var(--text2);padding:1px 6px;border-radius:4px;font-size:9px">${v.gender==='M'?'♂':'♀'} ${v.style}</span>
+  const q = ((document.getElementById('voice-search')||{}).value||'').toLowerCase();
+  let filtered = voices.filter(v => {
+    if(_voiceFilter==='custom') return v.type!=='builtin';
+    if(_voiceFilter!=='all') return v.lang===_voiceFilter;
+    return true;
+  }).filter(v => !q || (v.displayName||v.name).toLowerCase().includes(q) || (v.style||'').toLowerCase().includes(q));
+
+  const langMeta = {TR:{flag:'🇹🇷',label:'Türkisch'},DE:{flag:'🇩🇪',label:'Deutsch'},EN:{flag:'🇬🇧',label:'Englisch'},AR:{flag:'🇸🇦',label:'Arabisch'}};
+  const groups = {}; const customList = [];
+  filtered.forEach(v => {
+    if(v.type!=='builtin'){ customList.push(v); return; }
+    const k = v.lang||'Sonstige';
+    (groups[k] = groups[k]||{M:[],F:[]})[v.gender==='F'?'F':'M'].push(v);
+  });
+
+  let html = '';
+  ['TR','DE','EN','AR'].forEach(lang => {
+    const g = groups[lang]; if(!g) return;
+    const all = [...g.M,...g.F]; if(!all.length) return;
+    const meta = langMeta[lang]||{flag:'🌐',label:lang};
+    html += `<div style="margin-bottom:.75rem">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:.45rem;display:flex;align-items:center;gap:.5rem">
+        ${meta.flag} ${meta.label}
+        ${g.M.length?`<span style="font-size:10px;color:var(--text3)">♂ ${g.M.length}</span>`:''}
+        ${g.F.length?`<span style="font-size:10px;color:var(--text3)">♀ ${g.F.length}</span>`:''}
       </div>
-      <div class="vc-actions">
-        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();previewVoice(${v.id})" title="Vorschau">▶</button>
-        ${v.type!=='builtin'?`<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteVoiceFromServer('${v.name}')" title="Löschen">🗑</button>`:''}
-      </div>
-    </div>`).join('') + `
-    <div class="voice-card vc-add" onclick="document.querySelector('#panel-voices .upload-zone input').click()">
-      <div style="font-size:24px">+</div>
-      <div style="font-size:11px">Stimme hochladen</div>
+      <div class="voice-grid">${all.map(_voiceCard).join('')}</div>
     </div>`;
+  });
+  Object.keys(groups).filter(k=>!['TR','DE','EN','AR'].includes(k)).forEach(lang=>{
+    const g=groups[lang]; const all=[...g.M,...g.F]; if(!all.length) return;
+    html+=`<div style="margin-bottom:.75rem"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:.45rem">🌐 ${lang}</div><div class="voice-grid">${all.map(_voiceCard).join('')}</div></div>`;
+  });
+  if(customList.length){
+    html+=`<div style="margin-bottom:.75rem">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:.45rem">⬆ Hochgeladen (${customList.length})</div>
+      <div class="voice-grid">${customList.map(_voiceCard).join('')}</div>
+    </div>`;
+  }
+  if(!html) html='<div style="color:var(--text3);text-align:center;padding:2rem;font-size:12px">Keine Stimme gefunden</div>';
+  html+=`<div class="voice-grid"><div class="voice-card vc-add" onclick="document.querySelector('#panel-voices .upload-zone input').click()">
+    <div style="font-size:24px">+</div><div style="font-size:11px">Stimme hochladen</div>
+  </div></div>`;
+  grid.innerHTML = html;
 }
 
 function selectVoice(id){
@@ -3091,6 +3167,17 @@ function setLang(lang) {
   applyLang();
 }
 
+// #1 Zeitzone: Browser-lokale Formatierung für Server-Timestamps
+function _fmtDatumLocal(datum_ts){
+  if(!datum_ts) return '';
+  try {
+    return new Intl.DateTimeFormat(navigator.language||'de-DE',{
+      day:'2-digit', month:'2-digit', year:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    }).format(new Date(datum_ts * 1000));
+  } catch(e){ return ''; }
+}
+
 function applyLang() {
   const t = i18n[currentLang];
   if(!t) return;
@@ -3176,6 +3263,11 @@ function _getImportZiel(){
 
 function updateImportZiel(){
   const ziel = _getImportZiel();
+  const tb = document.getElementById('transcribe-btn');
+  if(tb && !tb.disabled){
+    const labels = { transcribe:'TRANSKRIBIEREN', voice:'ALS STIMME SPEICHERN', audio:'AUDIO HERUNTERLADEN' };
+    tb.innerHTML = '<i class="ti ti-wand"></i> ' + (labels[ziel] || 'START');
+  }
   const rec = document.getElementById('mic-recorder');
   const st = document.getElementById('mic-status');
   if(!rec) return;
@@ -3262,6 +3354,15 @@ async function toggleMicRecording(){
     return;
   }
 
+  // #7 Gate: Projektname + Ordner Pflicht
+  const _micProj = document.getElementById('transcribe-project');
+  const _micFolder = document.getElementById('transcribe-folder-select');
+  if(!_micProj || !_micProj.value.trim()){
+    showToast('Bitte zuerst einen Projektnamen eingeben', 'err'); return;
+  }
+  if(!_micFolder || !_micFolder.value){
+    showToast('Bitte zuerst einen Ordner auswählen', 'err'); return;
+  }
   // Aufnahme starten
   try {
     _micStream = await navigator.mediaDevices.getUserMedia({ audio:true });
@@ -4324,6 +4425,74 @@ async function clearAdminLogs(){
   if(!confirm('Alle Logs löschen?')) return;
   await fetch(`${TTS_URL}/admin/logs`, {method:'DELETE'});
   loadAdminLogs();
+}
+
+
+
+// ── P1 Quick-Wins JS ──────────────────────────────────────────────────
+
+// #2: Floating Player
+function floatingPlayerOpen(src, title){
+  const fp = document.getElementById('floating-player');
+  const fa = document.getElementById('fp-audio');
+  const ft = document.getElementById('fp-title');
+  if(!fp||!fa) return;
+  if(ft) ft.textContent = title || '';
+  fa.src = src;
+  fp.style.display = 'flex';
+  fa.play().catch(()=>{});
+}
+function floatingPlayerClose(){
+  const fp = document.getElementById('floating-player');
+  const fa = document.getElementById('fp-audio');
+  if(fa){ fa.pause(); fa.src=''; }
+  if(fp) fp.style.display = 'none';
+}
+
+// #3: Mediathek-Ordner löschen
+async function mediaDeleteFolder(cat, folder){
+  const ok = await showModal({ title:'Ordner löschen', icon:'ti-trash', iconColor:'var(--red)',
+    message:`Ordner "${folder}" in "${cat}" mit ALLEN Dateien löschen?`, okText:'Löschen', cancelText:'Abbrechen' });
+  if(!ok) return;
+  let url = '';
+  if(cat==='hoerbuch')   url = `${TTS_URL}/tts/hoerbuch/folder/${encodeURIComponent(folder)}`;
+  else if(cat==='transkript') url = `${TTS_URL}/transcribe/folder/${encodeURIComponent(folder)}`;
+  else { showToast('Löschen für diese Kategorie nicht verfügbar', 'err'); return; }
+  try {
+    const r = await fetch(url, {method:'DELETE'});
+    if(!r.ok){ const d=await r.json().catch(()=>({detail:'Fehler'})); showToast(d.detail||'Fehler','err'); return; }
+    showToast('Ordner gelöscht','ok');
+    loadMediaCategory(_mediaActive);
+  } catch(e){ showToast('Löschen fehlgeschlagen','err'); }
+}
+
+
+// ── Voice-Meta-Editor ────────────────────────────────────────────────────
+
+function openVoiceEdit(filename){
+  const m = _voiceMeta[filename] || {};
+  const v = voices.find(x => x.name === filename);
+  document.getElementById('vem-filename').value = filename;
+  document.getElementById('vem-name').value = m.name || (v ? (v.displayName || v.name.replace(/\.(mp3|wav|m4a|ogg)$/i,'').replace(/_/g,' ')) : filename);
+  document.getElementById('vem-lang').value = m.lang || 'TR';
+  document.getElementById('vem-gender').value = m.gender || 'M';
+  document.getElementById('vem-style').value = m.style || '';
+  document.getElementById('voice-edit-modal').style.display = 'flex';
+}
+
+function saveVoiceMeta(){
+  const filename = document.getElementById('vem-filename').value;
+  if(!filename) return;
+  _voiceMeta[filename] = {
+    name:   document.getElementById('vem-name').value.trim() || filename,
+    lang:   document.getElementById('vem-lang').value,
+    gender: document.getElementById('vem-gender').value,
+    style:  document.getElementById('vem-style').value.trim() || 'Custom',
+  };
+  try { localStorage.setItem('bv-voice-meta', JSON.stringify(_voiceMeta)); } catch(e){}
+  document.getElementById('voice-edit-modal').style.display = 'none';
+  showToast('Stimme aktualisiert', 'ok');
+  loadVoicesFromServer();
 }
 
 function toggleLogAutoRefresh(){
