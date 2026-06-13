@@ -35,13 +35,7 @@ nvidia-smi > nul 2>&1
 if %errorlevel% equ 0 (
     if exist "%~dp0compose.gpu.yaml" copy /Y "%~dp0compose.gpu.yaml" "%INSTALL_DIR%\" > nul
     if exist "%~dp0Dockerfile.tts.gpu" copy /Y "%~dp0Dockerfile.tts.gpu" "%INSTALL_DIR%\" > nul 2>&1
-    if exist "%INSTALL_DIR%\compose.gpu.yaml" (
-        if exist "%INSTALL_DIR%\Dockerfile.tts.gpu" (
-            set COMPOSE_FILE=compose.gpu.yaml
-        ) else (
-            echo  Hinweis: Dockerfile.tts.gpu fehlt - nutze CPU-Modus
-        )
-    )
+    if exist "%INSTALL_DIR%\compose.gpu.yaml" set COMPOSE_FILE=compose.gpu.yaml
 )
 
 REM ── Rebuild ──────────────────────────────────────────────

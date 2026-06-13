@@ -70,6 +70,8 @@ if %errorlevel% equ 0 (
     set COMPOSE_FILE=compose.gpu.yaml
     echo  GPU gefunden: NVIDIA - GPU-Modus aktiv (10x schneller!)
 ) else (
+    set USE_GPU=0
+    set COMPOSE_FILE=compose.yaml
     echo  Kein NVIDIA-GPU - CPU-Modus (funktioniert, etwas langsamer)
 )
 
