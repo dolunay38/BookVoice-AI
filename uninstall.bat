@@ -17,7 +17,7 @@ echo [1/3] Stoppe und loesche Container...
 docker stop bookvoice-tts bookvoice-proxy bookvoice-web > nul 2>&1
 docker rm bookvoice-tts bookvoice-proxy bookvoice-web > nul 2>&1
 docker rmi bookvoice-ai-bookvoice-tts > nul 2>&1
-docker volume rm bookvoice-tts-models bookvoice-hoerbuch bookvoice-musik > nul 2>&1
+docker volume rm bookvoice-tts-models bookvoice-hoerbuch bookvoice-transkriptionen bookvoice-archiv bookvoice-training bookvoice-musik > nul 2>&1
 echo OK: Container geloescht!
 
 echo.
